@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class AddDevicePage extends StatefulWidget {
@@ -18,20 +19,23 @@ class _AddDevicePageState extends State<AddDevicePage> {
 
   Color hex(String hexCode) => Color(int.parse('FF$hexCode', radix: 16));
 
-  void _submitForm() {
-    if (_formKey.currentState!.validate()) {
-      String name = _nameController.text;
-      String ip = _ipController.text;
-      String mac = _macController.text;
+  void _submitForm() async {
+  if (_formKey.currentState!.validate()) {
+    String name = _nameController.text;
+    String ip = _ipController.text;
+    String mac = _macController.text;
 
-      // You can send this data to your database or print it
-      print('Device Name: $name');
-      print('Type: $_deviceType');
-      print('IP: $ip');
-      print('MAC: $mac');
+    try {
+      await FirebaseFirestore.instance.collection('devices').add({
+        'name': name,
+        'type': _deviceType,
+        'ip': ip,
+        'mac': mac,
+        'created_at': FieldValue.serverTimestamp(),
+      });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Device Added Successfully")),
+        const SnackBar(content: Text("Device added successfully")),
       );
 
       // Clear form
@@ -41,8 +45,14 @@ class _AddDevicePageState extends State<AddDevicePage> {
       setState(() {
         _deviceType = 'PC';
       });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
     }
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
