@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "977424272269",
+    "project_id": "einventory-52205",
+    "storage_bucket": "einventory-52205.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:977424272269:android:4b27dd0fa3dc9a60cfcbc4",
+        "android_client_info": {
+          "package_name": "com.example.einventorycomputer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCyA6G40SNDLkt9yMQNSPQwJp6sy_39u7k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
