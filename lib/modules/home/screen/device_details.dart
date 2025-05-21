@@ -15,12 +15,24 @@ class DeviceDetailsPage extends StatelessWidget {
     }
   }
 
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'online':
+        return Colors.green;
+      case 'offline':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final type = device['type'] ?? 'Unknown';
     final name = device['name'] ?? 'No name';
     final ip = device['ip'] ?? 'N/A';
     final mac = device['mac'] ?? 'N/A';
+    final status = (device['status'] ?? 'N/A').toString();
 
     return Scaffold(
       appBar: AppBar(title: Text(name)),
@@ -29,6 +41,15 @@ class DeviceDetailsPage extends StatelessWidget {
         child: Column(
           children: [
             Center(child: _getDeviceIcon(type)),
+            const SizedBox(height: 24),
+            Text(
+              status.toUpperCase(),
+              style: TextStyle(
+                color: _getStatusColor(status),
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             const SizedBox(height: 24),
             Text('Name: $name', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),

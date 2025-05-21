@@ -20,9 +20,10 @@ class DatabaseService {
     });
   }
 
-  Future registerUserData(String username, String email, String password) async {
+  Future registerUserData(String fullname, String username, String email, String password) async {
     return await accountCollection.doc(uid).set({
       'uid' : uid,
+      'fullname' : fullname,
       'username' : username,
       'email': email,
       'password' :password,

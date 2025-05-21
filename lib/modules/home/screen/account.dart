@@ -58,6 +58,15 @@ class AccountPage extends StatelessWidget {
 
                 Row(
                   children: [
+                    const Icon(Icons.person),
+                    const SizedBox(width: 8),
+                    Text(data['fullname']  ?? 'No Fullname'),
+                  ],
+                ),
+
+                const SizedBox(height: 12),
+                Row(
+                  children: [
                     const Icon(Icons.email),
                     const SizedBox(width: 8),
                     Text(data['email'] ?? user.email ?? 'No Email'),

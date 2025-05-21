@@ -53,7 +53,7 @@ class _ScreenPageState extends State<ScreenPage> {
         _selectedIndex = index;
       });
     }
-    Navigator.pop(context); // Close the drawer
+    Navigator.pop(context); // Close drawer
   }
 
   @override
@@ -68,49 +68,87 @@ class _ScreenPageState extends State<ScreenPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_titles[_selectedIndex]),
+        title: Text(
+          _titles[_selectedIndex],
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+        iconTheme: const IconThemeData(color: Colors.white),
+        elevation: 2,
       ),
       drawer: Drawer(
-        child: ListView(
+        backgroundColor: const Color(0xFFFFC727),
+        child: Column(
           children: [
             UserAccountsDrawerHeader(
-              accountName: Text(_username ?? 'Loading...'),
-              accountEmail: Text(FirebaseAuth.instance.currentUser?.email ?? ''),
+              accountName: Text(
+                _username ?? 'Loading...',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              accountEmail: Text(
+                FirebaseAuth.instance.currentUser?.email ?? '',
+                style: const TextStyle(fontSize: 14),
+              ),
               currentAccountPicture: const CircleAvatar(
                 backgroundColor: Colors.white,
-                child: Icon(Icons.person, size: 42, color: Colors.blue),
+                child: Icon(Icons.person, size: 42, color: Color.fromARGB(255, 0, 0, 0)),
               ),
-              decoration: const BoxDecoration(color: Colors.blue),
+              decoration: const BoxDecoration(
+                color: Color.fromARGB(255, 0, 0, 0),
+              ),
             ),
-            ListTile(
-              title: const Text("Home"),
-              leading: const Icon(Icons.home),
-              onTap: () => _onSelect(0),
-            ),
-            ListTile(
-              title: const Text("Inventory"),
-              leading: const Icon(Icons.inventory),
-              onTap: () => _onSelect(1),
-            ),
-            ListTile(
-              title: const Text("Add Device"),
-              leading: const Icon(Icons.inventory_2),
-              onTap: () => _onSelect(2),
-            ),
-            ListTile(
-              title: const Text("Settings"),
-              leading: const Icon(Icons.settings),
-              onTap: () => _onSelect(3),
-            ),
-            ListTile(
-              title: const Text("Account"),
-              leading: const Icon(Icons.person),
-              onTap: () => _onSelect(4),
+            _buildDrawerItem(Icons.home, "Home", 0),
+            _buildDrawerItem(Icons.inventory, "Inventory", 1),
+            _buildDrawerItem(Icons.inventory_2, "Add Device", 2),
+            _buildDrawerItem(Icons.settings, "Settings", 3),
+            _buildDrawerItem(Icons.person, "Account", 4),
+            const Spacer(),
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF153B6D),
+                  foregroundColor: const Color(0xFFFFC727),
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: () async {
+                  await FirebaseAuth.instance.signOut();
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (context) => const LoginPage()),
+                  );
+                },
+                icon: const Icon(Icons.logout),
+                label: const Text("Log Out"),
+              ),
             ),
           ],
         ),
       ),
       body: _pages[_selectedIndex],
+    );
+  }
+
+  Widget _buildDrawerItem(IconData icon, String title, int index) {
+    final isSelected = _selectedIndex == index;
+
+    return ListTile(
+      selected: isSelected,
+      selectedTileColor: const Color(0xFF7BAFBB).withOpacity(0.2),
+      leading: Icon(icon, color: isSelected ? const Color.fromARGB(255, 0, 2, 4) : Colors.black),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: isSelected ? const Color.fromARGB(255, 0, 0, 0) : Colors.black,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+      onTap: () => _onSelect(index),
     );
   }
 }

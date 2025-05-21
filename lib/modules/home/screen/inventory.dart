@@ -23,6 +23,17 @@ class _InventoryPageState extends State<InventoryPage> {
     }
   }
 
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'online':
+        return Colors.green;
+      case 'offline':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -31,7 +42,7 @@ class _InventoryPageState extends State<InventoryPage> {
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(80),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
             child: Column(
               children: [
                 // Search bar
@@ -100,12 +111,11 @@ class _InventoryPageState extends State<InventoryPage> {
                 final name = (data['name'] ?? '').toString().toLowerCase();
                 final type = (data['type'] ?? 'Unknown').toString();
 
-                // Filter by search query
-                if (_searchQuery.isNotEmpty && !name.contains(_searchQuery.toLowerCase())) {
+                if (_searchQuery.isNotEmpty &&
+                    !name.contains(_searchQuery.toLowerCase())) {
                   return false;
                 }
 
-                // Filter by type
                 if (_selectedType != 'All' && type != _selectedType) {
                   return false;
                 }
@@ -114,7 +124,7 @@ class _InventoryPageState extends State<InventoryPage> {
               })
               .toList();
 
-          // Group by first letter of device name
+          // Group by first letter of name
           final grouped = <String, List<Map<String, dynamic>>>{};
           for (var data in filteredDevices) {
             final name = (data['name'] ?? 'No name').toString();
@@ -136,11 +146,16 @@ class _InventoryPageState extends State<InventoryPage> {
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Text(
                       entry.key,
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   ...entry.value.map((data) {
                     final type = data['type'] ?? 'Unknown';
+                    final status = data['status']?.toString() ?? 'N/A';
+
                     return ListTile(
                       leading: _getDeviceIcon(type),
                       title: Text(data['name'] ?? 'No name'),
@@ -152,11 +167,28 @@ class _InventoryPageState extends State<InventoryPage> {
                           Text('MAC: ${data['mac'] ?? 'N/A'}'),
                         ],
                       ),
+                      trailing: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: _getStatusColor(status).withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          status.toUpperCase(),
+                          style: TextStyle(
+                            color: _getStatusColor(status),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => DeviceDetailsPage(device: data),
+                            builder: (context) =>
+                                DeviceDetailsPage(device: data),
                           ),
                         );
                       },

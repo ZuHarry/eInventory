@@ -19,6 +19,7 @@ class _SignUpState extends State<SignUp> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmpasswordController = TextEditingController();
+  final TextEditingController _fullnameController = TextEditingController();
 
   bool _obscurePassword = true;
   String error = '';
@@ -27,6 +28,7 @@ class _SignUpState extends State<SignUp> {
     if (_formKey.currentState!.validate()) {
       setState(() => loading = true);
       dynamic result = await _auth.registerWithEmailAndPassword(
+        _fullnameController.text.trim(),
         _usernameController.text.trim(),
         _emailController.text.trim(),
         _passwordController.text.trim(),
@@ -45,67 +47,142 @@ class _SignUpState extends State<SignUp> {
     return loading
         ? Loading()
         : Scaffold(
-            appBar: AppBar(title: const Text("Sign Up")),
-            body: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: SingleChildScrollView(
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 30),
-                      _buildInputField(
-                        label: 'Your Username',
-                        controller: _usernameController,
-                        icon: Icons.person,
-                        validator: (val) =>
-                            val == null || val.isEmpty ? 'Enter a username' : null,
-                      ),
-                      const SizedBox(height: 20),
-                      _buildInputField(
-                        label: 'Your Email',
-                        controller: _emailController,
-                        icon: Icons.email,
-                        validator: (val) =>
-                            val == null || val.isEmpty ? 'Enter an email' : null,
-                      ),
-                      const SizedBox(height: 20),
-                      _buildPasswordField(
-                        label: 'Your Password',
-                        controller: _passwordController,
-                        validator: (val) => val == null || val.length < 6
-                            ? 'Enter a password 6+ chars long'
-                            : null,
-                      ),
-                      const SizedBox(height: 20),
-                      _buildPasswordField(
-                        label: 'Confirm Your Password',
-                        controller: _confirmpasswordController,
-                        validator: (val) => val != _passwordController.text
-                            ? 'Passwords do not match'
-                            : null,
-                      ),
-                      const SizedBox(height: 30),
-                      ElevatedButton(
-                        onPressed: _register,
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 50),
+            backgroundColor: const Color(0xFFFFC727),
+            body: SafeArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    child: Row(
+                      children: [
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: () => widget.toggleView(),
+                          child: const Text(
+                            'Sign In',
+                            style: TextStyle(
+                              fontFamily: 'PoetsenOne',
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
                         ),
-                        child: const Text('Register'),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        error,
-                        style: const TextStyle(color: Colors.red, fontSize: 14.0),
-                      ),
-                      const SizedBox(height: 20),
-                      TextButton(
-                        onPressed: () => widget.toggleView(),
-                        child: const Text("Already have an account? Sign In"),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          'Register',
+                          style: TextStyle(
+                            fontFamily: 'PoetsenOne',
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Create your account',
+                          style: TextStyle(
+                            fontFamily: 'PoetsenOne',
+                            fontSize: 14,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 36),
+                  Expanded(
+                    child: Container(
+                      width: double.infinity,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(44)),
+                      ),
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 34),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildInputField(
+                                label: 'Your Fullname',
+                                controller: _fullnameController,
+                                icon: Icons.person,
+                                validator: (val) =>
+                                    val == null || val.isEmpty ? 'Enter your fullname' : null,
+                              ),
+                              const SizedBox(height: 16),
+                              _buildInputField(
+                                label: 'Your Username',
+                                controller: _usernameController,
+                                icon: Icons.person,
+                                validator: (val) =>
+                                    val == null || val.isEmpty ? 'Enter a username' : null,
+                              ),
+                              const SizedBox(height: 16),
+                              _buildInputField(
+                                label: 'Your Email',
+                                controller: _emailController,
+                                icon: Icons.email,
+                                validator: (val) =>
+                                    val == null || val.isEmpty ? 'Enter an email' : null,
+                              ),
+                              const SizedBox(height: 16),
+                              _buildPasswordField(
+                                label: 'Your Password',
+                                controller: _passwordController,
+                                validator: (val) => val == null || val.length < 6
+                                    ? 'Enter a password 6+ chars long'
+                                    : null,
+                              ),
+                              const SizedBox(height: 16),
+                              _buildPasswordField(
+                                label: 'Confirm Your Password',
+                                controller: _confirmpasswordController,
+                                validator: (val) => val != _passwordController.text
+                                    ? 'Passwords do not match'
+                                    : null,
+                              ),
+                              const SizedBox(height: 24),
+                              ElevatedButton(
+                                onPressed: _register,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.black,
+                                  minimumSize: const Size(double.infinity, 50),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Register',
+                                  style: TextStyle(
+                                    fontFamily: 'PoetsenOne',
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              if (error.isNotEmpty)
+                                Text(
+                                  error,
+                                  style: const TextStyle(color: Colors.red, fontSize: 14.0),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           );
@@ -120,10 +197,17 @@ class _SignUpState extends State<SignUp> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 16)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontFamily: 'PoetsenOne',
+            fontSize: 16,
+          ),
+        ),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
+          style: const TextStyle(fontFamily: 'PoetsenOne'),
           decoration: _inputDecoration(label, icon),
           validator: validator,
         ),
@@ -139,11 +223,18 @@ class _SignUpState extends State<SignUp> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 16)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontFamily: 'PoetsenOne',
+            fontSize: 16,
+          ),
+        ),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
           obscureText: _obscurePassword,
+          style: const TextStyle(fontFamily: 'PoetsenOne'),
           decoration: _passwordDecoration(label),
           validator: validator,
         ),
@@ -154,13 +245,9 @@ class _SignUpState extends State<SignUp> {
   InputDecoration _inputDecoration(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
+      labelStyle: const TextStyle(fontFamily: 'PoetsenOne'),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(40.0),
-        borderSide: const BorderSide(color: Colors.grey),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(40.0),
-        borderSide: const BorderSide(color: Colors.blue),
+        borderRadius: BorderRadius.circular(12.0),
       ),
       prefixIcon: Icon(icon),
     );
@@ -169,13 +256,9 @@ class _SignUpState extends State<SignUp> {
   InputDecoration _passwordDecoration(String label) {
     return InputDecoration(
       labelText: label,
+      labelStyle: const TextStyle(fontFamily: 'PoetsenOne'),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(40.0),
-        borderSide: const BorderSide(color: Colors.grey),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(40.0),
-        borderSide: const BorderSide(color: Colors.blue),
+        borderRadius: BorderRadius.circular(12.0),
       ),
       prefixIcon: const Icon(Icons.lock),
       suffixIcon: IconButton(

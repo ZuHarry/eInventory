@@ -1,5 +1,4 @@
 import 'package:einventorycomputer/services/auth.dart';
-import 'package:einventorycomputer/shared/constants.dart';
 import 'package:einventorycomputer/shared/loading.dart';
 import 'package:flutter/material.dart';
 
@@ -43,102 +42,193 @@ class _SignInState extends State<SignIn> {
     return loading
         ? Loading()
         : Scaffold(
-            backgroundColor: Colors.white,
-            body: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: SingleChildScrollView(
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 40),
-                      const Icon(Icons.lock_outline, size: 100, color: Colors.indigo),
-                      const SizedBox(height: 20),
-                      const Text(
-                        'Welcome Back!',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 30),
-                      TextFormField(
-                        controller: _emailController,
-                        decoration: textDecoration.copyWith(
-                          labelText: 'Email',
-                          prefixIcon: const Icon(Icons.person),
-                        ),
-                        validator: (val) => val!.isEmpty ? 'Enter an email' : null,
-                      ),
-                      const SizedBox(height: 20),
-                      TextFormField(
-                        controller: _passwordController,
-                        obscureText: _obscurePassword,
-                        decoration: textDecoration.copyWith(
-                          labelText: 'Password',
-                          prefixIcon: const Icon(Icons.lock),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword ? Icons.visibility : Icons.visibility_off,
+            backgroundColor: const Color(0xFFFFC727),
+            body: SafeArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    child: Row(
+                      children: [
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: () => widget.toggleView(),
+                          child: const Text(
+                            'Register',
+                            style: TextStyle(
+                              fontFamily: 'PoetsenOne',
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
                             ),
-                            onPressed: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
                           ),
                         ),
-                        validator: (val) =>
-                            val!.length < 6 ? 'Enter a password 6+ chars long' : null,
-                      ),
-                      const SizedBox(height: 10),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Forgot Password clicked')),
-                            );
-                          },
-                          child: const Text('Forgot Password?'),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      ElevatedButton(
-                        onPressed: _login,
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 50),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          'Sign In',
+                          style: TextStyle(
+                            fontFamily: 'PoetsenOne',
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
                           ),
                         ),
-                        child: const Text('Login'),
+                        SizedBox(height: 8),
+                        Text(
+                          'Fill your credentials',
+                          style: TextStyle(
+                            fontFamily: 'PoetsenOne',
+                            fontSize: 14,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 36),
+                  Expanded(
+                    child: Container(
+                      width: double.infinity,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(44)),
                       ),
-                      const SizedBox(height: 20),
-                      Text(
-                        error,
-                        style: const TextStyle(color: Colors.red, fontSize: 14.0),
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text("Don't have an account? "),
-                          GestureDetector(
-                            onTap: () {
-                              widget.toggleView(); // Keep toggleView working
-                            },
-                            child: const Text(
-                              'Sign Up',
-                              style: TextStyle(
-                                color: Colors.indigo,
-                                fontWeight: FontWeight.bold,
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 34),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Form(
+                              key: _formKey,
+                              child: Column(
+                                children: [
+                                  TextFormField(
+                                    controller: _emailController,
+                                    style: const TextStyle(
+                                      fontFamily: 'PoetsenOne',
+                                      fontSize: 18,
+                                      color: Colors.black,
+                                    ),
+                                    decoration: const InputDecoration(
+                                      hintText: 'Email',
+                                      hintStyle: TextStyle(
+                                        fontFamily: 'PoetsenOne',
+                                        fontSize: 16,
+                                        color: Colors.grey,
+                                      ),
+                                      prefixIcon: Icon(Icons.person),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.all(
+                                            Radius.circular(12)),
+                                      ),
+                                    ),
+                                    validator: (val) =>
+                                        val!.isEmpty ? 'Enter an email' : null,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  TextFormField(
+                                    controller: _passwordController,
+                                    obscureText: _obscurePassword,
+                                    style: const TextStyle(
+                                      fontFamily: 'PoetsenOne',
+                                      fontSize: 18,
+                                      color: Colors.black,
+                                    ),
+                                    decoration: InputDecoration(
+                                      hintText: 'Password',
+                                      hintStyle: const TextStyle(
+                                        fontFamily: 'PoetsenOne',
+                                        fontSize: 16,
+                                        color: Colors.grey,
+                                      ),
+                                      prefixIcon: const Icon(Icons.lock),
+                                      suffixIcon: IconButton(
+                                        icon: Icon(_obscurePassword
+                                            ? Icons.visibility
+                                            : Icons.visibility_off),
+                                        onPressed: () {
+                                          setState(() {
+                                            _obscurePassword =
+                                                !_obscurePassword;
+                                          });
+                                        },
+                                      ),
+                                      border: const OutlineInputBorder(
+                                        borderRadius: BorderRadius.all(
+                                            Radius.circular(12)),
+                                      ),
+                                    ),
+                                    validator: (val) => val!.length < 6
+                                        ? 'Enter a password 6+ chars long'
+                                        : null,
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: TextButton(
+                                      onPressed: () {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(const SnackBar(
+                                          content:
+                                              Text('Forgot Password clicked'),
+                                        ));
+                                      },
+                                      child: const Text(
+                                        'Forgot Password?',
+                                        style: TextStyle(
+                                          fontFamily: 'PoetsenOne',
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  ElevatedButton(
+                                    onPressed: _login,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.black,
+                                      minimumSize:
+                                          const Size(double.infinity, 50),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'Sign In',
+                                      style: TextStyle(
+                                        fontFamily: 'PoetsenOne',
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  if (error.isNotEmpty)
+                                    Text(
+                                      error,
+                                      style: const TextStyle(
+                                          color: Colors.red, fontSize: 14.0),
+                                    ),
+                                  const SizedBox(height: 20),
+                                ],
                               ),
                             ),
-                          )
-                        ],
+                          ],
+                        ),
                       ),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
           );

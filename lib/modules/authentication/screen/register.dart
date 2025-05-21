@@ -18,6 +18,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmpasswordController = TextEditingController();
+  final TextEditingController _fullnameController = TextEditingController();
 
   bool _obscurePassword = true;
   String error = '';
@@ -26,6 +27,7 @@ class _RegisterPageState extends State<RegisterPage> {
     if (_formKey.currentState!.validate()) {
       setState(() => loading = true);
       dynamic result = await _auth.registerWithEmailAndPassword(
+        _fullnameController.text.trim(),
          _usernameController.text.trim(),
         _emailController.text.trim(),
         _passwordController.text.trim(),
@@ -54,6 +56,21 @@ class _RegisterPageState extends State<RegisterPage> {
                   key: _formKey,
                   child: Column(
                     children: [
+                      const SizedBox(height: 30),
+                      // Fullname
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Your Full Name', style: TextStyle(fontSize: 16)),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: _fullnameController,
+                            decoration: _inputDecoration('Username', Icons.person),
+                            validator: (val) =>
+                                val == null || val.isEmpty ? 'Enter Your Full Name' : null,
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 30),
                       // Username
                       Column(
