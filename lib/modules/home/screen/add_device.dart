@@ -16,43 +16,45 @@ class _AddDevicePageState extends State<AddDevicePage> {
   final TextEditingController _macController = TextEditingController();
 
   String _deviceType = 'PC';
+  String _deviceStatus = 'Online'; // New status field
 
   Color hex(String hexCode) => Color(int.parse('FF$hexCode', radix: 16));
 
   void _submitForm() async {
-  if (_formKey.currentState!.validate()) {
-    String name = _nameController.text;
-    String ip = _ipController.text;
-    String mac = _macController.text;
+    if (_formKey.currentState!.validate()) {
+      String name = _nameController.text;
+      String ip = _ipController.text;
+      String mac = _macController.text;
 
-    try {
-      await FirebaseFirestore.instance.collection('devices').add({
-        'name': name,
-        'type': _deviceType,
-        'ip': ip,
-        'mac': mac,
-        'created_at': FieldValue.serverTimestamp(),
-      });
+      try {
+        await FirebaseFirestore.instance.collection('devices').add({
+          'name': name,
+          'type': _deviceType,
+          'ip': ip,
+          'mac': mac,
+          'status': _deviceStatus, // <-- Add status field here
+          'created_at': FieldValue.serverTimestamp(),
+        });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Device added successfully")),
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Device added successfully")),
+        );
 
-      // Clear form
-      _nameController.clear();
-      _ipController.clear();
-      _macController.clear();
-      setState(() {
-        _deviceType = 'PC';
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
+        // Clear form
+        _nameController.clear();
+        _ipController.clear();
+        _macController.clear();
+        setState(() {
+          _deviceType = 'PC';
+          _deviceStatus = 'Online'; // Reset status
+        });
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: $e")),
+        );
+      }
     }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -110,6 +112,23 @@ class _AddDevicePageState extends State<AddDevicePage> {
                     decoration: const InputDecoration(labelText: 'MAC Address'),
                     validator: (value) =>
                         value == null || value.isEmpty ? 'Enter MAC address' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  // NEW Status dropdown
+                  DropdownButtonFormField<String>(
+                    value: _deviceStatus,
+                    items: ['Online', 'Offline']
+                        .map((status) => DropdownMenuItem(
+                              value: status,
+                              child: Text(status),
+                            ))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _deviceStatus = value!;
+                      });
+                    },
+                    decoration: const InputDecoration(labelText: 'Device Status'),
                   ),
                   const SizedBox(height: 20),
                   SizedBox(

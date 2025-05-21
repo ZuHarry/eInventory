@@ -1,3 +1,5 @@
+import 'package:einventorycomputer/modules/authentication/screen/login.dart';
+import 'package:einventorycomputer/modules/authentication/screen/register.dart';
 import 'package:einventorycomputer/modules/authentication/sign_in.dart';
 import 'package:einventorycomputer/modules/authentication/sign_up.dart';
 import 'package:flutter/material.dart';

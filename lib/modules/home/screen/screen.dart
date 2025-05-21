@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:einventorycomputer/modules/home/screen/home.dart';
 import 'package:einventorycomputer/modules/home/screen/inventory.dart';
 import 'package:einventorycomputer/modules/home/screen/settings.dart';
@@ -13,6 +16,7 @@ class ScreenPage extends StatefulWidget {
 
 class _ScreenPageState extends State<ScreenPage> {
   int _selectedIndex = 0;
+  String? _username;
 
   final List<String> _titles = [
     "Home",
@@ -20,8 +24,28 @@ class _ScreenPageState extends State<ScreenPage> {
     "Add Device",
     "Settings",
     "Account",
-    "Login",
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUsername();
+  }
+
+  Future<void> _loadUsername() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      if (doc.exists) {
+        setState(() {
+          _username = doc.data()?['username'] ?? 'User';
+        });
+      }
+    }
+  }
 
   void _onSelect(int index) {
     if (_selectedIndex != index) {
@@ -35,12 +59,11 @@ class _ScreenPageState extends State<ScreenPage> {
   @override
   Widget build(BuildContext context) {
     List<Widget> _pages = [
-      HomePage(), // Navigate to Inventory
+      HomePage(),
       InventoryPage(),
       AddDevicePage(),
       SettingsPage(),
       AccountPage(),
-      LoginPage(),
     ];
 
     return Scaffold(
@@ -50,10 +73,14 @@ class _ScreenPageState extends State<ScreenPage> {
       drawer: Drawer(
         child: ListView(
           children: [
-            DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blue),
-              child: const Text("Menu",
-                  style: TextStyle(color: Colors.white, fontSize: 24)),
+            UserAccountsDrawerHeader(
+              accountName: Text(_username ?? 'Loading...'),
+              accountEmail: Text(FirebaseAuth.instance.currentUser?.email ?? ''),
+              currentAccountPicture: const CircleAvatar(
+                backgroundColor: Colors.white,
+                child: Icon(Icons.person, size: 42, color: Colors.blue),
+              ),
+              decoration: const BoxDecoration(color: Colors.blue),
             ),
             ListTile(
               title: const Text("Home"),
@@ -79,11 +106,6 @@ class _ScreenPageState extends State<ScreenPage> {
               title: const Text("Account"),
               leading: const Icon(Icons.person),
               onTap: () => _onSelect(4),
-            ),
-            ListTile(
-              title: const Text("Login"),
-              leading: const Icon(Icons.login),
-              onTap: () => _onSelect(5),
             ),
           ],
         ),

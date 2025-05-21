@@ -8,12 +8,24 @@ class DatabaseService {
   // collection reference
   final CollectionReference brewCollection = FirebaseFirestore.instance.collection("brews");
 
+  // collection reference
+  final CollectionReference accountCollection = FirebaseFirestore.instance.collection("users");
+
 
   Future updateUserData(String sugars, String name, int strength) async {
     return await brewCollection.doc(uid).set({
       'sugars': sugars,
       'name': name,
       'strength': strength,
+    });
+  }
+
+  Future registerUserData(String username, String email, String password) async {
+    return await accountCollection.doc(uid).set({
+      'uid' : uid,
+      'username' : username,
+      'email': email,
+      'password' :password,
     });
   }
 
