@@ -38,6 +38,7 @@ class HomePage extends StatelessWidget {
               const Text(
                 'Dashboard',
                 style: TextStyle(
+                  fontFamily: 'PoetsenOne',
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
@@ -45,107 +46,50 @@ class HomePage extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(30),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 8,
-                        offset: Offset(0, 4),
-                      )
-                    ],
-                  ),
-                  child: FutureBuilder<List<int>>(
-                    future: Future.wait([
-                      getCountByType('PC'),               // 0
-                      getCountByType('Peripheral'),       // 1
-                      getOnlineCountByType('PC'),         // 2
-                      getOnlineCountByType('Peripheral'), // 3
-                    ]),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
+                child: FutureBuilder<List<int>>(
+                  future: Future.wait([
+                    getCountByType('PC'),               // 0
+                    getOnlineCountByType('PC'),         // 1
+                    getCountByType('Peripheral'),       // 2
+                    getOnlineCountByType('Peripheral'), // 3
+                  ]),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-                      if (snapshot.hasError) {
-                        return Center(child: Text('Error: ${snapshot.error}'));
-                      }
+                    if (snapshot.hasError) {
+                      return Center(child: Text('Error: ${snapshot.error}'));
+                    }
 
-                      final List<Map<String, dynamic>> stats = [
-                        {
-                          'title': 'Total PCs',
-                          'count': snapshot.data![0],
-                          'icon': Icons.computer,
-                        },
-                        {
-                          'title': 'Peripherals',
-                          'count': snapshot.data![1],
-                          'icon': Icons.devices_other,
-                        },
-                        {
-                          'title': 'Online PCs',
-                          'count': snapshot.data![2],
-                          'icon': Icons.wifi,
-                        },
-                        {
-                          'title': 'Online Peripherals',
-                          'count': snapshot.data![3],
-                          'icon': Icons.device_hub,
-                        },
-                      ];
+                    final totalPC = snapshot.data![0];
+                    final onlinePC = snapshot.data![1];
+                    final offlinePC = totalPC - onlinePC;
 
-                      return GridView.builder(
-                        itemCount: stats.length,
-                        padding: EdgeInsets.zero,
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                          childAspectRatio: 1.1,
+                    final totalPeripheral = snapshot.data![2];
+                    final onlinePeripheral = snapshot.data![3];
+                    final offlinePeripheral = totalPeripheral - onlinePeripheral;
+
+                    return ListView(
+                      children: [
+                        _buildDeviceCard(
+                          label: "PCs",
+                          icon: Icons.computer,
+                          total: totalPC,
+                          online: onlinePC,
+                          offline: offlinePC,
                         ),
-                        itemBuilder: (context, index) {
-                          final item = stats[index];
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: Colors.grey[100],
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: hex('153B6D'), width: 1),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 20, horizontal: 12),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(item['icon'],
-                                    size: 30, color: Colors.grey[800]),
-                                const SizedBox(height: 12),
-                                Text(
-                                  item['count'].toString(),
-                                  style: const TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  item['title'],
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[700],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
+                        const SizedBox(height: 16),
+                        _buildDeviceCard(
+                          label: "Peripherals",
+                          icon: Icons.devices_other,
+                          total: totalPeripheral,
+                          online: onlinePeripheral,
+                          offline: offlinePeripheral,
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: 20),
@@ -153,7 +97,7 @@ class HomePage extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: hex('153B6D'),
+                    backgroundColor: Colors.black,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -164,7 +108,9 @@ class HomePage extends StatelessWidget {
                   },
                   child: const Text(
                     'Log Out',
-                    style: TextStyle(fontSize: 16, color: Colors.white),
+                    style: TextStyle(
+                      fontFamily: 'PoetsenOne',
+                      fontSize: 16, color: Colors.white),
                   ),
                 ),
               )
@@ -172,6 +118,81 @@ class HomePage extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildDeviceCard({
+    required String label,
+    required IconData icon,
+    required int total,
+    required int online,
+    required int offline,
+  }) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 30,
+              backgroundColor: const Color(0xFFFFC727),
+              child: Icon(icon, size: 32, color: Colors.black),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontFamily: 'PoetsenOne',
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildStatusCount("Total", total),
+                      _buildStatusCount("Online", online),
+                      _buildStatusCount("Offline", offline),
+                    ],
+                  )
+                ],
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusCount(String label, int count) {
+    return Column(
+      children: [
+        Text(
+          count.toString(),
+          style: const TextStyle(
+            fontFamily: 'PoetsenOne',
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(
+            fontFamily: 'PoetsenOne',
+            fontSize: 14,
+            color: Colors.grey,
+          ),
+        ),
+      ],
     );
   }
 }

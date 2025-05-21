@@ -16,7 +16,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
   final TextEditingController _macController = TextEditingController();
 
   String _deviceType = 'PC';
-  String _deviceStatus = 'Online'; // New status field
+  String _deviceStatus = 'Online';
 
   Color hex(String hexCode) => Color(int.parse('FF$hexCode', radix: 16));
 
@@ -32,7 +32,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
           'type': _deviceType,
           'ip': ip,
           'mac': mac,
-          'status': _deviceStatus, // <-- Add status field here
+          'status': _deviceStatus,
           'created_at': FieldValue.serverTimestamp(),
         });
 
@@ -46,7 +46,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
         _macController.clear();
         setState(() {
           _deviceType = 'PC';
-          _deviceStatus = 'Online'; // Reset status
+          _deviceStatus = 'Online';
         });
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -59,84 +59,57 @@ class _AddDevicePageState extends State<AddDevicePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: hex('7BAFBB'),
+      backgroundColor: hex('FFC727'),
       appBar: AppBar(
-        backgroundColor: hex('7BAFBB'),
+        backgroundColor: hex('FFC727'),
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
-        title: const Text('Add New Device', style: TextStyle(color: Colors.black)),
+        title: const Text(
+          'Add New Device',
+          style: TextStyle(
+            color: Colors.black,
+            fontFamily: 'PoetsenOne',
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Card(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          elevation: 6,
+          elevation: 8,
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Form(
               key: _formKey,
               child: Column(
                 children: [
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: const InputDecoration(labelText: 'Device Name'),
-                    validator: (value) =>
-                        value == null || value.isEmpty ? 'Enter device name' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
+                  _buildTextField(_nameController, 'Device Name'),
+                  const SizedBox(height: 16),
+                  _buildDropdown(
+                    label: 'Device Type',
                     value: _deviceType,
-                    items: ['PC', 'Peripheral']
-                        .map((type) => DropdownMenuItem(
-                              value: type,
-                              child: Text(type),
-                            ))
-                        .toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _deviceType = value!;
-                      });
-                    },
-                    decoration: const InputDecoration(labelText: 'Device Type'),
+                    items: ['PC', 'Peripheral'],
+                    onChanged: (val) => setState(() => _deviceType = val!),
                   ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _ipController,
-                    decoration: const InputDecoration(labelText: 'IP Address'),
-                    validator: (value) =>
-                        value == null || value.isEmpty ? 'Enter IP address' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _macController,
-                    decoration: const InputDecoration(labelText: 'MAC Address'),
-                    validator: (value) =>
-                        value == null || value.isEmpty ? 'Enter MAC address' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  // NEW Status dropdown
-                  DropdownButtonFormField<String>(
+                  const SizedBox(height: 16),
+                  _buildTextField(_ipController, 'IP Address'),
+                  const SizedBox(height: 16),
+                  _buildTextField(_macController, 'MAC Address'),
+                  const SizedBox(height: 16),
+                  _buildDropdown(
+                    label: 'Device Status',
                     value: _deviceStatus,
-                    items: ['Online', 'Offline']
-                        .map((status) => DropdownMenuItem(
-                              value: status,
-                              child: Text(status),
-                            ))
-                        .toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _deviceStatus = value!;
-                      });
-                    },
-                    decoration: const InputDecoration(labelText: 'Device Status'),
+                    items: ['Online', 'Offline'],
+                    onChanged: (val) => setState(() => _deviceStatus = val!),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 28),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: _submitForm,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: hex('153B6D'),
+                        backgroundColor: Colors.black,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -144,7 +117,12 @@ class _AddDevicePageState extends State<AddDevicePage> {
                       ),
                       child: const Text(
                         'Submit',
-                        style: TextStyle(color: Colors.white, fontSize: 16),
+                        style: TextStyle(
+                          color: Color(0xFFFFC727),
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'PoetsenOne',
+                        ),
                       ),
                     ),
                   ),
@@ -154,6 +132,59 @@ class _AddDevicePageState extends State<AddDevicePage> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String label) {
+    return TextFormField(
+      controller: controller,
+      style: const TextStyle(fontFamily: 'PoetsenOne', fontSize: 16),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(
+          color: Colors.black87,
+          fontFamily: 'PoetsenOne',
+        ),
+        border: const OutlineInputBorder(),
+        focusedBorder: const OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.black, width: 2),
+        ),
+      ),
+      validator: (value) =>
+          value == null || value.isEmpty ? 'Enter $label' : null,
+    );
+  }
+
+  Widget _buildDropdown({
+    required String label,
+    required String value,
+    required List<String> items,
+    required void Function(String?) onChanged,
+  }) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      onChanged: onChanged,
+      items: items
+          .map((item) => DropdownMenuItem(
+                value: item,
+                child: Text(
+                  item,
+                  style: const TextStyle(fontFamily: 'PoetsenOne'),
+                ),
+              ))
+          .toList(),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(
+          color: Colors.black87,
+          fontFamily: 'PoetsenOne',
+        ),
+        border: const OutlineInputBorder(),
+        focusedBorder: const OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.black, width: 2),
+        ),
+      ),
+      style: const TextStyle(fontFamily: 'PoetsenOne', color: Colors.black),
     );
   }
 }

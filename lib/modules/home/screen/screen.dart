@@ -1,3 +1,4 @@
+import 'package:einventorycomputer/services/auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -15,6 +16,7 @@ class ScreenPage extends StatefulWidget {
 }
 
 class _ScreenPageState extends State<ScreenPage> {
+  final AuthService _auth = AuthService();
   int _selectedIndex = 0;
   String? _username;
 
@@ -71,6 +73,7 @@ class _ScreenPageState extends State<ScreenPage> {
         title: Text(
           _titles[_selectedIndex],
           style: const TextStyle(
+            fontFamily: 'PoetsenOne',
             color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
@@ -86,11 +89,15 @@ class _ScreenPageState extends State<ScreenPage> {
             UserAccountsDrawerHeader(
               accountName: Text(
                 _username ?? 'Loading...',
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontFamily: 'PoetsenOne',
+                  fontWeight: FontWeight.bold),
               ),
               accountEmail: Text(
                 FirebaseAuth.instance.currentUser?.email ?? '',
-                style: const TextStyle(fontSize: 14),
+                style: const TextStyle(
+                  fontFamily: 'PoetsenOne',
+                  fontSize: 14),
               ),
               currentAccountPicture: const CircleAvatar(
                 backgroundColor: Colors.white,
@@ -110,7 +117,7 @@ class _ScreenPageState extends State<ScreenPage> {
               padding: const EdgeInsets.all(12.0),
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF153B6D),
+                  backgroundColor: const Color.fromARGB(255, 0, 0, 0),
                   foregroundColor: const Color(0xFFFFC727),
                   minimumSize: const Size.fromHeight(48),
                   shape: RoundedRectangleBorder(
@@ -118,13 +125,21 @@ class _ScreenPageState extends State<ScreenPage> {
                   ),
                 ),
                 onPressed: () async {
-                  await FirebaseAuth.instance.signOut();
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (context) => const LoginPage()),
-                  );
-                },
-                icon: const Icon(Icons.logout),
-                label: const Text("Log Out"),
+                    await _auth.signOut();
+                  },
+                icon: const Icon(
+                  Icons.logout,
+                  color: Colors.white,
+                ),
+                label: const Text(
+                  "Log Out",
+                  style: TextStyle(
+                    fontSize: 18,            // Font size
+                    fontWeight: FontWeight.bold,  // Font weight
+                    color: Color(0xFFFFC727),     // Text color (optional here since foregroundColor handles it)
+                    fontFamily: 'PoetsenOne',     // Custom font (optional)
+                  ),
+                ),
               ),
             ),
           ],
@@ -145,6 +160,7 @@ class _ScreenPageState extends State<ScreenPage> {
         title,
         style: TextStyle(
           color: isSelected ? const Color.fromARGB(255, 0, 0, 0) : Colors.black,
+          fontFamily: 'PoetsenOne',
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         ),
       ),

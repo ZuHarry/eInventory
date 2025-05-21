@@ -7,11 +7,11 @@ class DeviceDetailsPage extends StatelessWidget {
 
   Icon _getDeviceIcon(String? type) {
     if (type == 'PC') {
-      return const Icon(Icons.computer, color: Colors.blue, size: 100);
+      return const Icon(Icons.computer, color: Colors.black, size: 100);
     } else if (type == 'Peripheral') {
-      return const Icon(Icons.devices_other, color: Colors.green, size: 100);
+      return const Icon(Icons.devices_other, color: Colors.black, size: 100);
     } else {
-      return const Icon(Icons.device_unknown, color: Colors.grey, size: 100);
+      return const Icon(Icons.device_unknown, color: Colors.black, size: 100);
     }
   }
 
@@ -35,32 +35,80 @@ class DeviceDetailsPage extends StatelessWidget {
     final status = (device['status'] ?? 'N/A').toString();
 
     return Scaffold(
-      appBar: AppBar(title: Text(name)),
+      backgroundColor: const Color(0xFFFFC727),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFFFC727),
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
+        title: Text(
+          name,
+          style: const TextStyle(
+            fontFamily: 'PoetsenOne',
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
             Center(child: _getDeviceIcon(type)),
-            const SizedBox(height: 24),
-            Text(
-              status.toUpperCase(),
-              style: TextStyle(
-                color: _getStatusColor(status),
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: _getStatusColor(status).withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                status.toUpperCase(),
+                style: TextStyle(
+                  color: _getStatusColor(status),
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'PoetsenOne',
+                ),
               ),
             ),
             const SizedBox(height: 24),
-            Text('Name: $name', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Text('Type: $type'),
-            const SizedBox(height: 8),
-            Text('IP Address: $ip'),
-            const SizedBox(height: 8),
-            Text('MAC Address: $mac'),
+            _buildDetailRow('Name', name),
+            const SizedBox(height: 10),
+            _buildDetailRow('Type', type),
+            const SizedBox(height: 10),
+            _buildDetailRow('IP Address', ip),
+            const SizedBox(height: 10),
+            _buildDetailRow('MAC Address', mac),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$label: ',
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontFamily: 'PoetsenOne',
+            fontSize: 16,
+            color: Colors.black,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              fontFamily: 'PoetsenOne',
+              fontSize: 16,
+              color: Colors.black87,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
