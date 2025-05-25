@@ -1,65 +1,53 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'choose_location.dart'; // Import this
 
-class AddDevicePage extends StatefulWidget {
-  const AddDevicePage({super.key});
+class AddLocationPage extends StatefulWidget {
+  const AddLocationPage({super.key});
 
   @override
-  State<AddDevicePage> createState() => _AddDevicePageState();
+  State<AddLocationPage> createState() => _AddLocationPageState();
 }
 
-class _AddDevicePageState extends State<AddDevicePage> {
+class _AddLocationPageState extends State<AddLocationPage> {
   final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _ipController = TextEditingController();
-  final TextEditingController _macController = TextEditingController();
+  final TextEditingController _locationNameController = TextEditingController();
 
-  String _deviceType = 'PC';
-  String _deviceStatus = 'Online';
-  String? _selectedLocationName;
+  String _building = 'Right Wing';
+  String _floor = 'Ground';
+  String _locationType = 'Lecture Room';
 
   Color hex(String hexCode) => Color(int.parse('FF$hexCode', radix: 16));
 
   void _submitForm() async {
-    if (_formKey.currentState!.validate() && _selectedLocationName != null) {
-      String name = _nameController.text;
-      String ip = _ipController.text;
-      String mac = _macController.text;
+    if (_formKey.currentState!.validate()) {
+      String locationName = _locationNameController.text;
 
       try {
-        await FirebaseFirestore.instance.collection('devices').add({
-          'name': name,
-          'type': _deviceType,
-          'ip': ip,
-          'mac': mac,
-          'status': _deviceStatus,
-          'location': _selectedLocationName,
+        await FirebaseFirestore.instance.collection('locations').add({
+          'name': locationName,
+          'building': _building,
+          'floor': _floor,
+          'type': _locationType,
           'created_at': FieldValue.serverTimestamp(),
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Device added successfully")),
+          const SnackBar(content: Text("Location added successfully")),
         );
 
-        _nameController.clear();
-        _ipController.clear();
-        _macController.clear();
+        // Clear form
+        _locationNameController.clear();
         setState(() {
-          _deviceType = 'PC';
-          _deviceStatus = 'Online';
-          _selectedLocationName = null;
+          _building = 'Right Wing';
+          _floor = 'Ground';
+          _locationType = 'Lecture Room';
         });
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Error: $e")),
         );
       }
-    } else if (_selectedLocationName == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please choose a location")),
-      );
     }
   }
 
@@ -72,7 +60,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
         title: const Text(
-          'Add New Device',
+          'Add New Location',
           style: TextStyle(
             color: Colors.black,
             fontFamily: 'PoetsenOne',
@@ -91,62 +79,27 @@ class _AddDevicePageState extends State<AddDevicePage> {
               key: _formKey,
               child: Column(
                 children: [
-                  _buildTextField(_nameController, 'Device Name'),
+                  _buildTextField(_locationNameController, 'Location Name'),
                   const SizedBox(height: 16),
                   _buildDropdown(
-                    label: 'Device Type',
-                    value: _deviceType,
-                    items: ['PC', 'Peripheral'],
-                    onChanged: (val) => setState(() => _deviceType = val!),
+                    label: 'Building',
+                    value: _building,
+                    items: ['Right Wing', 'Left Wing'],
+                    onChanged: (val) => setState(() => _building = val!),
                   ),
-                  const SizedBox(height: 16),
-                  _buildTextField(_ipController, 'IP Address'),
-                  const SizedBox(height: 16),
-                  _buildTextField(_macController, 'MAC Address'),
                   const SizedBox(height: 16),
                   _buildDropdown(
-                    label: 'Device Status',
-                    value: _deviceStatus,
-                    items: ['Online', 'Offline'],
-                    onChanged: (val) => setState(() => _deviceStatus = val!),
+                    label: 'Floor',
+                    value: _floor,
+                    items: ['Ground', '1st Floor', '2nd Floor', '3rd Floor'],
+                    onChanged: (val) => setState(() => _floor = val!),
                   ),
                   const SizedBox(height: 16),
-                  GestureDetector(
-                    onTap: () async {
-                      final selected = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ChooseLocationPage(),
-                        ),
-                      );
-                      if (selected != null) {
-                        setState(() {
-                          _selectedLocationName = selected;
-                        });
-                      }
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.black54),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            _selectedLocationName ?? 'Choose Location',
-                            style: const TextStyle(
-                              fontFamily: 'PoetsenOne',
-                              color: Colors.black87,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.black54),
-                        ],
-                      ),
-                    ),
+                  _buildDropdown(
+                    label: 'Type',
+                    value: _locationType,
+                    items: ['Lecture Room', 'Lab', 'Lecturer Office', 'Other'],
+                    onChanged: (val) => setState(() => _locationType = val!),
                   ),
                   const SizedBox(height: 28),
                   SizedBox(

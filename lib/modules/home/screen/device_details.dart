@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'device_edit_page.dart'; // Make sure this file exists in the same folder or update the import path accordingly.
 
 class DeviceDetailsPage extends StatelessWidget {
   final Map<String, dynamic> device;
@@ -33,6 +34,8 @@ class DeviceDetailsPage extends StatelessWidget {
     final ip = device['ip'] ?? 'N/A';
     final mac = device['mac'] ?? 'N/A';
     final status = (device['status'] ?? 'N/A').toString();
+    final location = device['location'] ?? 'N/A';
+    final deviceId = device['id']?.toString() ?? '';
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFC727),
@@ -79,6 +82,35 @@ class DeviceDetailsPage extends StatelessWidget {
             _buildDetailRow('IP Address', ip),
             const SizedBox(height: 10),
             _buildDetailRow('MAC Address', mac),
+            const SizedBox(height: 10),
+            _buildDetailRow('Location', location),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DeviceEditPage(
+                      deviceId: deviceId,
+                      deviceData: device,
+                    ),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text(
+                'Modify',
+                style: TextStyle(
+                  fontFamily: 'PoetsenOne',
+                  color: Color(0xFFFFC727),
+                  fontSize: 16,
+                ),
+              ),
+            ),
           ],
         ),
       ),

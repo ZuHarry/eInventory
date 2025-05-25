@@ -1,14 +1,13 @@
+import 'package:einventorycomputer/modules/home/screen/location.dart';
 import 'package:einventorycomputer/services/auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'package:einventorycomputer/modules/home/screen/home.dart';
 import 'package:einventorycomputer/modules/home/screen/inventory.dart';
 import 'package:einventorycomputer/modules/home/screen/settings.dart';
 import 'package:einventorycomputer/modules/home/screen/account.dart';
 import 'package:einventorycomputer/modules/home/screen/add_device.dart';
-import 'package:einventorycomputer/modules/authentication/screen/login.dart';
 
 class ScreenPage extends StatefulWidget {
   @override
@@ -26,6 +25,7 @@ class _ScreenPageState extends State<ScreenPage> {
     "Add Device",
     "Settings",
     "Account",
+    "Location",
   ];
 
   @override
@@ -66,6 +66,7 @@ class _ScreenPageState extends State<ScreenPage> {
       AddDevicePage(),
       SettingsPage(),
       AccountPage(),
+      LocationPage(),
     ];
 
     return Scaffold(
@@ -112,6 +113,7 @@ class _ScreenPageState extends State<ScreenPage> {
             _buildDrawerItem(Icons.inventory_2, "Add Device", 2),
             _buildDrawerItem(Icons.settings, "Settings", 3),
             _buildDrawerItem(Icons.person, "Account", 4),
+            _buildDrawerItem(Icons.location_city, "Location", 5),
             const Spacer(),
             Padding(
               padding: const EdgeInsets.all(12.0),

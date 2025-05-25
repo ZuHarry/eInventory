@@ -1,3 +1,5 @@
+// inventory.dart
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:einventorycomputer/modules/home/screen/device_details.dart';
@@ -12,26 +14,37 @@ class InventoryPage extends StatefulWidget {
 class _InventoryPageState extends State<InventoryPage> {
   String _searchQuery = '';
   String _selectedType = 'All';
+  String _selectedFloor = 'All';
 
   Icon _getDeviceIcon(String? type) {
-    if (type == 'PC') {
-      return const Icon(Icons.computer, color: Colors.black);
-    } else if (type == 'Peripheral') {
-      return const Icon(Icons.devices_other, color: Colors.black);
-    } else {
-      return const Icon(Icons.device_unknown, color: Colors.black);
-    }
+    if (type == 'PC') return const Icon(Icons.computer, color: Colors.black);
+    if (type == 'Peripheral') return const Icon(Icons.devices_other, color: Colors.black);
+    return const Icon(Icons.device_unknown, color: Colors.black);
   }
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
-      case 'online':
-        return Colors.green;
-      case 'offline':
-        return Colors.red;
-      default:
-        return Colors.grey;
+      case 'online': return Colors.green;
+      case 'offline': return Colors.red;
+      default: return Colors.grey;
     }
+  }
+
+  Future<Map<String, Map<String, String>>> _fetchLocationInfoMap() async {
+    final snapshot = await FirebaseFirestore.instance.collection('locations').get();
+    final map = <String, Map<String, String>>{};
+
+    for (var doc in snapshot.docs) {
+      final data = doc.data();
+      final name = data['name'];
+      final floor = data['floor'];
+      final building = data['building'];
+      if (name != null && floor != null && building != null) {
+        map[name] = {'floor': floor, 'building': building};
+      }
+    }
+
+    return map;
   }
 
   @override
@@ -41,71 +54,67 @@ class _InventoryPageState extends State<InventoryPage> {
       appBar: AppBar(
         backgroundColor: const Color(0xFFFFC727),
         elevation: 0,
-        title: const Text(
-          'Device Inventory',
-          style: TextStyle(
-            fontFamily: 'PoetsenOne',
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
-        ),
+        title: const Text('Device Inventory', style: TextStyle(fontFamily: 'PoetsenOne', fontWeight: FontWeight.bold, color: Colors.black)),
         iconTheme: const IconThemeData(color: Colors.black),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(100),
+          preferredSize: const Size.fromHeight(130),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Column(
               children: [
-                // Search bar
                 TextField(
                   decoration: InputDecoration(
                     hintText: 'Search device name',
                     prefixIcon: const Icon(Icons.search),
                     hintStyle: const TextStyle(fontFamily: 'PoetsenOne'),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     isDense: true,
                     filled: true,
                     fillColor: Colors.white,
                   ),
                   style: const TextStyle(fontFamily: 'PoetsenOne'),
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value.trim();
-                    });
-                  },
+                  onChanged: (value) => setState(() => _searchQuery = value.trim()),
                 ),
                 const SizedBox(height: 8),
-                // Dropdown filter for type
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Filter by type:',
-                      style: TextStyle(fontFamily: 'PoetsenOne'),
-                    ),
-                    const SizedBox(width: 12),
-                    DropdownButton<String>(
-                      value: _selectedType,
-                      dropdownColor: Colors.white,
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontFamily: 'PoetsenOne',
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: 'All', child: Text('All')),
-                        DropdownMenuItem(value: 'PC', child: Text('PC')),
-                        DropdownMenuItem(
-                            value: 'Peripheral', child: Text('Peripheral')),
-                        DropdownMenuItem(value: 'Unknown', child: Text('Unknown')),
+                    Row(
+                      children: [
+                        const Text('Type:', style: TextStyle(fontFamily: 'PoetsenOne')),
+                        const SizedBox(width: 8),
+                        DropdownButton<String>(
+                          value: _selectedType,
+                          dropdownColor: Colors.white,
+                          style: const TextStyle(color: Colors.black, fontFamily: 'PoetsenOne'),
+                          items: const [
+                            DropdownMenuItem(value: 'All', child: Text('All')),
+                            DropdownMenuItem(value: 'PC', child: Text('PC')),
+                            DropdownMenuItem(value: 'Peripheral', child: Text('Peripheral')),
+                            DropdownMenuItem(value: 'Unknown', child: Text('Unknown')),
+                          ],
+                          onChanged: (value) => setState(() => _selectedType = value!),
+                        ),
                       ],
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            _selectedType = value;
-                          });
-                        }
-                      },
+                    ),
+                    Row(
+                      children: [
+                        const Text('Floor:', style: TextStyle(fontFamily: 'PoetsenOne')),
+                        const SizedBox(width: 8),
+                        DropdownButton<String>(
+                          value: _selectedFloor,
+                          dropdownColor: Colors.white,
+                          style: const TextStyle(color: Colors.black, fontFamily: 'PoetsenOne'),
+                          items: const [
+                            DropdownMenuItem(value: 'All', child: Text('All')),
+                            DropdownMenuItem(value: 'Ground', child: Text('Ground')),
+                            DropdownMenuItem(value: '1st Floor', child: Text('1st')),
+                            DropdownMenuItem(value: '2nd Floor', child: Text('2nd')),
+                            DropdownMenuItem(value: '3rd Floor', child: Text('3rd')),
+                          ],
+                          onChanged: (value) => setState(() => _selectedFloor = value!),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -114,129 +123,97 @@ class _InventoryPageState extends State<InventoryPage> {
           ),
         ),
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('devices')
-            .orderBy('name')
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return const Center(
-              child: Text('Error loading data',
-                  style: TextStyle(fontFamily: 'PoetsenOne')),
-            );
-          }
-          if (snapshot.connectionState == ConnectionState.waiting) {
+      body: FutureBuilder<Map<String, Map<String, String>>>(
+        future: _fetchLocationInfoMap(),
+        builder: (context, locationSnapshot) {
+          if (locationSnapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
+          if (!locationSnapshot.hasData) {
+            return const Center(child: Text('Failed to load location data', style: TextStyle(fontFamily: 'PoetsenOne')));
+          }
 
-          final docs = snapshot.data!.docs;
+          final locationInfoMap = locationSnapshot.data!;
 
-          final filteredDevices = docs
-              .map((doc) => doc.data() as Map<String, dynamic>)
-              .where((data) {
+          return StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance.collection('devices').orderBy('name').snapshots(),
+            builder: (context, deviceSnapshot) {
+              if (deviceSnapshot.hasError) {
+                return const Center(child: Text('Error loading devices', style: TextStyle(fontFamily: 'PoetsenOne')));
+              }
+              if (deviceSnapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final docs = deviceSnapshot.data!.docs;
+
+              final filteredDevices = docs.map((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                final locationName = data['location'] ?? '';
+                final locationInfo = locationInfoMap[locationName];
+                data['floor'] = locationInfo?['floor'] ?? 'Unknown';
+                data['building'] = locationInfo?['building'] ?? 'Unknown';
+                data['locationName'] = locationName;
+                data['id'] = doc.id; // ✅ Add Firestore document ID here
+                return data;
+              }).where((data) {
                 final name = (data['name'] ?? '').toString().toLowerCase();
                 final type = (data['type'] ?? 'Unknown').toString();
+                final floor = (data['floor'] ?? 'Unknown').toString();
 
-                if (_searchQuery.isNotEmpty &&
-                    !name.contains(_searchQuery.toLowerCase())) {
-                  return false;
-                }
-
-                if (_selectedType != 'All' && type != _selectedType) {
-                  return false;
-                }
-
+                if (_searchQuery.isNotEmpty && !name.contains(_searchQuery.toLowerCase())) return false;
+                if (_selectedType != 'All' && type != _selectedType) return false;
+                if (_selectedFloor != 'All' && floor != _selectedFloor) return false;
                 return true;
-              })
-              .toList();
+              }).toList();
 
-          final grouped = <String, List<Map<String, dynamic>>>{};
-          for (var data in filteredDevices) {
-            final name = (data['name'] ?? 'No name').toString();
-            final key = name[0].toUpperCase();
-            grouped.putIfAbsent(key, () => []).add(data);
-          }
+              final grouped = <String, List<Map<String, dynamic>>>{};
+              for (var data in filteredDevices) {
+                final name = (data['name'] ?? 'No name').toString();
+                final key = name[0].toUpperCase();
+                grouped.putIfAbsent(key, () => []).add(data);
+              }
 
-          if (filteredDevices.isEmpty) {
-            return const Center(
-              child: Text(
-                'No devices found',
-                style: TextStyle(fontFamily: 'PoetsenOne'),
-              ),
-            );
-          }
+              if (filteredDevices.isEmpty) {
+                return const Center(child: Text('No devices found', style: TextStyle(fontFamily: 'PoetsenOne')));
+              }
 
-          return ListView(
-            children: grouped.entries.map((entry) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Text(
-                      entry.key,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'PoetsenOne',
-                        color: Colors.black,
-                      ),
+              return ListView(
+                children: grouped.entries.expand((entry) {
+                  return [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Text(entry.key, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'PoetsenOne', color: Colors.black)),
                     ),
-                  ),
-                  ...entry.value.map((data) {
-                    final type = data['type'] ?? 'Unknown';
-                    final status = data['status']?.toString() ?? 'N/A';
-
-                    return Card(
-                      margin:
-                          const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    ...entry.value.map((data) => Card(
+                      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       child: ListTile(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        leading: _getDeviceIcon(type),
-                        title: Text(
-                          data['name'] ?? 'No name',
-                          style: const TextStyle(
-                            fontFamily: 'PoetsenOne',
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        leading: _getDeviceIcon(data['type']),
+                        title: Text(data['name'] ?? 'No name', style: const TextStyle(fontFamily: 'PoetsenOne', fontWeight: FontWeight.bold, fontSize: 16)),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Type: $type',
-                              style: const TextStyle(fontFamily: 'PoetsenOne'),
-                            ),
-                            Text(
-                              'IP: ${data['ip'] ?? 'N/A'}',
-                              style: const TextStyle(fontFamily: 'PoetsenOne'),
-                            ),
-                            Text(
-                              'MAC: ${data['mac'] ?? 'N/A'}',
-                              style: const TextStyle(fontFamily: 'PoetsenOne'),
-                            ),
+                            Text('Type: ${data['type'] ?? 'Unknown'}', style: const TextStyle(fontFamily: 'PoetsenOne')),
+                            Text('IP: ${data['ip'] ?? 'N/A'}', style: const TextStyle(fontFamily: 'PoetsenOne')),
+                            Text('MAC: ${data['mac'] ?? 'N/A'}', style: const TextStyle(fontFamily: 'PoetsenOne')),
+                            Text('Location: ${data['locationName'] ?? 'Unknown'}', style: const TextStyle(fontFamily: 'PoetsenOne')),
+                            Text('Floor: ${data['floor'] ?? 'Unknown'}', style: const TextStyle(fontFamily: 'PoetsenOne')),
+                            Text('Building: ${data['building'] ?? 'Unknown'}', style: const TextStyle(fontFamily: 'PoetsenOne')),
                           ],
                         ),
                         trailing: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: _getStatusColor(status).withOpacity(0.15),
+                            color: _getStatusColor(data['status'] ?? '').withOpacity(0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            status.toUpperCase(),
+                            (data['status'] ?? 'N/A').toString().toUpperCase(),
                             style: TextStyle(
-                              color: _getStatusColor(status),
+                              color: _getStatusColor(data['status'] ?? ''),
                               fontWeight: FontWeight.bold,
                               fontFamily: 'PoetsenOne',
                               fontSize: 13,
@@ -247,17 +224,16 @@ class _InventoryPageState extends State<InventoryPage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) =>
-                                  DeviceDetailsPage(device: data),
+                              builder: (context) => DeviceDetailsPage(device: data),
                             ),
                           );
                         },
                       ),
-                    );
-                  }).toList(),
-                ],
+                    )),
+                  ];
+                }).toList(),
               );
-            }).toList(),
+            },
           );
         },
       ),
