@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'choose_location.dart'; // Import this
+import '../location/choose_location.dart'; // Import this
 
 class AddDevicePage extends StatefulWidget {
   const AddDevicePage({super.key});

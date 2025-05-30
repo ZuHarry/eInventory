@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'choose_location.dart'; // your custom location selector
-import 'screen.dart'; // your home screen
+import '../location/choose_location.dart'; // your custom location selector
+import '../../main/screen.dart'; // your home screen
 
 class DeviceEditPage extends StatefulWidget {
   final String deviceId;

@@ -1,36 +1,38 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:einventorycomputer/modules/authentication/authenticate.dart';
 
-class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+class SplashScreenPage extends StatefulWidget {
+  const SplashScreenPage({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  State<SplashScreenPage> createState() => _SplashScreenPageState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
-  double _opacity = 0.0;
+class _SplashScreenPageState extends State<SplashScreenPage>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
 
   @override
   void initState() {
     super.initState();
 
-    // Trigger fade-in animation
-    Timer(const Duration(milliseconds: 300), () {
-      if (!mounted) return;
-      setState(() {
-        _opacity = 1.0;
-      });
-    });
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
 
-    // Navigate to Authenticate page after 2 seconds
-    Timer(const Duration(seconds: 2), () {
-      if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => Authenticate()),
-      );
-    });
+    _animation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeIn,
+    );
+
+    _controller.forward(); // Start animation
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose(); // Clean up controller
+    super.dispose();
   }
 
   @override
@@ -38,36 +40,24 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     return Scaffold(
       backgroundColor: const Color(0xFFFFC727),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset('assets/icons/checklists.png', width: 120),
-            const SizedBox(height: 24),
-            AnimatedOpacity(
-              opacity: _opacity,
-              duration: const Duration(milliseconds: 700),
-              child: Column(
-                children: const [
-                  Text(
-                    'e-Inventory',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF153B6D),
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Smart Inventory Management',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ],
+        child: FadeTransition(
+          opacity: _animation,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              Icon(Icons.computer, size: 300, color: Colors.black),
+              SizedBox(height: 20),
+              Text(
+                'e-Inventory',
+                style: TextStyle(
+                  fontSize: 40,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'PoetsenOne',
+                  color: Colors.black,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

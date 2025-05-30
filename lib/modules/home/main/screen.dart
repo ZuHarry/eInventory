@@ -1,13 +1,13 @@
-import 'package:einventorycomputer/modules/home/screen/location.dart';
+import 'package:einventorycomputer/modules/home/screen/location/location.dart';
 import 'package:einventorycomputer/services/auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:einventorycomputer/modules/home/screen/home.dart';
-import 'package:einventorycomputer/modules/home/screen/inventory.dart';
+import 'package:einventorycomputer/modules/home/screen/devices/inventory.dart';
 import 'package:einventorycomputer/modules/home/screen/settings.dart';
 import 'package:einventorycomputer/modules/home/screen/account.dart';
-import 'package:einventorycomputer/modules/home/screen/add_device.dart';
+import 'package:einventorycomputer/modules/home/screen/devices/add_device.dart';
 
 class ScreenPage extends StatefulWidget {
   @override

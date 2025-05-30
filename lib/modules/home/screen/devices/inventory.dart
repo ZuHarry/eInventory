@@ -2,7 +2,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:einventorycomputer/modules/home/screen/device_details.dart';
+import 'package:einventorycomputer/modules/home/screen/devices/device_details.dart';
 
 class InventoryPage extends StatefulWidget {
   const InventoryPage({super.key});
