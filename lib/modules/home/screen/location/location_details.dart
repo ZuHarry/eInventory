@@ -18,6 +18,7 @@ class LocationDetailsPage extends StatefulWidget {
 
 class _LocationDetailsPageState extends State<LocationDetailsPage> {
   Map<String, dynamic>? locationData;
+  String _selectedType = 'All';
 
   @override
   void initState() {
@@ -52,6 +53,23 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
     }
   }
 
+  Icon _getDeviceIcon(String? type) {
+    if (type == 'PC') return const Icon(Icons.computer, color: Colors.black);
+    if (type == 'Peripheral') return const Icon(Icons.devices_other, color: Colors.black);
+    return const Icon(Icons.device_unknown, color: Colors.black);
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'online':
+        return Colors.green;
+      case 'offline':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -73,23 +91,60 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                Expanded(
-                  flex: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildDetailItem('Location Name', locationData!['name']),
-                        _buildDetailItem('Building', locationData!['building']),
-                        _buildDetailItem('Floor', locationData!['floor']),
-                        _buildDetailItem('Type', locationData!['type']),
-                      ],
-                    ),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              locationData!['name'],
+                              style: const TextStyle(
+                                  fontSize: 20, fontFamily: 'PoetsenOne'),
+                            ),
+                          ),
+                          const Icon(Icons.business),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              locationData!['building'],
+                              style: const TextStyle(
+                                  fontSize: 20, fontFamily: 'PoetsenOne'),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          const Icon(Icons.layers),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              locationData!['floor'],
+                              style: const TextStyle(
+                                  fontSize: 20, fontFamily: 'PoetsenOne'),
+                            ),
+                          ),
+                          const Icon(Icons.category),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              locationData!['type'],
+                              style: const TextStyle(
+                                  fontSize: 20, fontFamily: 'PoetsenOne'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
                 const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
@@ -102,8 +157,33 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
                     ),
                   ),
                 ),
+                // Type filter dropdown
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: Row(
+                    children: [
+                      const Text('Type:', style: TextStyle(fontFamily: 'PoetsenOne')),
+                      const SizedBox(width: 8),
+                      DropdownButton<String>(
+                        value: _selectedType,
+                        dropdownColor: Colors.white,
+                        style: const TextStyle(
+                            color: Colors.black, fontFamily: 'PoetsenOne'),
+                        items: const [
+                          DropdownMenuItem(value: 'All', child: Text('All')),
+                          DropdownMenuItem(value: 'PC', child: Text('PC')),
+                          DropdownMenuItem(value: 'Peripheral', child: Text('Peripheral')),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedType = value!;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
                 Expanded(
-                  flex: 3,
                   child: StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance
                         .collection('devices')
@@ -117,26 +197,78 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
                         return const Center(child: CircularProgressIndicator());
                       }
 
-                      final devices = snapshot.data!.docs;
+                      final devices = snapshot.data!.docs.map((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        data['id'] = doc.id;
+                        return data;
+                      }).where((data) {
+                        final type = data['type'] ?? 'Unknown';
+                        if (_selectedType != 'All' && type != _selectedType) return false;
+                        return true;
+                      }).toList();
 
                       if (devices.isEmpty) {
-                        return const Center(child: Text('No devices found in this location'));
+                        return const Center(
+                            child: Text('No devices found in this location'));
                       }
 
                       return ListView.builder(
                         itemCount: devices.length,
                         itemBuilder: (context, index) {
-                          final device = devices[index].data() as Map<String, dynamic>;
+                          final device = devices[index];
                           return Card(
-                            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            margin: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            elevation: 4,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
                             child: ListTile(
+                              leading: _getDeviceIcon(device['type']),
                               title: Text(
                                 device['name'] ?? 'Unnamed Device',
-                                style: const TextStyle(fontFamily: 'PoetsenOne', fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                    fontFamily: 'PoetsenOne',
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16),
                               ),
-                              subtitle: Text(
-                                '${device['type'] ?? 'Type Unknown'} - IP: ${device['ip'] ?? 'N/A'}',
-                                style: const TextStyle(fontFamily: 'PoetsenOne'),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Type: ${device['type'] ?? 'Unknown'}',
+                                    style: const TextStyle(fontFamily: 'PoetsenOne'),
+                                  ),
+                                  Text(
+                                    'IP: ${device['ip'] ?? 'N/A'}',
+                                    style: const TextStyle(fontFamily: 'PoetsenOne'),
+                                  ),
+                                  Text(
+                                    'MAC: ${device['mac'] ?? 'N/A'}',
+                                    style: const TextStyle(fontFamily: 'PoetsenOne'),
+                                  ),
+                                ],
+                              ),
+                              trailing: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: _getStatusColor(
+                                          device['status'] ?? '')
+                                      .withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  (device['status'] ?? 'N/A')
+                                      .toString()
+                                      .toUpperCase(),
+                                  style: TextStyle(
+                                    color: _getStatusColor(
+                                        device['status'] ?? ''),
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'PoetsenOne',
+                                    fontSize: 13,
+                                  ),
+                                ),
                               ),
                             ),
                           );
@@ -171,31 +303,6 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
                 ),
               ],
             ),
-    );
-  }
-
-  Widget _buildDetailItem(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '$label: ',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontFamily: 'PoetsenOne',
-              fontSize: 16,
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 16, fontFamily: 'PoetsenOne'),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

@@ -26,6 +26,52 @@ class HomePage extends StatelessWidget {
     return snapshot.count ?? 0;
   }
 
+  Future<Map<String, Map<String, int>>> getDeviceCountsByBuilding() async {
+  final firestore = FirebaseFirestore.instance;
+
+  // Step 1: Get all locations
+  final locationsSnapshot = await firestore.collection('locations').get();
+  final Map<String, String> locationToBuilding = {};
+  for (var doc in locationsSnapshot.docs) {
+    final data = doc.data();
+    final locationName = data['name'];
+    final building = data['building'];
+    if (locationName != null && building != null) {
+      locationToBuilding[locationName] = building;
+    }
+  }
+
+  // Step 2: Prepare building counters
+  Map<String, Map<String, int>> result = {
+    'Right Wing': {'pc': 0, 'peripherals': 0},
+    'Left Wing': {'pc': 0, 'peripherals': 0},
+  };
+
+  // Step 3: Get all devices
+  final devicesSnapshot = await firestore.collection('devices').get();
+  for (var doc in devicesSnapshot.docs) {
+    final data = doc.data();
+    final locationName = data['location'];
+    final type = (data['type'] as String?)?.toLowerCase();
+
+    if (locationName != null &&
+        locationToBuilding.containsKey(locationName) &&
+        (type == 'pc' || type == 'peripheral' || type == 'peripherals')) {
+      final building = locationToBuilding[locationName]!;
+      if (result.containsKey(building)) {
+        if (type == 'pc') {
+          result[building]!['pc'] = result[building]!['pc']! + 1;
+        } else {
+          result[building]!['peripherals'] = result[building]!['peripherals']! + 1;
+        }
+      }
+    }
+  }
+
+  return result;
+}
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -46,13 +92,14 @@ class HomePage extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Expanded(
-                child: FutureBuilder<List<int>>(
+                child: FutureBuilder<List<dynamic>>(
                   future: Future.wait([
-                    getCountByType('PC'),               // 0
-                    getOnlineCountByType('PC'),         // 1
-                    getCountByType('Peripheral'),       // 2
-                    getOnlineCountByType('Peripheral'), // 3
-                  ]),
+                      getCountByType('PC'),
+                      getOnlineCountByType('PC'),
+                      getCountByType('Peripheral'),
+                      getOnlineCountByType('Peripheral'),
+                      getDeviceCountsByBuilding(), // This returns map grouped by building
+                    ]),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
@@ -62,13 +109,13 @@ class HomePage extends StatelessWidget {
                       return Center(child: Text('Error: ${snapshot.error}'));
                     }
 
-                    final totalPC = snapshot.data![0];
-                    final onlinePC = snapshot.data![1];
+                    final totalPC = snapshot.data![0] as int;
+                    final onlinePC = snapshot.data![1] as int;
+                    final totalPeripheral = snapshot.data![2] as int;
+                    final onlinePeripheral = snapshot.data![3] as int;
                     final offlinePC = totalPC - onlinePC;
-
-                    final totalPeripheral = snapshot.data![2];
-                    final onlinePeripheral = snapshot.data![3];
                     final offlinePeripheral = totalPeripheral - onlinePeripheral;
+                    final buildingCounts = snapshot.data![4] as Map<String, Map<String, int>>;
 
                     return ListView(
                       children: [
@@ -87,6 +134,19 @@ class HomePage extends StatelessWidget {
                           online: onlinePeripheral,
                           offline: offlinePeripheral,
                         ),
+                        const SizedBox(height: 24),
+                        const Text(
+                          'Devices by Building',
+                          style: TextStyle(
+                            fontFamily: 'PoetsenOne',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildBuildingSummary("Right Wing", buildingCounts["Right Wing"]!),
+                        _buildBuildingSummary("Left Wing", buildingCounts["Left Wing"]!),
                       ],
                     );
                   },
@@ -110,7 +170,9 @@ class HomePage extends StatelessWidget {
                     'Log Out',
                     style: TextStyle(
                       fontFamily: 'PoetsenOne',
-                      fontSize: 16, color: Colors.white),
+                      fontSize: 16,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               )
@@ -165,6 +227,40 @@ class HomePage extends StatelessWidget {
                   )
                 ],
               ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBuildingSummary(String building, Map<String, int> counts) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: Colors.white,
+      elevation: 3,
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              building,
+              style: const TextStyle(
+                fontFamily: 'PoetsenOne',
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildStatusCount("PC", counts["pc"] ?? 0),
+                _buildStatusCount("Peripherals", counts["peripherals"] ?? 0),
+              ],
             )
           ],
         ),

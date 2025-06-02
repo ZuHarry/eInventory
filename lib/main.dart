@@ -1,7 +1,6 @@
 import 'package:einventorycomputer/models/user.dart';
 import 'package:einventorycomputer/modules/authentication/authenticate.dart';
 import 'package:einventorycomputer/modules/home/main/screen.dart';
-import 'package:einventorycomputer/modules/home/screen/test.dart';
 import 'package:einventorycomputer/modules/home/screen/wrapper.dart';
 import 'package:einventorycomputer/services/auth.dart';
 import 'package:einventorycomputer/models/user.dart';
