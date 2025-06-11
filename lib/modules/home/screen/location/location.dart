@@ -46,20 +46,7 @@ class _LocationPageState extends State<LocationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: hex('FFC727'),
-      appBar: AppBar(
-        backgroundColor: hex('FFC727'),
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
-        title: const Text(
-          'Locations',
-          style: TextStyle(
-            color: Colors.black,
-            fontFamily: 'PoetsenOne',
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
+      backgroundColor: Colors.white,
       body: Column(
         children: [
           _buildSearchAndFilters(),
@@ -109,7 +96,7 @@ class _LocationPageState extends State<LocationPage> {
                         final peripheralCount = deviceCounts[locationName]?['Peripheral'] ?? 0;
 
                         return Card(
-                          color: Colors.white,
+                          color: Colors.black,
                           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           child: ListTile(
@@ -126,16 +113,22 @@ class _LocationPageState extends State<LocationPage> {
                             },
                             title: Text(
                               locationName,
-                              style: const TextStyle(fontFamily: 'PoetsenOne', fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                color: Colors.yellow,
+                                fontFamily: 'SansRegular', fontWeight: FontWeight.bold),
                             ),
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('$building - $floor - $type', style: const TextStyle(fontFamily: 'PoetsenOne')),
+                                Text('$building - $floor - $type', style: const TextStyle(
+                                  color: Colors.yellow,
+                                  fontFamily: 'SansRegular')),
                                 const SizedBox(height: 4),
                                 Text(
                                   'Total PCs: $pcCount | Peripherals: $peripheralCount',
-                                  style: const TextStyle(fontFamily: 'PoetsenOne'),
+                                  style: const TextStyle(
+                                    color: Colors.yellow,
+                                    fontFamily: 'SansRegular'),
                                 ),
                               ],
                             ),
@@ -169,10 +162,10 @@ class _LocationPageState extends State<LocationPage> {
                 child: const Text(
                   'Add Location',
                   style: TextStyle(
-                    color: Color(0xFFFFC727),
+                    color: Colors.yellow,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    fontFamily: 'PoetsenOne',
+                    fontFamily: 'SansRegular',
                   ),
                 ),
               ),
@@ -197,15 +190,41 @@ class _LocationPageState extends State<LocationPage> {
             ),
           ),
           const SizedBox(height: 10),
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              Expanded(child: _buildDropdown('Building', _selectedBuilding, _buildings, (val) => setState(() => _selectedBuilding = val!))),
-              const SizedBox(width: 8),
-              Expanded(child: _buildDropdown('Floor', _selectedFloor, _floors, (val) => setState(() => _selectedFloor = val!))),
-              const SizedBox(width: 8),
-              Expanded(child: _buildDropdown('Type', _selectedType, _types, (val) => setState(() => _selectedType = val!))),
+              ConstrainedBox(
+                constraints: BoxConstraints(                ),
+                child: _buildDropdown(
+                  'Building',
+                  _selectedBuilding,
+                  _buildings,
+                  (val) => setState(() => _selectedBuilding = val!),
+                ),
+              ),
+              ConstrainedBox(
+                constraints: BoxConstraints(                ),
+                child: _buildDropdown(
+                  'Floor',
+                  _selectedFloor,
+                  _floors,
+                  (val) => setState(() => _selectedFloor = val!),
+                ),
+              ),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                ),
+                child: _buildDropdown(
+                  'Type',
+                  _selectedType,
+                  _types,
+                  (val) => setState(() => _selectedType = val!),
+                ),
+              ),
             ],
-          ),
+          )
+
         ],
       ),
     );

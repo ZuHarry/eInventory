@@ -100,7 +100,7 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
           'Edit Location',
           style: TextStyle(
             color: Colors.black,
-            fontFamily: 'PoetsenOne',
+            fontFamily: 'SansRegular',
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -112,7 +112,7 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
             _buildLabel('Location Name'),
             TextField(
               controller: nameController,
-              style: const TextStyle(fontFamily: 'PoetsenOne'),
+              style: const TextStyle(fontFamily: 'SansRegular'),
               decoration: _inputDecoration(),
             ),
             const SizedBox(height: 16),
@@ -148,7 +148,7 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
                     color: Color(0xFFFFC727),
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    fontFamily: 'PoetsenOne',
+                    fontFamily: 'SansRegular',
                   ),
                 ),
               ),
@@ -163,7 +163,7 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
     return Text(
       label,
       style: const TextStyle(
-        fontFamily: 'PoetsenOne',
+        fontFamily: 'SansRegular',
         fontSize: 16,
         fontWeight: FontWeight.bold,
       ),
@@ -191,7 +191,7 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
           .map((option) => DropdownMenuItem(value: option, child: Text(option)))
           .toList(),
       decoration: _inputDecoration(),
-      style: const TextStyle(fontFamily: 'PoetsenOne', color: Colors.black),
+      style: const TextStyle(fontFamily: 'SansRegular', color: Colors.black),
     );
   }
 }

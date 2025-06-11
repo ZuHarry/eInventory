@@ -16,7 +16,7 @@ class AccountPage extends StatelessWidget {
             'No user is signed in',
             style: TextStyle(
               fontSize: 24,
-              fontFamily: 'PoetsenOne',
+              fontFamily: 'SansRegular',
               color: Colors.black,
             ),
           ),
@@ -28,17 +28,17 @@ class AccountPage extends StatelessWidget {
         FirebaseFirestore.instance.collection('users').doc(user.uid);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFC727),
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
           'My Account',
           style: TextStyle(
-            fontFamily: 'PoetsenOne',
+            fontFamily: 'SansRegular',
             color: Colors.black,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: const Color(0xFFFFC727),
+        backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
       ),
@@ -49,7 +49,7 @@ class AccountPage extends StatelessWidget {
             return const Center(
               child: Text(
                 'Error loading user data',
-                style: TextStyle(fontFamily: 'PoetsenOne'),
+                style: TextStyle(fontFamily: 'SansRegular'),
               ),
             );
           }
@@ -60,7 +60,7 @@ class AccountPage extends StatelessWidget {
             return const Center(
               child: Text(
                 'User data not found',
-                style: TextStyle(fontFamily: 'PoetsenOne'),
+                style: TextStyle(fontFamily: 'SansRegular'),
               ),
             );
           }
@@ -87,7 +87,7 @@ class AccountPage extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    fontFamily: 'PoetsenOne',
+                    fontFamily: 'SansRegular',
                     color: Colors.black,
                   ),
                 ),
@@ -119,7 +119,7 @@ class AccountPage extends StatelessWidget {
               Text(
                 '$label:',
                 style: const TextStyle(
-                  fontFamily: 'PoetsenOne',
+                  fontFamily: 'SansRegular',
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                   color: Colors.black,
@@ -128,7 +128,7 @@ class AccountPage extends StatelessWidget {
               Text(
                 value,
                 style: const TextStyle(
-                  fontFamily: 'PoetsenOne',
+                  fontFamily: 'SansRegular',
                   fontSize: 16,
                   color: Colors.black87,
                 ),

@@ -67,19 +67,6 @@ class _AddDevicePageState extends State<AddDevicePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: hex('FFC727'),
-      appBar: AppBar(
-        backgroundColor: hex('FFC727'),
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
-        title: const Text(
-          'Add New Device',
-          style: TextStyle(
-            color: Colors.black,
-            fontFamily: 'PoetsenOne',
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Card(
@@ -138,7 +125,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
                           Text(
                             _selectedLocationName ?? 'Choose Location',
                             style: const TextStyle(
-                              fontFamily: 'PoetsenOne',
+                              fontFamily: 'SansRegular',
                               color: Colors.black87,
                               fontSize: 16,
                             ),
@@ -166,7 +153,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
                           color: Color(0xFFFFC727),
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          fontFamily: 'PoetsenOne',
+                          fontFamily: 'SansRegular',
                         ),
                       ),
                     ),
@@ -183,12 +170,12 @@ class _AddDevicePageState extends State<AddDevicePage> {
   Widget _buildTextField(TextEditingController controller, String label) {
     return TextFormField(
       controller: controller,
-      style: const TextStyle(fontFamily: 'PoetsenOne', fontSize: 16),
+      style: const TextStyle(fontFamily: 'SansRegular', fontSize: 16),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(
           color: Colors.black87,
-          fontFamily: 'PoetsenOne',
+          fontFamily: 'SansRegular',
         ),
         border: const OutlineInputBorder(),
         focusedBorder: const OutlineInputBorder(
@@ -214,7 +201,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
                 value: item,
                 child: Text(
                   item,
-                  style: const TextStyle(fontFamily: 'PoetsenOne'),
+                  style: const TextStyle(fontFamily: 'SansRegular'),
                 ),
               ))
           .toList(),
@@ -222,14 +209,14 @@ class _AddDevicePageState extends State<AddDevicePage> {
         labelText: label,
         labelStyle: const TextStyle(
           color: Colors.black87,
-          fontFamily: 'PoetsenOne',
+          fontFamily: 'SansRegular',
         ),
         border: const OutlineInputBorder(),
         focusedBorder: const OutlineInputBorder(
           borderSide: BorderSide(color: Colors.black, width: 2),
         ),
       ),
-      style: const TextStyle(fontFamily: 'PoetsenOne', color: Colors.black),
+      style: const TextStyle(fontFamily: 'SansRegular', color: Colors.black),
     );
   }
 }

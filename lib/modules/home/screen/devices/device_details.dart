@@ -38,16 +38,16 @@ class DeviceDetailsPage extends StatelessWidget {
     final deviceId = device['id']?.toString() ?? '';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFC727),
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFC727),
+        backgroundColor: Colors.black,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: const IconThemeData(color: Colors.white),
         title: Text(
           name,
           style: const TextStyle(
-            fontFamily: 'PoetsenOne',
-            color: Colors.black,
+            fontFamily: 'SansRegular',
+            color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -70,7 +70,7 @@ class DeviceDetailsPage extends StatelessWidget {
                   color: _getStatusColor(status),
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  fontFamily: 'PoetsenOne',
+                  fontFamily: 'SansRegular',
                 ),
               ),
             ),
@@ -105,7 +105,7 @@ class DeviceDetailsPage extends StatelessWidget {
               child: const Text(
                 'Modify',
                 style: TextStyle(
-                  fontFamily: 'PoetsenOne',
+                  fontFamily: 'SansRegular',
                   color: Color(0xFFFFC727),
                   fontSize: 16,
                 ),
@@ -125,7 +125,7 @@ class DeviceDetailsPage extends StatelessWidget {
           '$label: ',
           style: const TextStyle(
             fontWeight: FontWeight.bold,
-            fontFamily: 'PoetsenOne',
+            fontFamily: 'SansRegular',
             fontSize: 16,
             color: Colors.black,
           ),
@@ -134,7 +134,7 @@ class DeviceDetailsPage extends StatelessWidget {
           child: Text(
             value,
             style: const TextStyle(
-              fontFamily: 'PoetsenOne',
+              fontFamily: 'SansRegular',
               fontSize: 16,
               color: Colors.black87,
             ),

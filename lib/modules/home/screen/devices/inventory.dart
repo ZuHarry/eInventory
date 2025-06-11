@@ -1,5 +1,3 @@
-// inventory.dart
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:einventorycomputer/modules/home/screen/devices/device_details.dart';
@@ -24,9 +22,12 @@ class _InventoryPageState extends State<InventoryPage> {
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
-      case 'online': return Colors.green;
-      case 'offline': return Colors.red;
-      default: return Colors.grey;
+      case 'online':
+        return Colors.green;
+      case 'offline':
+        return Colors.red;
+      default:
+        return Colors.grey;
     }
   }
 
@@ -50,14 +51,13 @@ class _InventoryPageState extends State<InventoryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFC727),
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFC727),
+        backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text('Device Inventory', style: TextStyle(fontFamily: 'PoetsenOne', fontWeight: FontWeight.bold, color: Colors.black)),
         iconTheme: const IconThemeData(color: Colors.black),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(130),
+          preferredSize: const Size.fromHeight(80),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Column(
@@ -66,27 +66,26 @@ class _InventoryPageState extends State<InventoryPage> {
                   decoration: InputDecoration(
                     hintText: 'Search device name',
                     prefixIcon: const Icon(Icons.search),
-                    hintStyle: const TextStyle(fontFamily: 'PoetsenOne'),
+                    hintStyle: const TextStyle(fontFamily: 'SansRegular'),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     isDense: true,
                     filled: true,
                     fillColor: Colors.white,
                   ),
-                  style: const TextStyle(fontFamily: 'PoetsenOne'),
+                  style: const TextStyle(fontFamily: 'SansRegular'),
                   onChanged: (value) => setState(() => _searchQuery = value.trim()),
                 ),
-                const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
                       children: [
-                        const Text('Type:', style: TextStyle(fontFamily: 'PoetsenOne')),
+                        const Text('Type:', style: TextStyle(fontFamily: 'SansRegular')),
                         const SizedBox(width: 8),
                         DropdownButton<String>(
                           value: _selectedType,
                           dropdownColor: Colors.white,
-                          style: const TextStyle(color: Colors.black, fontFamily: 'PoetsenOne'),
+                          style: const TextStyle(color: Colors.black, fontFamily: 'SansRegular'),
                           items: const [
                             DropdownMenuItem(value: 'All', child: Text('All')),
                             DropdownMenuItem(value: 'PC', child: Text('PC')),
@@ -99,12 +98,12 @@ class _InventoryPageState extends State<InventoryPage> {
                     ),
                     Row(
                       children: [
-                        const Text('Floor:', style: TextStyle(fontFamily: 'PoetsenOne')),
+                        const Text('Floor:', style: TextStyle(fontFamily: 'SansRegular')),
                         const SizedBox(width: 8),
                         DropdownButton<String>(
                           value: _selectedFloor,
                           dropdownColor: Colors.white,
-                          style: const TextStyle(color: Colors.black, fontFamily: 'PoetsenOne'),
+                          style: const TextStyle(color: Colors.black, fontFamily: 'SansRegular'),
                           items: const [
                             DropdownMenuItem(value: 'All', child: Text('All')),
                             DropdownMenuItem(value: 'Ground', child: Text('Ground')),
@@ -130,7 +129,7 @@ class _InventoryPageState extends State<InventoryPage> {
             return const Center(child: CircularProgressIndicator());
           }
           if (!locationSnapshot.hasData) {
-            return const Center(child: Text('Failed to load location data', style: TextStyle(fontFamily: 'PoetsenOne')));
+            return const Center(child: Text('Failed to load location data', style: TextStyle(fontFamily: 'SansRegular')));
           }
 
           final locationInfoMap = locationSnapshot.data!;
@@ -139,7 +138,7 @@ class _InventoryPageState extends State<InventoryPage> {
             stream: FirebaseFirestore.instance.collection('devices').orderBy('name').snapshots(),
             builder: (context, deviceSnapshot) {
               if (deviceSnapshot.hasError) {
-                return const Center(child: Text('Error loading devices', style: TextStyle(fontFamily: 'PoetsenOne')));
+                return const Center(child: Text('Error loading devices', style: TextStyle(fontFamily: 'SansRegular')));
               }
               if (deviceSnapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -154,7 +153,7 @@ class _InventoryPageState extends State<InventoryPage> {
                 data['floor'] = locationInfo?['floor'] ?? 'Unknown';
                 data['building'] = locationInfo?['building'] ?? 'Unknown';
                 data['locationName'] = locationName;
-                data['id'] = doc.id; // ✅ Add Firestore document ID here
+                data['id'] = doc.id;
                 return data;
               }).where((data) {
                 final name = (data['name'] ?? '').toString().toLowerCase();
@@ -175,7 +174,7 @@ class _InventoryPageState extends State<InventoryPage> {
               }
 
               if (filteredDevices.isEmpty) {
-                return const Center(child: Text('No devices found', style: TextStyle(fontFamily: 'PoetsenOne')));
+                return const Center(child: Text('No devices found', style: TextStyle(fontFamily: 'SansRegular')));
               }
 
               return ListView(
@@ -183,53 +182,54 @@ class _InventoryPageState extends State<InventoryPage> {
                   return [
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: Text(entry.key, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'PoetsenOne', color: Colors.black)),
+                      child: Text(entry.key, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'SansRegular', color: Colors.black)),
                     ),
                     ...entry.value.map((data) => Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      child: ListTile(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        leading: _getDeviceIcon(data['type']),
-                        title: Text(data['name'] ?? 'No name', style: const TextStyle(fontFamily: 'PoetsenOne', fontWeight: FontWeight.bold, fontSize: 16)),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Type: ${data['type'] ?? 'Unknown'}', style: const TextStyle(fontFamily: 'PoetsenOne')),
-                            Text('IP: ${data['ip'] ?? 'N/A'}', style: const TextStyle(fontFamily: 'PoetsenOne')),
-                            Text('MAC: ${data['mac'] ?? 'N/A'}', style: const TextStyle(fontFamily: 'PoetsenOne')),
-                            Text('Location: ${data['locationName'] ?? 'Unknown'}', style: const TextStyle(fontFamily: 'PoetsenOne')),
-                            Text('Floor: ${data['floor'] ?? 'Unknown'}', style: const TextStyle(fontFamily: 'PoetsenOne')),
-                            Text('Building: ${data['building'] ?? 'Unknown'}', style: const TextStyle(fontFamily: 'PoetsenOne')),
-                          ],
-                        ),
-                        trailing: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: _getStatusColor(data['status'] ?? '').withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            (data['status'] ?? 'N/A').toString().toUpperCase(),
-                            style: TextStyle(
-                              color: _getStatusColor(data['status'] ?? ''),
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'PoetsenOne',
-                              fontSize: 13,
+                          color: const Color(0xFFFFC727),
+                          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          child: ListTile(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            leading: _getDeviceIcon(data['type']),
+                            title: Text(data['name'] ?? 'No name', style: const TextStyle(fontFamily: 'SansRegular', fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black)),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Type: ${data['type'] ?? 'Unknown'}', style: const TextStyle(fontFamily: 'SansRegular', color: Colors.black)),
+                                Text('IP: ${data['ip'] ?? 'N/A'}', style: const TextStyle(fontFamily: 'SansRegular', color: Colors.black)),
+                                Text('MAC: ${data['mac'] ?? 'N/A'}', style: const TextStyle(fontFamily: 'SansRegular', color: Colors.black)),
+                                Text('Location: ${data['locationName'] ?? 'Unknown'}', style: const TextStyle(fontFamily: 'SansRegular', color: Colors.black)),
+                                Text('Floor: ${data['floor'] ?? 'Unknown'}', style: const TextStyle(fontFamily: 'SansRegular', color: Colors.black)),
+                                Text('Building: ${data['building'] ?? 'Unknown'}', style: const TextStyle(fontFamily: 'SansRegular', color: Colors.black)),
+                              ],
                             ),
-                          ),
-                        ),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => DeviceDetailsPage(device: data),
+                            trailing: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: _getStatusColor(data['status'] ?? '').withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                (data['status'] ?? 'N/A').toString().toUpperCase(),
+                                style: TextStyle(
+                                  color: _getStatusColor(data['status'] ?? ''),
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'SansRegular',
+                                  fontSize: 13,
+                                ),
+                              ),
                             ),
-                          );
-                        },
-                      ),
-                    )),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => DeviceDetailsPage(device: data),
+                                ),
+                              );
+                            },
+                          ),
+                        )),
                   ];
                 }).toList(),
               );

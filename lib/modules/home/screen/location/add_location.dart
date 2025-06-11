@@ -63,7 +63,7 @@ class _AddLocationPageState extends State<AddLocationPage> {
           'Add New Location',
           style: TextStyle(
             color: Colors.black,
-            fontFamily: 'PoetsenOne',
+            fontFamily: 'SansRegular',
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -119,7 +119,7 @@ class _AddLocationPageState extends State<AddLocationPage> {
                           color: Color(0xFFFFC727),
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          fontFamily: 'PoetsenOne',
+                          fontFamily: 'SansRegular',
                         ),
                       ),
                     ),
@@ -136,12 +136,12 @@ class _AddLocationPageState extends State<AddLocationPage> {
   Widget _buildTextField(TextEditingController controller, String label) {
     return TextFormField(
       controller: controller,
-      style: const TextStyle(fontFamily: 'PoetsenOne', fontSize: 16),
+      style: const TextStyle(fontFamily: 'SansRegular', fontSize: 16),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(
           color: Colors.black87,
-          fontFamily: 'PoetsenOne',
+          fontFamily: 'SansRegular',
         ),
         border: const OutlineInputBorder(),
         focusedBorder: const OutlineInputBorder(
@@ -167,7 +167,7 @@ class _AddLocationPageState extends State<AddLocationPage> {
                 value: item,
                 child: Text(
                   item,
-                  style: const TextStyle(fontFamily: 'PoetsenOne'),
+                  style: const TextStyle(fontFamily: 'SansRegular'),
                 ),
               ))
           .toList(),
@@ -175,14 +175,14 @@ class _AddLocationPageState extends State<AddLocationPage> {
         labelText: label,
         labelStyle: const TextStyle(
           color: Colors.black87,
-          fontFamily: 'PoetsenOne',
+          fontFamily: 'SansRegular',
         ),
         border: const OutlineInputBorder(),
         focusedBorder: const OutlineInputBorder(
           borderSide: BorderSide(color: Colors.black, width: 2),
         ),
       ),
-      style: const TextStyle(fontFamily: 'PoetsenOne', color: Colors.black),
+      style: const TextStyle(fontFamily: 'SansRegular', color: Colors.black),
     );
   }
 }

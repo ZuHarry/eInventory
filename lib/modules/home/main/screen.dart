@@ -5,8 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:einventorycomputer/modules/home/screen/home.dart';
 import 'package:einventorycomputer/modules/home/screen/devices/inventory.dart';
-import 'package:einventorycomputer/modules/home/screen/settings.dart';
-import 'package:einventorycomputer/modules/home/screen/account.dart';
+import 'package:einventorycomputer/modules/home/screen/settings/settings.dart';
+import 'package:einventorycomputer/modules/home/screen/user/account.dart';
 import 'package:einventorycomputer/modules/home/screen/devices/add_device.dart';
 
 class ScreenPage extends StatefulWidget {
@@ -28,6 +28,18 @@ class _ScreenPageState extends State<ScreenPage> {
     "Location",
   ];
 
+  final List<Widget> _pages = [
+    HomePage(),
+    InventoryPage(),
+    AddDevicePage(),
+    SettingsPage(),
+    AccountPage(),
+    LocationPage(),
+  ];
+
+  // Define which indices are in the bottom navigation
+  final List<int> _bottomNavIndexes = [0, 1, 4, 5];
+
   @override
   void initState() {
     super.initState();
@@ -37,10 +49,7 @@ class _ScreenPageState extends State<ScreenPage> {
   Future<void> _loadUsername() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
+      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
       if (doc.exists) {
         setState(() {
           _username = doc.data()?['username'] ?? 'User';
@@ -60,26 +69,20 @@ class _ScreenPageState extends State<ScreenPage> {
 
   @override
   Widget build(BuildContext context) {
-    List<Widget> _pages = [
-      HomePage(),
-      InventoryPage(),
-      AddDevicePage(),
-      SettingsPage(),
-      AccountPage(),
-      LocationPage(),
-    ];
+    final isBottomNavPage = _bottomNavIndexes.contains(_selectedIndex);
+    final safeCurrentIndex = _bottomNavIndexes.indexWhere((i) => i == _selectedIndex);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
           _titles[_selectedIndex],
           style: const TextStyle(
-            fontFamily: 'PoetsenOne',
+            fontFamily: 'SansRegular',
             color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+        backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 2,
       ),
@@ -91,22 +94,22 @@ class _ScreenPageState extends State<ScreenPage> {
               accountName: Text(
                 _username ?? 'Loading...',
                 style: const TextStyle(
-                  fontFamily: 'PoetsenOne',
-                  fontWeight: FontWeight.bold),
+                  fontFamily: 'SansRegular',
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               accountEmail: Text(
                 FirebaseAuth.instance.currentUser?.email ?? '',
                 style: const TextStyle(
-                  fontFamily: 'PoetsenOne',
-                  fontSize: 14),
+                  fontFamily: 'SansRegular',
+                  fontSize: 14,
+                ),
               ),
               currentAccountPicture: const CircleAvatar(
                 backgroundColor: Colors.white,
-                child: Icon(Icons.person, size: 42, color: Color.fromARGB(255, 0, 0, 0)),
+                child: Icon(Icons.person, size: 42, color: Colors.black),
               ),
-              decoration: const BoxDecoration(
-                color: Color.fromARGB(255, 0, 0, 0),
-              ),
+              decoration: const BoxDecoration(color: Colors.black),
             ),
             _buildDrawerItem(Icons.home, "Home", 0),
             _buildDrawerItem(Icons.inventory, "Inventory", 1),
@@ -119,7 +122,7 @@ class _ScreenPageState extends State<ScreenPage> {
               padding: const EdgeInsets.all(12.0),
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+                  backgroundColor: Colors.black,
                   foregroundColor: const Color(0xFFFFC727),
                   minimumSize: const Size.fromHeight(48),
                   shape: RoundedRectangleBorder(
@@ -127,19 +130,16 @@ class _ScreenPageState extends State<ScreenPage> {
                   ),
                 ),
                 onPressed: () async {
-                    await _auth.signOut();
-                  },
-                icon: const Icon(
-                  Icons.logout,
-                  color: Colors.white,
-                ),
+                  await _auth.signOut();
+                },
+                icon: const Icon(Icons.logout, color: Colors.white),
                 label: const Text(
                   "Log Out",
                   style: TextStyle(
-                    fontSize: 18,            // Font size
-                    fontWeight: FontWeight.bold,  // Font weight
-                    color: Color(0xFFFFC727),     // Text color (optional here since foregroundColor handles it)
-                    fontFamily: 'PoetsenOne',     // Custom font (optional)
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFFFC727),
+                    fontFamily: 'SansRegular',
                   ),
                 ),
               ),
@@ -148,6 +148,39 @@ class _ScreenPageState extends State<ScreenPage> {
         ),
       ),
       body: _pages[_selectedIndex],
+      bottomNavigationBar: isBottomNavPage
+          ? Padding(
+              padding: const EdgeInsets.only(top: 16.0, left: 16.0, right: 16.0, bottom: 16.0),
+              child: Material(
+                elevation: 8,
+                borderRadius: BorderRadius.circular(24),
+                color: Colors.transparent,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: BottomNavigationBar(
+                    currentIndex: safeCurrentIndex,
+                    selectedItemColor: Colors.yellow,
+                    unselectedItemColor: Colors.yellowAccent,
+                    backgroundColor: Colors.black,
+                    type: BottomNavigationBarType.fixed,
+                    onTap: (index) {
+                      setState(() {
+                        _selectedIndex = _bottomNavIndexes[index];
+                      });
+                    },
+                    selectedLabelStyle: const TextStyle(fontFamily: 'SansRegular'),
+                    unselectedLabelStyle: const TextStyle(fontFamily: 'SansRegular'),
+                    items: const [
+                      BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+                      BottomNavigationBarItem(icon: Icon(Icons.inventory), label: "Inventory"),
+                      BottomNavigationBarItem(icon: Icon(Icons.person), label: "Account"),
+                      BottomNavigationBarItem(icon: Icon(Icons.location_city), label: "Location"),
+                    ],
+                  ),
+                ),
+              ),
+            )
+          : null,
     );
   }
 
@@ -157,12 +190,12 @@ class _ScreenPageState extends State<ScreenPage> {
     return ListTile(
       selected: isSelected,
       selectedTileColor: const Color(0xFF7BAFBB).withOpacity(0.2),
-      leading: Icon(icon, color: isSelected ? const Color.fromARGB(255, 0, 2, 4) : Colors.black),
+      leading: Icon(icon, color: isSelected ? Colors.black : Colors.black54),
       title: Text(
         title,
         style: TextStyle(
-          color: isSelected ? const Color.fromARGB(255, 0, 0, 0) : Colors.black,
-          fontFamily: 'PoetsenOne',
+          color: Colors.black,
+          fontFamily: 'SansRegular',
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         ),
       ),

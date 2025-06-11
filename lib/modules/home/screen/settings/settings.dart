@@ -11,7 +11,7 @@ class SettingsPage extends StatelessWidget {
         title: const Text(
           'Settings',
           style: TextStyle(
-            fontFamily: 'PoetsenOne',
+            fontFamily: 'SansRegular',
             fontWeight: FontWeight.bold,
             color: Colors.black,
           ),
@@ -55,7 +55,7 @@ class SettingsPage extends StatelessWidget {
         title: Text(
           label,
           style: const TextStyle(
-            fontFamily: 'PoetsenOne',
+            fontFamily: 'SansRegular',
             fontSize: 18,
             color: Color(0xFFFFC727),
           ),

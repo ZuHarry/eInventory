@@ -70,15 +70,15 @@ class _DeviceEditPageState extends State<DeviceEditPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFC727),
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFC727),
+        backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
         title: const Text(
           'Edit Device',
           style: TextStyle(
-            fontFamily: 'PoetsenOne',
+            fontFamily: 'SansRegular',
             color: Colors.black,
             fontWeight: FontWeight.bold,
           ),
@@ -116,7 +116,7 @@ class _DeviceEditPageState extends State<DeviceEditPage> {
                   children: [
                     Text(
                       selectedLocation ?? 'Choose Location',
-                      style: const TextStyle(fontFamily: 'PoetsenOne', fontSize: 16),
+                      style: const TextStyle(fontFamily: 'SansRegular', fontSize: 16),
                     ),
                     const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.black54),
                   ],
@@ -138,7 +138,7 @@ class _DeviceEditPageState extends State<DeviceEditPage> {
                     ),
                     child: const Text(
                       'Cancel',
-                      style: TextStyle(fontFamily: 'PoetsenOne', fontSize: 16),
+                      style: TextStyle(color: Color(0xFFFFC727), fontFamily: 'SansRegular', fontSize: 16),
                     ),
                   ),
                 ),
@@ -152,7 +152,7 @@ class _DeviceEditPageState extends State<DeviceEditPage> {
                     ),
                     child: const Text(
                       'Update',
-                      style: TextStyle(color: Color(0xFFFFC727), fontFamily: 'PoetsenOne', fontSize: 16),
+                      style: TextStyle(color: Color(0xFFFFC727), fontFamily: 'SansRegular', fontSize: 16),
                     ),
                   ),
                 ),
@@ -175,7 +175,7 @@ class _DeviceEditPageState extends State<DeviceEditPage> {
           filled: true,
           fillColor: Colors.white,
         ),
-        style: const TextStyle(fontFamily: 'PoetsenOne', fontSize: 16),
+        style: const TextStyle(fontFamily: 'SansRegular', fontSize: 16),
       ),
     );
   }
@@ -193,7 +193,7 @@ class _DeviceEditPageState extends State<DeviceEditPage> {
           filled: true,
           fillColor: Colors.white,
         ),
-        style: const TextStyle(fontFamily: 'PoetsenOne', fontSize: 16, color: Colors.black),
+        style: const TextStyle(fontFamily: 'SansRegular', fontSize: 16, color: Colors.black),
       ),
     );
   }
