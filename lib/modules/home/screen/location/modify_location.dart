@@ -32,8 +32,6 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
   ];
   final List<String> typeOptions = ['Lab', 'Lecture Room'];
 
-  Color hex(String hexCode) => Color(int.parse('FF$hexCode', radix: 16));
-
   @override
   void initState() {
     super.initState();
@@ -91,9 +89,8 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: hex('FFC727'),
+      backgroundColor: const Color(0xFFF8F9FA), // Match the background color
       appBar: AppBar(
-        backgroundColor: hex('FFC727'),
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
         title: const Text(
@@ -110,11 +107,7 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
         child: ListView(
           children: [
             _buildLabel('Location Name'),
-            TextField(
-              controller: nameController,
-              style: const TextStyle(fontFamily: 'SansRegular'),
-              decoration: _inputDecoration(),
-            ),
+            _buildTextField(nameController, 'Location Name'),
             const SizedBox(height: 16),
             _buildLabel('Building'),
             _buildDropdown(selectedBuilding, buildingOptions, (val) {
@@ -136,7 +129,7 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
               child: ElevatedButton(
                 onPressed: updateLocation,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
+                  backgroundColor: const Color(0xFF212529), // Dark button color
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -145,7 +138,7 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
                 child: const Text(
                   'Update Location',
                   style: TextStyle(
-                    color: Color(0xFFFFC727),
+                    color: Color(0xFFFFC727), // Yellow text color
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'SansRegular',
@@ -170,12 +163,25 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
     );
   }
 
-  InputDecoration _inputDecoration() {
-    return const InputDecoration(
-      filled: true,
-      fillColor: Colors.white,
-      border: OutlineInputBorder(),
-      contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+  Widget _buildTextField(TextEditingController controller, String label) {
+    return TextFormField(
+      controller: controller,
+      style: const TextStyle(fontFamily: 'SansRegular', fontSize: 16, color: Colors.black),
+      decoration: InputDecoration(
+        fillColor: Colors.white,
+        filled: true,
+        labelText: label,
+        labelStyle: const TextStyle(
+          color: Colors.black,
+          fontFamily: 'SansRegular',
+        ),
+        border: const OutlineInputBorder(),
+        focusedBorder: const OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.black, width: 2),
+        ),
+      ),
+      validator: (value) =>
+          value == null || value.isEmpty ? 'Enter $label' : null,
     );
   }
 
@@ -190,7 +196,14 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
       items: options
           .map((option) => DropdownMenuItem(value: option, child: Text(option)))
           .toList(),
-      decoration: _inputDecoration(),
+      decoration: InputDecoration(
+        fillColor: Colors.white,
+        filled: true,
+        border: const OutlineInputBorder(),
+        focusedBorder: const OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.black, width: 2),
+        ),
+      ),
       style: const TextStyle(fontFamily: 'SansRegular', color: Colors.black),
     );
   }

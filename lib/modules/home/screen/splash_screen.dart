@@ -45,14 +45,14 @@ class _SplashScreenPageState extends State<SplashScreenPage>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: const [
-              Icon(Icons.computer, size: 250, color: Colors.black),
+              Icon(Icons.computer, size: 150, color: Colors.black),
               SizedBox(height: 20),
               Text(
                 'e-Inventory',
                 style: TextStyle(
                   fontSize: 40,
                   fontWeight: FontWeight.bold,
-                  fontFamily: 'PoetsenOne',
+                  fontFamily: 'SansRegular',
                   color: Colors.black,
                 ),
               ),

@@ -21,16 +21,16 @@ class _ChooseLocationPageState extends State<ChooseLocationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFC727),
+      backgroundColor: const Color(0xFFF8F9FA), // Match the background color
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFC727),
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: const IconThemeData(color: Color(0xFF212529)),
         title: const Text(
           'Select Location',
           style: TextStyle(
-            color: Colors.black,
-            fontFamily: 'PoetsenOne',
+            color: Color(0xFF212529),
+            fontFamily: 'SansRegular',
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -73,26 +73,35 @@ class _ChooseLocationPageState extends State<ChooseLocationPage> {
                     final floor = data['floor'] ?? 'Unknown';
                     final type = data['type'] ?? 'Unknown';
 
-                    return Card(
+                    return Container(
                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF212529),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
                       child: ListTile(
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         title: Text(
                           locationName,
                           style: const TextStyle(
-                            fontFamily: 'PoetsenOne',
+                            fontFamily: 'SansRegular',
                             fontSize: 18,
-                            color: Colors.black,
+                            color: Color(0xFFFFC727),
                           ),
                         ),
                         subtitle: Text(
                           'Building: $building\nFloor: $floor\nType: $type',
                           style: const TextStyle(
-                            fontFamily: 'PoetsenOne',
+                            fontFamily: 'SansRegular',
                             fontSize: 14,
-                            color: Colors.black87,
+                            color: Colors.white70,
                           ),
                         ),
                         isThreeLine: true,
@@ -114,22 +123,66 @@ class _ChooseLocationPageState extends State<ChooseLocationPage> {
       padding: const EdgeInsets.all(12),
       child: Column(
         children: [
-          TextField(
-            onChanged: (val) => setState(() => _searchQuery = val),
-            decoration: const InputDecoration(
-              hintText: 'Search by name...',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.search),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: TextField(
+              onChanged: (val) => setState(() => _searchQuery = val),
+              decoration: InputDecoration(
+                hintText: 'Search by name...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
+                ),
+                prefixIcon: const Icon(Icons.search_outlined, color: Color(0xFF6C757D)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                filled: true,
+                fillColor: Colors.white,
+              ),
+              style: const TextStyle(
+                fontFamily: 'SansRegular',
+                fontSize: 16,
+              ),
             ),
           ),
           const SizedBox(height: 10),
           Row(
             children: [
-              Expanded(child: _buildDropdown('Building', _selectedBuilding, _buildings, (val) => setState(() => _selectedBuilding = val!))),
+              Expanded(
+                child: _buildFilterDropdown(
+                  'Building',
+                  _selectedBuilding,
+                  _buildings,
+                  (val) => setState(() => _selectedBuilding = val!),
+                ),
+              ),
               const SizedBox(width: 8),
-              Expanded(child: _buildDropdown('Floor', _selectedFloor, _floors, (val) => setState(() => _selectedFloor = val!))),
+              Expanded(
+                child: _buildFilterDropdown(
+                  'Floor',
+                  _selectedFloor,
+                  _floors,
+                  (val) => setState(() => _selectedFloor = val!),
+                ),
+              ),
               const SizedBox(width: 8),
-              Expanded(child: _buildDropdown('Type', _selectedType, _types, (val) => setState(() => _selectedType = val!))),
+              Expanded(
+                child: _buildFilterDropdown(
+                  'Type',
+                  _selectedType,
+                  _types,
+                  (val) => setState(() => _selectedType = val!),
+                ),
+              ),
             ],
           ),
         ],
@@ -137,15 +190,31 @@ class _ChooseLocationPageState extends State<ChooseLocationPage> {
     );
   }
 
-  Widget _buildDropdown(String label, String value, List<String> items, void Function(String?) onChanged) {
-    return DropdownButtonFormField<String>(
-      value: value,
-      onChanged: onChanged,
-      items: items.map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(),
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-        isDense: true,
+  Widget _buildFilterDropdown(String label, String value, List<String> items, void Function(String?) onChanged) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: DropdownButton<String>(
+        value: value,
+        onChanged: onChanged,
+        items: items.map((item) => DropdownMenuItem(value: item, child: Text(item == 'All' ? 'All ${label}s' : item))).toList(),
+        underline: const SizedBox(),
+        isExpanded: true,
+        style: const TextStyle(
+          color: Color(0xFF212529),
+          fontFamily: 'SansRegular',
+          fontSize: 14,
+        ),
       ),
     );
   }

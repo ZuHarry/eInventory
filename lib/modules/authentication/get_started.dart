@@ -18,7 +18,7 @@ class GetStarted extends StatelessWidget {
               const Text(
                 'Welcome to E-Inventory',
                 style: TextStyle(
-                  fontFamily: 'PoetsenOne',
+                  fontFamily: 'SansRegular',
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
@@ -28,7 +28,7 @@ class GetStarted extends StatelessWidget {
               const Text(
                 'Manage inventory with ease.\nSimple, fast, and efficient.',
                 style: TextStyle(
-                  fontFamily: 'PoetsenOne',
+                  fontFamily: 'SansRegular',
                   fontSize: 16,
                   color: Colors.black,
                 ),
@@ -48,7 +48,7 @@ class GetStarted extends StatelessWidget {
                   child: const Text(
                     'Get Started',
                     style: TextStyle(
-                      fontFamily: 'PoetsenOne',
+                      fontFamily: 'SansRegular',
                       fontSize: 18,
                       color: Colors.white,
                     ),

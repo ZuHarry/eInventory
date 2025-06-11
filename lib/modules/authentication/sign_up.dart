@@ -1,6 +1,8 @@
 import 'package:einventorycomputer/services/auth.dart';
 import 'package:einventorycomputer/shared/loading.dart';
 import 'package:flutter/material.dart';
+import 'package:einventorycomputer/modules/authentication/verify_email.dart'; // Adjust the path if needed
+
 
 class SignUp extends StatefulWidget {
   final Function toggleView;
@@ -20,27 +22,37 @@ class _SignUpState extends State<SignUp> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmpasswordController = TextEditingController();
   final TextEditingController _fullnameController = TextEditingController();
-
+  final TextEditingController _telephoneController = TextEditingController();
   bool _obscurePassword = true;
   String error = '';
+  
+  // Staff type dropdown
+  String? _selectedStaffType;
+  final List<String> _staffTypes = ['Staff', 'Lecturer', 'Technician'];
 
   void _register() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() => loading = true);
-      dynamic result = await _auth.registerWithEmailAndPassword(
-        _fullnameController.text.trim(),
-        _usernameController.text.trim(),
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
-      );
-      if (result == null) {
-        setState(() {
-          error = 'Please supply a valid email';
-          loading = false;
-        });
-      }
-    }
+  if (_formKey.currentState!.validate()) {
+    setState(() => loading = true);
+
+    dynamic result = await _auth.registerWithEmailAndPassword(
+      _fullnameController.text.trim(),
+      _usernameController.text.trim(),
+      _emailController.text.trim(),
+      _passwordController.text.trim(),
+      _telephoneController.text.trim(),
+      _selectedStaffType!,
+    );
+
+    if (result == null) {
+      setState(() {
+        error = 'Please supply a valid email';
+        loading = false;
+      });
+    } 
   }
+}
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +75,7 @@ class _SignUpState extends State<SignUp> {
                           child: const Text(
                             'Sign In',
                             style: TextStyle(
-                              fontFamily: 'PoetsenOne',
+                              fontFamily: 'SansRegular',
                               fontWeight: FontWeight.bold,
                               color: Colors.black,
                             ),
@@ -80,7 +92,7 @@ class _SignUpState extends State<SignUp> {
                         Text(
                           'Register',
                           style: TextStyle(
-                            fontFamily: 'PoetsenOne',
+                            fontFamily: 'SansRegular',
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
                             color: Colors.black,
@@ -90,7 +102,7 @@ class _SignUpState extends State<SignUp> {
                         Text(
                           'Create your account',
                           style: TextStyle(
-                            fontFamily: 'PoetsenOne',
+                            fontFamily: 'SansRegular',
                             fontSize: 14,
                             color: Colors.black,
                           ),
@@ -137,6 +149,17 @@ class _SignUpState extends State<SignUp> {
                                     val == null || val.isEmpty ? 'Enter an email' : null,
                               ),
                               const SizedBox(height: 16),
+                              _buildInputField(
+                                label: 'Telephone Number',
+                                controller: _telephoneController,
+                                icon: Icons.phone,
+                                keyboardType: TextInputType.phone,
+                                validator: (val) =>
+                                    val == null || val.isEmpty ? 'Enter your telephone number' : null,
+                              ),
+                              const SizedBox(height: 16),
+                              _buildStaffTypeDropdown(),
+                              const SizedBox(height: 16),
                               _buildPasswordField(
                                 label: 'Your Password',
                                 controller: _passwordController,
@@ -165,7 +188,7 @@ class _SignUpState extends State<SignUp> {
                                 child: const Text(
                                   'Register',
                                   style: TextStyle(
-                                    fontFamily: 'PoetsenOne',
+                                    fontFamily: 'SansRegular',
                                     color: Colors.white,
                                   ),
                                 ),
@@ -193,6 +216,7 @@ class _SignUpState extends State<SignUp> {
     required TextEditingController controller,
     required IconData icon,
     required String? Function(String?) validator,
+    TextInputType keyboardType = TextInputType.text,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -200,16 +224,59 @@ class _SignUpState extends State<SignUp> {
         Text(
           label,
           style: const TextStyle(
-            fontFamily: 'PoetsenOne',
+            fontFamily: 'SansRegular',
             fontSize: 16,
           ),
         ),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
-          style: const TextStyle(fontFamily: 'PoetsenOne'),
+          keyboardType: keyboardType,
+          style: const TextStyle(fontFamily: 'SansRegular'),
           decoration: _inputDecoration(label, icon),
           validator: validator,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStaffTypeDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Staff Type',
+          style: TextStyle(
+            fontFamily: 'SansRegular',
+            fontSize: 16,
+          ),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          value: _selectedStaffType,
+          decoration: InputDecoration(
+            labelText: 'Select Staff Type',
+            labelStyle: const TextStyle(fontFamily: 'SansRegular'),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.0),
+            ),
+            prefixIcon: const Icon(Icons.work),
+          ),
+          items: _staffTypes.map((String staffType) {
+            return DropdownMenuItem<String>(
+              value: staffType,
+              child: Text(
+                staffType,
+                style: const TextStyle(fontFamily: 'SansRegular'),
+              ),
+            );
+          }).toList(),
+          onChanged: (String? newValue) {
+            setState(() {
+              _selectedStaffType = newValue;
+            });
+          },
+          validator: (value) => value == null ? 'Please select a staff type' : null,
         ),
       ],
     );
@@ -226,7 +293,7 @@ class _SignUpState extends State<SignUp> {
         Text(
           label,
           style: const TextStyle(
-            fontFamily: 'PoetsenOne',
+            fontFamily: 'SansRegular',
             fontSize: 16,
           ),
         ),
@@ -234,7 +301,7 @@ class _SignUpState extends State<SignUp> {
         TextFormField(
           controller: controller,
           obscureText: _obscurePassword,
-          style: const TextStyle(fontFamily: 'PoetsenOne'),
+          style: const TextStyle(fontFamily: 'SansRegular'),
           decoration: _passwordDecoration(label),
           validator: validator,
         ),
@@ -245,7 +312,7 @@ class _SignUpState extends State<SignUp> {
   InputDecoration _inputDecoration(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(fontFamily: 'PoetsenOne'),
+      labelStyle: const TextStyle(fontFamily: 'SansRegular'),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12.0),
       ),
@@ -256,7 +323,7 @@ class _SignUpState extends State<SignUp> {
   InputDecoration _passwordDecoration(String label) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(fontFamily: 'PoetsenOne'),
+      labelStyle: const TextStyle(fontFamily: 'SansRegular'),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12.0),
       ),

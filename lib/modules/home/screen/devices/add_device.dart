@@ -16,11 +16,9 @@ class _AddDevicePageState extends State<AddDevicePage> {
   final TextEditingController _ipController = TextEditingController();
   final TextEditingController _macController = TextEditingController();
 
-  String _deviceType = 'PC';
-  String _deviceStatus = 'Online';
+  String _deviceType = 'PC'; // Default value for device type
+  String _deviceStatus = 'Online'; // Default value for device status
   String? _selectedLocationName;
-
-  Color hex(String hexCode) => Color(int.parse('FF$hexCode', radix: 16));
 
   void _submitForm() async {
     if (_formKey.currentState!.validate() && _selectedLocationName != null) {
@@ -66,12 +64,21 @@ class _AddDevicePageState extends State<AddDevicePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: hex('FFC727'),
+      backgroundColor: const Color(0xFFF8F9FA), // Match the background color
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Card(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          elevation: 8,
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF212529), // Set card background to dark color
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Form(
@@ -81,7 +88,6 @@ class _AddDevicePageState extends State<AddDevicePage> {
                   _buildTextField(_nameController, 'Device Name'),
                   const SizedBox(height: 16),
                   _buildDropdown(
-                    label: 'Device Type',
                     value: _deviceType,
                     items: ['PC', 'Peripheral'],
                     onChanged: (val) => setState(() => _deviceType = val!),
@@ -92,7 +98,6 @@ class _AddDevicePageState extends State<AddDevicePage> {
                   _buildTextField(_macController, 'MAC Address'),
                   const SizedBox(height: 16),
                   _buildDropdown(
-                    label: 'Device Status',
                     value: _deviceStatus,
                     items: ['Online', 'Offline'],
                     onChanged: (val) => setState(() => _deviceStatus = val!),
@@ -118,6 +123,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
                       decoration: BoxDecoration(
                         border: Border.all(color: Colors.black54),
                         borderRadius: BorderRadius.circular(8),
+                        color: Colors.white,
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -141,7 +147,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
                     child: ElevatedButton(
                       onPressed: _submitForm,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
+                        backgroundColor: const Color(0xFFFFC727), // Button color
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -150,7 +156,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
                       child: const Text(
                         'Submit',
                         style: TextStyle(
-                          color: Color(0xFFFFC727),
+                          color: Colors.black,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'SansRegular',
@@ -170,11 +176,13 @@ class _AddDevicePageState extends State<AddDevicePage> {
   Widget _buildTextField(TextEditingController controller, String label) {
     return TextFormField(
       controller: controller,
-      style: const TextStyle(fontFamily: 'SansRegular', fontSize: 16),
+      style: const TextStyle(fontFamily: 'SansRegular', fontSize: 16, color: Colors.black),
       decoration: InputDecoration(
+        fillColor: Colors.white,
+        filled: true,
         labelText: label,
         labelStyle: const TextStyle(
-          color: Colors.black87,
+          color: Colors.black,
           fontFamily: 'SansRegular',
         ),
         border: const OutlineInputBorder(),
@@ -188,7 +196,6 @@ class _AddDevicePageState extends State<AddDevicePage> {
   }
 
   Widget _buildDropdown({
-    required String label,
     required String value,
     required List<String> items,
     required void Function(String?) onChanged,
@@ -201,16 +208,13 @@ class _AddDevicePageState extends State<AddDevicePage> {
                 value: item,
                 child: Text(
                   item,
-                  style: const TextStyle(fontFamily: 'SansRegular'),
+                  style: const TextStyle(fontFamily: 'SansRegular', color: Colors.black),
                 ),
               ))
           .toList(),
       decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(
-          color: Colors.black87,
-          fontFamily: 'SansRegular',
-        ),
+        fillColor: Colors.white,
+        filled: true,
         border: const OutlineInputBorder(),
         focusedBorder: const OutlineInputBorder(
           borderSide: BorderSide(color: Colors.black, width: 2),

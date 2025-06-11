@@ -6,20 +6,7 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFC727),
-      appBar: AppBar(
-        title: const Text(
-          'Settings',
-          style: TextStyle(
-            fontFamily: 'SansRegular',
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
-        ),
-        backgroundColor: const Color(0xFFFFC727),
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
-      ),
+      backgroundColor: const Color(0xFFF8F9FA), // Match the background color
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         children: [
@@ -40,24 +27,24 @@ class SettingsPage extends StatelessWidget {
   Widget _buildSettingsButton(IconData icon, String label) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.black,
+        color: Colors.white, // Set button background to white
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withOpacity(0.1),
             offset: const Offset(0, 4),
             blurRadius: 6,
           ),
         ],
       ),
       child: ListTile(
-        leading: Icon(icon, color: Color(0xFFFFC727)),
+        leading: Icon(icon, color: const Color(0xFFFFC727)), // Yellow icon color
         title: Text(
           label,
           style: const TextStyle(
             fontFamily: 'SansRegular',
             fontSize: 18,
-            color: Color(0xFFFFC727),
+            color: Color(0xFF212529), // Dark text color
           ),
         ),
         onTap: () {

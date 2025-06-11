@@ -58,7 +58,7 @@ class _SignInState extends State<SignIn> {
                           child: const Text(
                             'Register',
                             style: TextStyle(
-                              fontFamily: 'PoetsenOne',
+                              fontFamily: 'SansRegular',
                               fontWeight: FontWeight.bold,
                               color: Colors.black,
                             ),
@@ -75,7 +75,7 @@ class _SignInState extends State<SignIn> {
                         Text(
                           'Sign In',
                           style: TextStyle(
-                            fontFamily: 'PoetsenOne',
+                            fontFamily: 'SansRegular',
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
                             color: Colors.black,
@@ -85,7 +85,7 @@ class _SignInState extends State<SignIn> {
                         Text(
                           'Fill your credentials',
                           style: TextStyle(
-                            fontFamily: 'PoetsenOne',
+                            fontFamily: 'SansRegular',
                             fontSize: 14,
                             color: Colors.black,
                           ),
@@ -116,14 +116,14 @@ class _SignInState extends State<SignIn> {
                                   TextFormField(
                                     controller: _emailController,
                                     style: const TextStyle(
-                                      fontFamily: 'PoetsenOne',
+                                      fontFamily: 'SansRegular',
                                       fontSize: 18,
                                       color: Colors.black,
                                     ),
                                     decoration: const InputDecoration(
                                       hintText: 'Email',
                                       hintStyle: TextStyle(
-                                        fontFamily: 'PoetsenOne',
+                                        fontFamily: 'SansRegular',
                                         fontSize: 16,
                                         color: Colors.grey,
                                       ),
@@ -141,14 +141,14 @@ class _SignInState extends State<SignIn> {
                                     controller: _passwordController,
                                     obscureText: _obscurePassword,
                                     style: const TextStyle(
-                                      fontFamily: 'PoetsenOne',
+                                      fontFamily: 'SansRegular',
                                       fontSize: 18,
                                       color: Colors.black,
                                     ),
                                     decoration: InputDecoration(
                                       hintText: 'Password',
                                       hintStyle: const TextStyle(
-                                        fontFamily: 'PoetsenOne',
+                                        fontFamily: 'SansRegular',
                                         fontSize: 16,
                                         color: Colors.grey,
                                       ),
@@ -187,7 +187,7 @@ class _SignInState extends State<SignIn> {
                                       child: const Text(
                                         'Forgot Password?',
                                         style: TextStyle(
-                                          fontFamily: 'PoetsenOne',
+                                          fontFamily: 'SansRegular',
                                           color: Colors.black,
                                         ),
                                       ),
@@ -207,7 +207,7 @@ class _SignInState extends State<SignIn> {
                                     child: const Text(
                                       'Sign In',
                                       style: TextStyle(
-                                        fontFamily: 'PoetsenOne',
+                                        fontFamily: 'SansRegular',
                                         color: Colors.white,
                                       ),
                                     ),

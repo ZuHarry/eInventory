@@ -73,7 +73,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20.0),
@@ -90,11 +90,24 @@ class HomePage extends StatelessWidget {
                 ]),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFC727)),
+                      ),
+                    );
                   }
 
                   if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
+                    return Center(
+                      child: Text(
+                        'Error: ${snapshot.error}',
+                        style: const TextStyle(
+                          fontFamily: 'SansRegular',
+                          color: Color(0xFF6C757D),
+                          fontSize: 16,
+                        ),
+                      ),
+                    );
                   }
 
                   final totalPC = snapshot.data![0] as int;
@@ -130,7 +143,7 @@ class HomePage extends StatelessWidget {
                           fontFamily: 'SansRegular',
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                          color: Color(0xFF212529),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -145,110 +158,119 @@ class HomePage extends StatelessWidget {
                           fontFamily: 'SansRegular',
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                          color: Color(0xFF212529),
                         ),
                       ),
                       const SizedBox(height: 12),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: Container(
-                          color: Color(0xFFFFC727),
-                          height: 300,
-                          padding: const EdgeInsets.all(16),
-                          child: BarChart(
-                            BarChartData(
-                              gridData: FlGridData(show: false),
-                              borderData: FlBorderData(show: false),
-                              titlesData: FlTitlesData(
-                                bottomTitles: AxisTitles(
-                                  sideTitles: SideTitles(
-                                    showTitles: true,
-                                    getTitlesWidget: (value, _) {
-                                      switch (value.toInt()) {
-                                        case 0:
-                                          return const Text(
-                                            'PC',
-                                            style: TextStyle(
-                                              fontFamily: 'SansRegular',
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 14,
-                                            ),
-                                          );
-                                        case 1:
-                                          return const Text(
-                                            'Peripheral',
-                                            style: TextStyle(
-                                              fontFamily: 'SansRegular',
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 14,
-                                            ),
-                                          );
-                                        default:
-                                          return const Text('');
-                                      }
-                                    },
-                                  ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF212529),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        height: 300,
+                        padding: const EdgeInsets.all(16),
+                        child: BarChart(
+                          BarChartData(
+                            gridData: FlGridData(show: false),
+                            borderData: FlBorderData(show: false),
+                            titlesData: FlTitlesData(
+                              bottomTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  getTitlesWidget: (value, _) {
+                                    switch (value.toInt()) {
+                                      case 0:
+                                        return const Text(
+                                          'PC',
+                                          style: TextStyle(
+                                            fontFamily: 'SansRegular',
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                            color: Color(0xFFFFC727),
+                                          ),
+                                        );
+                                      case 1:
+                                        return const Text(
+                                          'Peripheral',
+                                          style: TextStyle(
+                                            fontFamily: 'SansRegular',
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                            color: Color(0xFFFFC727),
+                                          ),
+                                        );
+                                      default:
+                                        return const Text('');
+                                    }
+                                  },
                                 ),
-                                leftTitles: AxisTitles(
-                                  sideTitles: SideTitles(
-                                    showTitles: true,
-                                    getTitlesWidget: (value, _) => Text(
-                                      value.toInt().toString(),
-                                      style: const TextStyle(
-                                        fontFamily: 'SansRegular',
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 12,
-                                        color: Colors.black,
-                                      ),
+                              ),
+                              leftTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  getTitlesWidget: (value, _) => Text(
+                                    value.toInt().toString(),
+                                    style: const TextStyle(
+                                      fontFamily: 'SansRegular',
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                      color: Color(0xFFFFC727),
                                     ),
                                   ),
                                 ),
-                                rightTitles: AxisTitles(
-                                  sideTitles: SideTitles(showTitles: false),
-                                ),
-                                topTitles: AxisTitles(
-                                  sideTitles: SideTitles(showTitles: false),
-                                ),
                               ),
-                              barGroups: [
-                                BarChartGroupData(x: 0, barRods: [
-                                  BarChartRodData(
-                                    toY: onlinePC.toDouble(),
-                                    color: Colors.yellow,
-                                    width: 18,
-                                    borderRadius: BorderRadius.zero,
-                                  ),
-                                  BarChartRodData(
-                                    toY: offlinePC.toDouble(),
-                                    color: Colors.black,
-                                    width: 18,
-                                    borderRadius: BorderRadius.zero,
-                                  ),
-                                ]),
-                                BarChartGroupData(x: 1, barRods: [
-                                  BarChartRodData(
-                                    toY: onlinePeripheral.toDouble(),
-                                    color: Colors.yellow,
-                                    width: 18,
-                                    borderRadius: BorderRadius.zero,
-                                  ),
-                                  BarChartRodData(
-                                    toY: offlinePeripheral.toDouble(),
-                                    color: Colors.black,
-                                    width: 18,
-                                    borderRadius: BorderRadius.zero,
-                                  ),
-                                ]),
-                              ],
-                              barTouchData: BarTouchData(enabled: false),
-                              maxY: [
-                                onlinePC,
-                                offlinePC,
-                                onlinePeripheral,
-                                offlinePeripheral
-                              ].reduce((a, b) => a > b ? a : b).toDouble() +
-                                  5,
+                              rightTitles: AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                              topTitles: AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
                             ),
+                            barGroups: [
+                              BarChartGroupData(x: 0, barRods: [
+                                BarChartRodData(
+                                  toY: onlinePC.toDouble(),
+                                  color: const Color(0xFFFFC727),
+                                  width: 18,
+                                  borderRadius: BorderRadius.zero,
+                                ),
+                                BarChartRodData(
+                                  toY: offlinePC.toDouble(),
+                                  color: Colors.grey[600],
+                                  width: 18,
+                                  borderRadius: BorderRadius.zero,
+                                ),
+                              ]),
+                              BarChartGroupData(x: 1, barRods: [
+                                BarChartRodData(
+                                  toY: onlinePeripheral.toDouble(),
+                                  color: const Color(0xFFFFC727),
+                                  width: 18,
+                                  borderRadius: BorderRadius.zero,
+                                ),
+                                BarChartRodData(
+                                  toY: offlinePeripheral.toDouble(),
+                                  color: Colors.grey[600],
+                                  width: 18,
+                                  borderRadius: BorderRadius.zero,
+                                ),
+                              ]),
+                            ],
+                            barTouchData: BarTouchData(enabled: false),
+                            maxY: [
+                              onlinePC,
+                              offlinePC,
+                              onlinePeripheral,
+                              offlinePeripheral
+                            ].reduce((a, b) => a > b ? a : b).toDouble() +
+                                5,
                           ),
                         ),
                       ),
@@ -261,11 +283,13 @@ class HomePage extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
+                    backgroundColor: const Color(0xFF212529),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                     ),
+                    elevation: 4,
+                    shadowColor: Colors.black.withOpacity(0.1),
                   ),
                   onPressed: () async {
                     await _auth.signOut();
@@ -276,7 +300,7 @@ class HomePage extends StatelessWidget {
                       fontFamily: 'SansRegular',
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
-                      color: Colors.white,
+                      color: Color(0xFFFFC727),
                     ),
                   ),
                 ),
@@ -295,18 +319,29 @@ class HomePage extends StatelessWidget {
     required int online,
     required int offline,
   }) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      color: Color(0xFFFFC727),
-      elevation: 4,
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF212529),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Row(
           children: [
-            CircleAvatar(
-              radius: 30,
-              backgroundColor: const Color(0xFFFFC727),
-              child: Icon(icon, size: 32, color: Colors.black),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFC727).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 32, color: const Color(0xFFFFC727)),
             ),
             const SizedBox(width: 20),
             Expanded(
@@ -319,7 +354,7 @@ class HomePage extends StatelessWidget {
                       fontFamily: 'SansRegular',
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: Color(0xFFFFC727),
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -343,7 +378,7 @@ class HomePage extends StatelessWidget {
   Widget _buildBuildingSummary(String building, Map<String, int> counts) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      color: Color(0xFFFFC727),
+      color: const Color(0xFF212529),
       elevation: 3,
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
@@ -357,7 +392,7 @@ class HomePage extends StatelessWidget {
                 fontFamily: 'SansRegular',
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: Color(0xFFFFC727),
               ),
             ),
             const SizedBox(height: 10),
@@ -383,7 +418,7 @@ class HomePage extends StatelessWidget {
             fontFamily: 'SansRegular',
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            color: Color(0xFFFFC727),
           ),
         ),
         Text(
@@ -392,7 +427,7 @@ class HomePage extends StatelessWidget {
             fontFamily: 'SansRegular',
             fontWeight: FontWeight.bold,
             fontSize: 14,
-            color: Colors.black,
+            color: Color(0xFFFFC727),
           ),
         ),
       ],

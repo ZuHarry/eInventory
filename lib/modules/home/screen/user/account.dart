@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'modify_account.dart'; // Import the modify account page
 
 class AccountPage extends StatelessWidget {
   const AccountPage({super.key});
@@ -30,17 +31,26 @@ class AccountPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text(
-          'My Account',
-          style: TextStyle(
-            fontFamily: 'SansRegular',
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        actions: [
+          // Modify button in app bar
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ModifyAccountPage(),
+                ),
+              );
+            },
+            icon: const Icon(
+              Icons.edit,
+              color: Colors.black,
+            ),
+            tooltip: 'Modify Account',
+          ),
+        ],
       ),
       body: FutureBuilder<DocumentSnapshot>(
         future: userDoc.get(),
@@ -69,36 +79,94 @@ class AccountPage extends StatelessWidget {
 
           return Padding(
             padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                const CircleAvatar(
-                  radius: 60,
-                  backgroundColor: Colors.black,
-                  child: Icon(
-                    Icons.person,
-                    size: 80,
-                    color: Color(0xFFFFC727),
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  const CircleAvatar(
+                    radius: 60,
+                    backgroundColor: Colors.black,
+                    child: Icon(
+                      Icons.person,
+                      size: 80,
+                      color: Color(0xFFFFC727),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-                Text(
-                  data['username'] ?? 'No Username',
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'SansRegular',
-                    color: Colors.black,
+                  Text(
+                    data['username'] ?? 'No Username',
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'SansRegular',
+                      color: Colors.black,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 24),
+                  const SizedBox(height: 8),
+                  
+                  // Staff type badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _getStaffTypeColor(data['staffType']),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      data['staffType'] ?? 'No Staff Type',
+                      style: const TextStyle(
+                        fontFamily: 'SansRegular',
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
 
-                _buildInfoTile(Icons.person, 'Full Name', data['fullname'] ?? 'No Fullname'),
-                const SizedBox(height: 12),
-                _buildInfoTile(Icons.email, 'Email', data['email'] ?? user.email ?? 'No Email'),
-                const SizedBox(height: 12),
-                _buildInfoTile(Icons.lock, 'Password', data['password'] ?? 'No Password'),
-              ],
+                  _buildInfoTile(Icons.person, 'Full Name', data['fullname'] ?? 'No Fullname'),
+                  const SizedBox(height: 16),
+                  _buildInfoTile(Icons.email, 'Email', data['email'] ?? user.email ?? 'No Email'),
+                  const SizedBox(height: 16),
+                  _buildInfoTile(Icons.phone, 'Telephone', data['telephone'] ?? 'No Phone Number'),
+                  const SizedBox(height: 16),
+                  _buildInfoTile(Icons.work, 'Staff Type', data['staffType'] ?? 'No Staff Type'),
+                  
+                  const SizedBox(height: 32),
+                  
+                  // Modify Account Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ModifyAccountPage(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.edit, color: Colors.black),
+                      label: const Text(
+                        'Modify Account',
+                        style: TextStyle(
+                          fontFamily: 'SansRegular',
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFFC727),
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         },
@@ -106,37 +174,66 @@ class AccountPage extends StatelessWidget {
     );
   }
 
+  Color _getStaffTypeColor(String? staffType) {
+    switch (staffType) {
+      case 'Staff':
+        return Colors.blue;
+      case 'Lecturer':
+        return Colors.green;
+      case 'Technician':
+        return Colors.orange;
+      default:
+        return Colors.grey;
+    }
+  }
+
   Widget _buildInfoTile(IconData icon, String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, color: Colors.black),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '$label:',
-                style: const TextStyle(
-                  fontFamily: 'SansRegular',
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Colors.black,
-                ),
-              ),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontFamily: 'SansRegular',
-                  fontSize: 16,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFC727),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: Colors.black, size: 20),
           ),
-        ),
-      ],
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontFamily: 'SansRegular',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Colors.black54,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontFamily: 'SansRegular',
+                    fontSize: 16,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

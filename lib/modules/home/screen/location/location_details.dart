@@ -76,14 +76,14 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
   Widget _buildGridItem(String label, IconData icon, String value) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.black,
+        color: Color(0xFF212529),
         borderRadius: BorderRadius.circular(12),
       ),
       padding: const EdgeInsets.all(12),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 40, color: Colors.yellow),
+          Icon(icon, size: 40, color: Color(0xFFFFC727)),
           const SizedBox(height: 8),
           Text(
             label,
@@ -97,7 +97,7 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
           Text(
             value,
             style: const TextStyle(
-              color: Colors.yellow,
+              color: Color(0xFFFFC727),
               fontSize: 16,
               fontWeight: FontWeight.bold,
               fontFamily: 'SansRegular',
@@ -139,7 +139,7 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
                       height: 200,
                       margin: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(1),
+                        borderRadius: BorderRadius.circular(12),
                         image: DecorationImage(
                           image: NetworkImage(locationData!['imageUrl']),
                           fit: BoxFit.cover,
