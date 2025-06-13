@@ -39,26 +39,51 @@ class _SplashScreenPageState extends State<SplashScreenPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Center(
-        child: FadeTransition(
-          opacity: _animation,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              Icon(Icons.computer, size: 150, color: Colors.black),
-              SizedBox(height: 20),
-              Text(
-                'e-Inventory',
-                style: TextStyle(
-                  fontSize: 40,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'SansRegular',
-                  color: Colors.black,
+      body: Column(
+        children: [
+          Expanded(
+            child: Center(
+              child: FadeTransition(
+                opacity: _animation,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      'assets/icons/eInventory.png',
+                      width: 250,
+                      height: 250,
+                      fit: BoxFit.contain,
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'e-Inventory',
+                      style: TextStyle(
+                        fontSize: 40,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'SansRegular',
+                        color: Colors.black,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
-        ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 40),
+            child: FadeTransition(
+              opacity: _animation,
+              child: const Text(
+                'Your Inventory Solution',
+                style: TextStyle(
+                  fontSize: 26,
+                  color: Colors.grey,
+                  fontFamily: 'SansRegular',
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

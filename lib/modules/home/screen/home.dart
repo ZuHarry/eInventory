@@ -174,104 +174,127 @@ class HomePage extends StatelessWidget {
                             ),
                           ],
                         ),
-                        height: 300,
                         padding: const EdgeInsets.all(16),
-                        child: BarChart(
-                          BarChartData(
-                            gridData: FlGridData(show: false),
-                            borderData: FlBorderData(show: false),
-                            titlesData: FlTitlesData(
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  getTitlesWidget: (value, _) {
-                                    switch (value.toInt()) {
-                                      case 0:
-                                        return const Text(
-                                          'PC',
-                                          style: TextStyle(
-                                            fontFamily: 'SansRegular',
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 14,
-                                            color: Color(0xFFFFC727),
-                                          ),
-                                        );
-                                      case 1:
-                                        return const Text(
-                                          'Peripheral',
-                                          style: TextStyle(
-                                            fontFamily: 'SansRegular',
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 14,
-                                            color: Color(0xFFFFC727),
-                                          ),
-                                        );
-                                      default:
-                                        return const Text('');
-                                    }
-                                  },
+                        child: Column(
+                          children: [
+                            // Legend
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _buildLegendItem(
+                                  color: const Color(0xFFFFC727),
+                                  label: "Online",
                                 ),
-                              ),
-                              leftTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  getTitlesWidget: (value, _) => Text(
-                                    value.toInt().toString(),
-                                    style: const TextStyle(
-                                      fontFamily: 'SansRegular',
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                      color: Color(0xFFFFC727),
+                                const SizedBox(width: 24),
+                                _buildLegendItem(
+                                  color: Colors.grey[600]!,
+                                  label: "Offline",
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            // Chart
+                            SizedBox(
+                              height: 250,
+                              child: BarChart(
+                                BarChartData(
+                                  gridData: FlGridData(show: false),
+                                  borderData: FlBorderData(show: false),
+                                  titlesData: FlTitlesData(
+                                    bottomTitles: AxisTitles(
+                                      sideTitles: SideTitles(
+                                        showTitles: true,
+                                        getTitlesWidget: (value, _) {
+                                          switch (value.toInt()) {
+                                            case 0:
+                                              return const Text(
+                                                'PC',
+                                                style: TextStyle(
+                                                  fontFamily: 'SansRegular',
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14,
+                                                  color: Color(0xFFFFC727),
+                                                ),
+                                              );
+                                            case 1:
+                                              return const Text(
+                                                'Peripheral',
+                                                style: TextStyle(
+                                                  fontFamily: 'SansRegular',
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14,
+                                                  color: Color(0xFFFFC727),
+                                                ),
+                                              );
+                                            default:
+                                              return const Text('');
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                    leftTitles: AxisTitles(
+                                      sideTitles: SideTitles(
+                                        showTitles: true,
+                                        getTitlesWidget: (value, _) => Text(
+                                          value.toInt().toString(),
+                                          style: const TextStyle(
+                                            fontFamily: 'SansRegular',
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12,
+                                            color: Color(0xFFFFC727),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    rightTitles: AxisTitles(
+                                      sideTitles: SideTitles(showTitles: false),
+                                    ),
+                                    topTitles: AxisTitles(
+                                      sideTitles: SideTitles(showTitles: false),
                                     ),
                                   ),
+                                  barGroups: [
+                                    BarChartGroupData(x: 0, barRods: [
+                                      BarChartRodData(
+                                        toY: onlinePC.toDouble(),
+                                        color: const Color(0xFFFFC727),
+                                        width: 18,
+                                        borderRadius: BorderRadius.zero,
+                                      ),
+                                      BarChartRodData(
+                                        toY: offlinePC.toDouble(),
+                                        color: Colors.grey[600],
+                                        width: 18,
+                                        borderRadius: BorderRadius.zero,
+                                      ),
+                                    ]),
+                                    BarChartGroupData(x: 1, barRods: [
+                                      BarChartRodData(
+                                        toY: onlinePeripheral.toDouble(),
+                                        color: const Color(0xFFFFC727),
+                                        width: 18,
+                                        borderRadius: BorderRadius.zero,
+                                      ),
+                                      BarChartRodData(
+                                        toY: offlinePeripheral.toDouble(),
+                                        color: Colors.grey[600],
+                                        width: 18,
+                                        borderRadius: BorderRadius.zero,
+                                      ),
+                                    ]),
+                                  ],
+                                  barTouchData: BarTouchData(enabled: false),
+                                  maxY: [
+                                    onlinePC,
+                                    offlinePC,
+                                    onlinePeripheral,
+                                    offlinePeripheral
+                                  ].reduce((a, b) => a > b ? a : b).toDouble() +
+                                      5,
                                 ),
-                              ),
-                              rightTitles: AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                              topTitles: AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
                               ),
                             ),
-                            barGroups: [
-                              BarChartGroupData(x: 0, barRods: [
-                                BarChartRodData(
-                                  toY: onlinePC.toDouble(),
-                                  color: const Color(0xFFFFC727),
-                                  width: 18,
-                                  borderRadius: BorderRadius.zero,
-                                ),
-                                BarChartRodData(
-                                  toY: offlinePC.toDouble(),
-                                  color: Colors.grey[600],
-                                  width: 18,
-                                  borderRadius: BorderRadius.zero,
-                                ),
-                              ]),
-                              BarChartGroupData(x: 1, barRods: [
-                                BarChartRodData(
-                                  toY: onlinePeripheral.toDouble(),
-                                  color: const Color(0xFFFFC727),
-                                  width: 18,
-                                  borderRadius: BorderRadius.zero,
-                                ),
-                                BarChartRodData(
-                                  toY: offlinePeripheral.toDouble(),
-                                  color: Colors.grey[600],
-                                  width: 18,
-                                  borderRadius: BorderRadius.zero,
-                                ),
-                              ]),
-                            ],
-                            barTouchData: BarTouchData(enabled: false),
-                            maxY: [
-                              onlinePC,
-                              offlinePC,
-                              onlinePeripheral,
-                              offlinePeripheral
-                            ].reduce((a, b) => a > b ? a : b).toDouble() +
-                                5,
-                          ),
+                          ],
                         ),
                       ),
                     ],
@@ -309,6 +332,31 @@ class HomePage extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildLegendItem({required Color color, required String label}) {
+    return Row(
+      children: [
+        Container(
+          width: 16,
+          height: 16,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: const TextStyle(
+            fontFamily: 'SansRegular',
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFFFFC727),
+          ),
+        ),
+      ],
     );
   }
 

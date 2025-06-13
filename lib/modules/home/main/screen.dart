@@ -31,14 +31,12 @@ class _ScreenPageState extends State<ScreenPage> with TickerProviderStateMixin {
     "Location",
   ];
 
-  final List<Widget> _pages = [
-    HomePage(),
-    InventoryPage(),
-    AddDevicePage(),
-    SettingsPage(),
-    AccountPage(),
-    LocationPage(),
-  ];
+  // Method to navigate to inventory page
+  void _navigateToInventory() {
+    setState(() {
+      _selectedIndex = 1; // Inventory page index
+    });
+  }
 
   // Define which indices are in the bottom navigation
   final List<int> _bottomNavIndexes = [0, 1, 4, 5];
@@ -160,6 +158,25 @@ class _ScreenPageState extends State<ScreenPage> with TickerProviderStateMixin {
         ),
       ),
     );
+  }
+
+  Widget _getCurrentPage() {
+    switch (_selectedIndex) {
+      case 0:
+        return HomePage();
+      case 1:
+        return InventoryPage();
+      case 2:
+        return AddDevicePage(onNavigateToInventory: _navigateToInventory);
+      case 3:
+        return SettingsPage();
+      case 4:
+        return AccountPage();
+      case 5:
+        return LocationPage();
+      default:
+        return HomePage();
+    }
   }
 
   @override
@@ -337,7 +354,7 @@ class _ScreenPageState extends State<ScreenPage> with TickerProviderStateMixin {
       ),
       body: Stack(
         children: [
-          _pages[_selectedIndex],
+          _getCurrentPage(), // Use the new method instead of _pages[_selectedIndex]
           // Floating Add Device Button - only show when bottom nav is visible
           if (isBottomNavPage)
             Positioned(

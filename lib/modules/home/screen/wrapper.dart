@@ -19,7 +19,7 @@ class _WrapperState extends State<Wrapper> {
   void initState() {
     super.initState();
     // Show splash screen for 2 seconds
-    Future.delayed(const Duration(seconds: 2), () {
+    Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
         setState(() {
           _showSplash = false;

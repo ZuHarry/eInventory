@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../location/choose_location.dart'; // Import this
 
 class AddDevicePage extends StatefulWidget {
-  const AddDevicePage({super.key});
+  final VoidCallback? onNavigateToInventory;
+  
+  const AddDevicePage({super.key, this.onNavigateToInventory});
 
   @override
   State<AddDevicePage> createState() => _AddDevicePageState();
@@ -20,11 +22,73 @@ class _AddDevicePageState extends State<AddDevicePage> {
   String _deviceStatus = 'Online'; // Default value for device status
   String? _selectedLocationName;
 
+  // Check for duplicate device name or IP address
+  Future<List<String>> _checkDuplicates(String name, String ip) async {
+    List<String> duplicateFields = [];
+    
+    try {
+      // Check for duplicate device name
+      QuerySnapshot nameQuery = await FirebaseFirestore.instance
+          .collection('devices')
+          .where('name', isEqualTo: name)
+          .get();
+      
+      if (nameQuery.docs.isNotEmpty) {
+        duplicateFields.add('Device Name: "$name"');
+      }
+
+      // Check for duplicate IP address
+      QuerySnapshot ipQuery = await FirebaseFirestore.instance
+          .collection('devices')
+          .where('ip', isEqualTo: ip)
+          .get();
+      
+      if (ipQuery.docs.isNotEmpty) {
+        duplicateFields.add('IP Address: "$ip"');
+      }
+    } catch (e) {
+      print('Error checking duplicates: $e');
+    }
+    
+    return duplicateFields;
+  }
+
   void _submitForm() async {
-    if (_formKey.currentState!.validate() && _selectedLocationName != null) {
-      String name = _nameController.text;
-      String ip = _ipController.text;
-      String mac = _macController.text;
+    // Check if all required fields are filled
+    List<String> emptyFields = [];
+    
+    if (_nameController.text.trim().isEmpty) {
+      emptyFields.add('Device Name');
+    }
+    if (_ipController.text.trim().isEmpty) {
+      emptyFields.add('IP Address');
+    }
+    if (_macController.text.trim().isEmpty) {
+      emptyFields.add('MAC Address');
+    }
+    if (_selectedLocationName == null) {
+      emptyFields.add('Location');
+    }
+
+    // If there are empty fields, show error dialog
+    if (emptyFields.isNotEmpty) {
+      _showErrorDialog(emptyFields);
+      return;
+    }
+
+    // Proceed with form validation
+    if (_formKey.currentState!.validate()) {
+      String name = _nameController.text.trim();
+      String ip = _ipController.text.trim();
+      String mac = _macController.text.trim();
+
+      // Check for duplicates
+      List<String> duplicateFields = await _checkDuplicates(name, ip);
+      
+      if (duplicateFields.isNotEmpty) {
+        _showDuplicateDialog(duplicateFields);
+        return;
+      }
 
       try {
         await FirebaseFirestore.instance.collection('devices').add({
@@ -37,10 +101,10 @@ class _AddDevicePageState extends State<AddDevicePage> {
           'created_at': FieldValue.serverTimestamp(),
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Device added successfully")),
-        );
+        // Show success dialog
+        _showSuccessDialog(name);
 
+        // Clear form after showing dialog
         _nameController.clear();
         _ipController.clear();
         _macController.clear();
@@ -54,11 +118,305 @@ class _AddDevicePageState extends State<AddDevicePage> {
           SnackBar(content: Text("Error: $e")),
         );
       }
-    } else if (_selectedLocationName == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please choose a location")),
-      );
     }
+  }
+
+  void _showErrorDialog(List<String> emptyFields) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // User must tap button to dismiss
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.error_outline,
+                  color: Colors.red,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Validation Error',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 20,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Please fill in all required fields:',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF212529),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ...emptyFields.map((field) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.circle,
+                      size: 6,
+                      color: Colors.red,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      field,
+                      style: const TextStyle(
+                        fontFamily: 'SansRegular',
+                        fontSize: 14,
+                        color: Color(0xFF6C757D),
+                      ),
+                    ),
+                  ],
+                ),
+              )).toList(),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'OK',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showDuplicateDialog(List<String> duplicateFields) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // User must tap button to dismiss
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.warning_amber_outlined,
+                  color: Colors.orange,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Duplicate Found',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 20,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'The following fields already exist in the system:',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF212529),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ...duplicateFields.map((field) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.circle,
+                      size: 6,
+                      color: Colors.orange,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      field,
+                      style: const TextStyle(
+                        fontFamily: 'SansRegular',
+                        fontSize: 14,
+                        color: Color(0xFF6C757D),
+                      ),
+                    ),
+                  ],
+                ),
+              )).toList(),
+              const SizedBox(height: 8),
+              const Text(
+                'Please use different values for these fields.',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  fontSize: 14,
+                  color: Color(0xFF6C757D),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'OK',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showSuccessDialog(String deviceName) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // User must tap button to dismiss
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.check_circle_outline,
+                  color: Colors.green,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Success',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 20,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Device added successfully!',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF212529),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '"$deviceName" has been added to your inventory.',
+                style: const TextStyle(
+                  fontFamily: 'SansRegular',
+                  fontSize: 14,
+                  color: Color(0xFF6C757D),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(), // Just closes dialog, stays on add device page
+              child: const Text(
+                'Add Another',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  color: Color(0xFF6C757D),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog first
+                // Navigate to inventory page using the callback
+                if (widget.onNavigateToInventory != null) {
+                  widget.onNavigateToInventory!();
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFFC727),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'OK',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  color: Color(0xFF212529),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -130,9 +488,9 @@ class _AddDevicePageState extends State<AddDevicePage> {
                         children: [
                           Text(
                             _selectedLocationName ?? 'Choose Location',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'SansRegular',
-                              color: Colors.black87,
+                              color: _selectedLocationName != null ? Colors.black87 : Colors.black54,
                               fontSize: 16,
                             ),
                           ),
@@ -191,7 +549,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
         ),
       ),
       validator: (value) =>
-          value == null || value.isEmpty ? 'Enter $label' : null,
+          value == null || value.trim().isEmpty ? 'Enter $label' : null,
     );
   }
 

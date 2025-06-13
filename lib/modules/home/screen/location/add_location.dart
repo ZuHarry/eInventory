@@ -25,6 +25,295 @@ class _AddLocationPageState extends State<AddLocationPage> {
 
   Color hex(String hexCode) => Color(int.parse('FF$hexCode', radix: 16));
 
+  void _showErrorDialog(List<String> emptyFields) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // User must tap button to dismiss
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.error_outline,
+                  color: Colors.red,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Validation Error',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 20,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Please fill in all required fields:',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF212529),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ...emptyFields.map((field) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.circle,
+                      size: 6,
+                      color: Colors.red,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      field,
+                      style: const TextStyle(
+                        fontFamily: 'SansRegular',
+                        fontSize: 14,
+                        color: Color(0xFF6C757D),
+                      ),
+                    ),
+                  ],
+                ),
+              )).toList(),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'OK',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showDuplicateNameDialog(String locationName) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.warning_amber_outlined,
+                  color: Colors.orange,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Duplicate Location',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 20,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Location name already exists!',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF212529),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'A location with the name "$locationName" already exists. Please choose a different name.',
+                style: const TextStyle(
+                  fontFamily: 'SansRegular',
+                  fontSize: 14,
+                  color: Color(0xFF6C757D),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'OK',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<bool> _showConfirmationDialog() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFC727).withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.add_location,
+                color: Color(0xFFFFC727),
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Confirm Addition',
+              style: TextStyle(
+                fontFamily: 'SansRegular',
+                fontWeight: FontWeight.w600,
+                fontSize: 20,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Are you sure you want to add this location?',
+              style: TextStyle(
+                fontFamily: 'SansRegular',
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF212529),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '"${_locationNameController.text}" will be added to $_building, $_floor as a $_locationType.',
+              style: const TextStyle(
+                fontFamily: 'SansRegular',
+                fontSize: 14,
+                color: Color(0xFF6C757D),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(
+                fontFamily: 'SansRegular',
+                color: Color(0xFF6C757D),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFFC727),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Add Location',
+              style: TextStyle(
+                fontFamily: 'SansRegular',
+                color: Color(0xFF212529),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return confirm ?? false;
+  }
+
+  Future<bool> _checkLocationNameExists(String locationName) async {
+    try {
+      // Query Firestore to check if location name already exists
+      // Using case-insensitive comparison
+      final QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('locations')
+          .where('name', isEqualTo: locationName.trim())
+          .limit(1)
+          .get();
+
+      return querySnapshot.docs.isNotEmpty;
+    } catch (e) {
+      // If there's an error checking, we'll allow the submission to proceed
+      // and let the actual submission handle any errors
+      print('Error checking location name: $e');
+      return false;
+    }
+  }
+
   Future<void> _pickImage() async {
     try {
       final XFile? image = await _picker.pickImage(
@@ -141,55 +430,78 @@ class _AddLocationPageState extends State<AddLocationPage> {
   }
 
   void _submitForm() async {
-    if (_formKey.currentState!.validate()) {
-      String locationName = _locationNameController.text;
-      String? finalImageUrl;
+    // Check if all required fields are filled
+    List<String> emptyFields = [];
+    
+    if (_locationNameController.text.trim().isEmpty) {
+      emptyFields.add('Location Name');
+    }
 
-      // If user uploaded a custom image, upload it to Firebase Storage
-      if (_selectedImage != null) {
-        finalImageUrl = await _uploadImageToFirebase(_selectedImage!);
-        if (finalImageUrl == null) {
-          // Upload failed, don't proceed
-          return;
-        }
-      } else {
-        // Use default image based on location type
-        if (_locationType == 'Lecture Room') {
-          finalImageUrl = 'https://drive.google.com/uc?export=view&id=1VRibpXtVrgUGokLdUrzCSIl8nZ3zanGy';
-        } else if (_locationType == 'Lab') {
-          finalImageUrl = 'https://drive.google.com/uc?export=view&id=1OOjtYkVwFJEc_zWhw6DADl3WunbqKsfU';
-        }
+    // If there are empty fields, show error dialog
+    if (emptyFields.isNotEmpty) {
+      _showErrorDialog(emptyFields);
+      return;
+    }
+
+    // Check if location name already exists
+    String locationName = _locationNameController.text.trim();
+    bool nameExists = await _checkLocationNameExists(locationName);
+    
+    if (nameExists) {
+      _showDuplicateNameDialog(locationName);
+      return;
+    }
+
+    // Show confirmation dialog
+    final confirmed = await _showConfirmationDialog();
+    if (!confirmed) return;
+
+    String? finalImageUrl;
+
+    // If user uploaded a custom image, upload it to Firebase Storage
+    if (_selectedImage != null) {
+      finalImageUrl = await _uploadImageToFirebase(_selectedImage!);
+      if (finalImageUrl == null) {
+        // Upload failed, don't proceed
+        return;
       }
-
-      try {
-        await FirebaseFirestore.instance.collection('locations').add({
-          'name': locationName,
-          'building': _building,
-          'floor': _floor,
-          'type': _locationType,
-          'imageUrl': finalImageUrl,
-          'hasCustomImage': _selectedImage != null, // Track if it's a custom image
-          'created_at': FieldValue.serverTimestamp(),
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Location added successfully")),
-        );
-
-        // Clear form
-        _locationNameController.clear();
-        setState(() {
-          _building = 'Right Wing';
-          _floor = 'Ground Floor';
-          _locationType = 'Lecture Room';
-          _imageUrl = null;
-          _selectedImage = null;
-        });
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $e")),
-        );
+    } else {
+      // Use default image based on location type
+      if (_locationType == 'Lecture Room') {
+        finalImageUrl = 'https://drive.google.com/uc?export=view&id=1VRibpXtVrgUGokLdUrzCSIl8nZ3zanGy';
+      } else if (_locationType == 'Lab') {
+        finalImageUrl = 'https://drive.google.com/uc?export=view&id=1OOjtYkVwFJEc_zWhw6DADl3WunbqKsfU';
       }
+    }
+
+    try {
+      await FirebaseFirestore.instance.collection('locations').add({
+        'name': locationName,
+        'building': _building,
+        'floor': _floor,
+        'type': _locationType,
+        'imageUrl': finalImageUrl,
+        'hasCustomImage': _selectedImage != null, // Track if it's a custom image
+        'created_at': FieldValue.serverTimestamp(),
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Location added successfully")),
+      );
+
+      // Clear form
+      _locationNameController.clear();
+      setState(() {
+        _building = 'Right Wing';
+        _floor = 'Ground Floor';
+        _locationType = 'Lecture Room';
+        _imageUrl = null;
+        _selectedImage = null;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
     }
   }
 
@@ -294,7 +606,7 @@ class _AddLocationPageState extends State<AddLocationPage> {
                       child: _isUploading
                           ? const CircularProgressIndicator(color: Colors.black)
                           : const Text(
-                              'Submit',
+                              'Add Location',
                               style: TextStyle(
                                 color: Colors.black,
                                 fontSize: 18,

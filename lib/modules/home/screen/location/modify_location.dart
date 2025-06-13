@@ -20,6 +20,7 @@ class ModifyLocationPage extends StatefulWidget {
 }
 
 class _ModifyLocationPageState extends State<ModifyLocationPage> {
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController nameController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
   
@@ -30,6 +31,7 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
   File? _selectedNewImage;
   bool _isUploading = false;
   bool _imageChanged = false;
+  bool _isDeleting = false;
 
   late String oldLocationName;
 
@@ -148,6 +150,306 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
     );
   }
 
+  void _showErrorDialog(List<String> emptyFields) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.error_outline,
+                  color: Colors.red,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Validation Error',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 20,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Please fill in all required fields:',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF212529),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ...emptyFields.map((field) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.circle,
+                      size: 6,
+                      color: Colors.red,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      field,
+                      style: const TextStyle(
+                        fontFamily: 'SansRegular',
+                        fontSize: 14,
+                        color: Color(0xFF6C757D),
+                      ),
+                    ),
+                  ],
+                ),
+              )).toList(),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'OK',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showDuplicateLocationDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.warning_outlined,
+                  color: Colors.orange,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Duplicate Location',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 20,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Location name already exists!',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF212529),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'A location with the name "${nameController.text.trim()}" already exists. Please choose a different name.',
+                style: const TextStyle(
+                  fontFamily: 'SansRegular',
+                  fontSize: 14,
+                  color: Color(0xFF6C757D),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'OK',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.check_circle_outline,
+                  color: Colors.green,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Success',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 20,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Location updated successfully!',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF212529),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '"${nameController.text.trim()}" has been updated.',
+                style: const TextStyle(
+                  fontFamily: 'SansRegular',
+                  fontSize: 14,
+                  color: Color(0xFF6C757D),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+                Navigator.pop(context); // Go back to previous screen
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFFC727),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'OK',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  color: Color(0xFF212529),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showDeleteConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF212529),
+          title: const Text(
+            'Delete Location',
+            style: TextStyle(color: Colors.white, fontFamily: 'SansRegular'),
+          ),
+          content: Text(
+            'Are you sure you want to delete "${nameController.text}"? This action cannot be undone.',
+            style: const TextStyle(color: Colors.white, fontFamily: 'SansRegular'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.grey, fontFamily: 'SansRegular'),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _deleteLocation();
+              },
+              child: const Text(
+                'Delete',
+                style: TextStyle(color: Colors.red, fontFamily: 'SansRegular'),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<String?> _uploadImageToFirebase(File imageFile) async {
     try {
       setState(() {
@@ -197,8 +499,56 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
     });
   }
 
+  Future<bool> _checkLocationNameExists(String locationName) async {
+    // If the name hasn't changed, it's valid
+    if (locationName == oldLocationName) {
+      return false;
+    }
+
+    try {
+      final QuerySnapshot result = await FirebaseFirestore.instance
+          .collection('locations')
+          .where('name', isEqualTo: locationName)
+          .get();
+      
+      return result.docs.isNotEmpty;
+    } catch (e) {
+      return false; // Assume it doesn't exist if there's an error
+    }
+  }
+
   Future<void> updateLocation() async {
+    // Check if all required fields are filled
+    List<String> emptyFields = [];
+    
+    if (nameController.text.trim().isEmpty) {
+      emptyFields.add('Location Name');
+    }
+    if (selectedBuilding == null) {
+      emptyFields.add('Building');
+    }
+    if (selectedFloor == null) {
+      emptyFields.add('Floor');
+    }
+    if (selectedType == null) {
+      emptyFields.add('Type');
+    }
+
+    // If there are empty fields, show error dialog
+    if (emptyFields.isNotEmpty) {
+      _showErrorDialog(emptyFields);
+      return;
+    }
+
     final String newName = nameController.text.trim();
+
+    // Check if location name already exists
+    bool locationExists = await _checkLocationNameExists(newName);
+    if (locationExists) {
+      _showDuplicateLocationDialog();
+      return;
+    }
+
     String? finalImageUrl = currentImageUrl;
 
     try {
@@ -245,15 +595,53 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
         }
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Location updated successfully')),
-      );
-
-      Navigator.pop(context);
+      // Show success dialog
+      _showSuccessDialog();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error updating location: $e')),
       );
+    }
+  }
+
+  Future<void> _deleteLocation() async {
+    try {
+      setState(() {
+        _isDeleting = true;
+      });
+
+      // First, update all devices that have this location to remove the location reference
+      final devicesSnapshot = await FirebaseFirestore.instance
+          .collection('devices')
+          .where('location', isEqualTo: oldLocationName)
+          .get();
+
+      // Update devices to remove location reference or set to null/empty
+      for (var doc in devicesSnapshot.docs) {
+        await doc.reference.update({'location': ''});
+      }
+
+      // Delete the location document
+      await FirebaseFirestore.instance
+          .collection('locations')
+          .doc(widget.locationId)
+          .delete();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Location deleted successfully')),
+      );
+
+      // Navigate back to the main screen (skip location details page)
+      Navigator.pop(context); // Close modify page
+      Navigator.pop(context); // Close location details page
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error deleting location: $e')),
+      );
+    } finally {
+      setState(() {
+        _isDeleting = false;
+      });
     }
   }
 
@@ -263,6 +651,7 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
         elevation: 0,
+        backgroundColor: const Color(0xFFF8F9FA),
         iconTheme: const IconThemeData(color: Colors.black),
         title: const Text(
           'Edit Location',
@@ -273,65 +662,105 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
           ),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ListView(
-          children: [
-            _buildLabel('Location Name'),
-            _buildTextField(nameController, 'Location Name'),
-            const SizedBox(height: 16),
-            _buildLabel('Building'),
-            _buildDropdown(selectedBuilding, buildingOptions, (val) {
-              setState(() => selectedBuilding = val);
-            }),
-            const SizedBox(height: 16),
-            _buildLabel('Floor'),
-            _buildDropdown(selectedFloor, floorOptions, (val) {
-              setState(() => selectedFloor = val);
-            }),
-            const SizedBox(height: 16),
-            _buildLabel('Type'),
-            _buildDropdown(selectedType, typeOptions, (val) {
-              setState(() {
-                selectedType = val;
-                // Update default image when type changes (only if not using custom image)
-                if (!_imageChanged && _selectedNewImage == null) {
-                  if (selectedType == 'Lecture Room') {
-                    currentImageUrl = 'https://drive.google.com/uc?export=view&id=1VRibpXtVrgUGokLdUrzCSIl8nZ3zanGy';
-                  } else if (selectedType == 'Lab') {
-                    currentImageUrl = 'https://drive.google.com/uc?export=view&id=1OOjtYkVwFJEc_zWhw6DADl3WunbqKsfU';
-                  }
-                }
-              });
-            }),
-            const SizedBox(height: 16),
-            _buildImageSection(),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isUploading ? null : updateLocation,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _isUploading ? Colors.grey : const Color(0xFF212529),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: _isUploading
-                    ? const CircularProgressIndicator(color: Color(0xFFFFC727))
-                    : const Text(
-                        'Update Location',
-                        style: TextStyle(
-                          color: Color(0xFFFFC727),
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'SansRegular',
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF212529),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  _buildTextField(nameController, 'Location Name'),
+                  const SizedBox(height: 16),
+                  _buildDropdown(selectedBuilding, buildingOptions, (val) {
+                    setState(() => selectedBuilding = val);
+                  }, 'Building'),
+                  const SizedBox(height: 16),
+                  _buildDropdown(selectedFloor, floorOptions, (val) {
+                    setState(() => selectedFloor = val);
+                  }, 'Floor'),
+                  const SizedBox(height: 16),
+                  _buildDropdown(selectedType, typeOptions, (val) {
+                    setState(() {
+                      selectedType = val;
+                      // Update default image when type changes (only if not using custom image)
+                      if (!_imageChanged && _selectedNewImage == null) {
+                        if (selectedType == 'Lecture Room') {
+                          currentImageUrl = 'https://drive.google.com/uc?export=view&id=1VRibpXtVrgUGokLdUrzCSIl8nZ3zanGy';
+                        } else if (selectedType == 'Lab') {
+                          currentImageUrl = 'https://drive.google.com/uc?export=view&id=1OOjtYkVwFJEc_zWhw6DADl3WunbqKsfU';
+                        }
+                      }
+                    });
+                  }, 'Type'),
+                  const SizedBox(height: 16),
+                  _buildImageSection(),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: (_isUploading || _isDeleting) ? null : updateLocation,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: (_isUploading || _isDeleting) ? Colors.grey : const Color(0xFFFFC727),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
+                      child: _isUploading
+                          ? const CircularProgressIndicator(color: Color(0xFF212529))
+                          : const Text(
+                              'Update Location',
+                              style: TextStyle(
+                                color: Color(0xFF212529),
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'SansRegular',
+                              ),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: (_isUploading || _isDeleting) ? null : _showDeleteConfirmationDialog,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: (_isUploading || _isDeleting) ? Colors.grey : Colors.red,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: _isDeleting
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text(
+                              'Delete Location',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'SansRegular',
+                              ),
+                            ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -341,7 +770,7 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey),
+        border: Border.all(color: Colors.white54),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
@@ -349,7 +778,15 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildLabel('Location Photo'),
+            const Text(
+              'Location Photo',
+              style: TextStyle(
+                fontFamily: 'SansRegular',
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
             const SizedBox(height: 12),
             
             // Show current/new image preview
@@ -405,8 +842,8 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
                   icon: const Icon(Icons.edit, size: 16),
                   label: Text(_selectedNewImage != null ? 'Change' : 'Update Photo'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF212529),
-                    foregroundColor: const Color(0xFFFFC727),
+                    backgroundColor: const Color(0xFFFFC727),
+                    foregroundColor: const Color(0xFF212529),
                   ),
                 ),
                 if (_selectedNewImage != null)
@@ -436,17 +873,6 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
     );
   }
 
-  Widget _buildLabel(String label) {
-    return Text(
-      label,
-      style: const TextStyle(
-        fontFamily: 'SansRegular',
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
-      ),
-    );
-  }
-
   Widget _buildTextField(TextEditingController controller, String label) {
     return TextFormField(
       controller: controller,
@@ -465,7 +891,7 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
         ),
       ),
       validator: (value) =>
-          value == null || value.isEmpty ? 'Enter $label' : null,
+          value == null || value.trim().isEmpty ? 'Enter $label' : null,
     );
   }
 
@@ -473,18 +899,32 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
     String? value,
     List<String> options,
     void Function(String?) onChanged,
+    String hint,
   ) {
     return DropdownButtonFormField<String>(
       value: value,
       onChanged: onChanged,
+      hint: Text(
+        hint,
+        style: const TextStyle(
+          fontFamily: 'SansRegular',
+          color: Colors.black54,
+        ),
+      ),
       items: options
-          .map((option) => DropdownMenuItem(value: option, child: Text(option)))
+          .map((option) => DropdownMenuItem(
+                value: option,
+                child: Text(
+                  option,
+                  style: const TextStyle(fontFamily: 'SansRegular', color: Colors.black),
+                ),
+              ))
           .toList(),
-      decoration: InputDecoration(
+      decoration: const InputDecoration(
         fillColor: Colors.white,
         filled: true,
-        border: const OutlineInputBorder(),
-        focusedBorder: const OutlineInputBorder(
+        border: OutlineInputBorder(),
+        focusedBorder: OutlineInputBorder(
           borderSide: BorderSide(color: Colors.black, width: 2),
         ),
       ),
