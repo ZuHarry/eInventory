@@ -18,7 +18,9 @@ class _ScreenPageState extends State<ScreenPage> with TickerProviderStateMixin {
   final AuthService _auth = AuthService();
   int _selectedIndex = 0;
   String? _username;
+  String? _profileImageUrl;  // Added for profile image
   late AnimationController _drawerAnimationController;
+  late AnimationController _fabAnimationController;
 
   final List<String> _titles = [
     "Home",
@@ -44,27 +46,40 @@ class _ScreenPageState extends State<ScreenPage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _loadUsername();
+    _loadUserData();  // Changed from _loadUsername to _loadUserData
     _drawerAnimationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
+    _fabAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _fabAnimationController.forward();
   }
 
   @override
   void dispose() {
     _drawerAnimationController.dispose();
+    _fabAnimationController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadUsername() async {
+  Future<void> _loadUserData() async {  // Updated method name and functionality
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-      if (doc.exists) {
-        setState(() {
-          _username = doc.data()?['username'] ?? 'User';
-        });
+      try {
+        final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+        if (doc.exists && mounted) {
+          final data = doc.data();
+          setState(() {
+            _username = data?['username'] ?? 'User';
+            _profileImageUrl = data?['profileImageUrl'];  // Get profile image URL
+          });
+          print('Profile image URL: $_profileImageUrl'); // Debug print
+        }
+      } catch (e) {
+        print('Error loading user data: $e'); // Debug print
       }
     }
   }
@@ -74,8 +89,77 @@ class _ScreenPageState extends State<ScreenPage> with TickerProviderStateMixin {
       setState(() {
         _selectedIndex = index;
       });
+      // Refresh user data when navigating to Account page
+      if (index == 4) { // Account page index
+        _loadUserData();
+      }
     }
     Navigator.pop(context); // Close drawer
+  }
+
+  void _onFabPressed() {
+    // Add a small animation when pressed
+    _fabAnimationController.reverse().then((_) {
+      _fabAnimationController.forward();
+    });
+    
+    setState(() {
+      _selectedIndex = 2; // Navigate to Add Device page (index 2)
+    });
+  }
+
+  Widget _buildProfileImage() {  // New method to build profile image widget
+    return Container(
+      width: 80,
+      height: 80,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFFC727).withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          width: 80,
+          height: 80,
+          color: const Color(0xFFFFC727),
+          child: _profileImageUrl != null && _profileImageUrl!.isNotEmpty
+              ? Image.network(
+                  _profileImageUrl!,
+                  width: 80,
+                  height: 80,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    print('Error loading image: $error'); // Debug print
+                    return const Icon(
+                      Icons.person_rounded,
+                      size: 40,
+                      color: Color(0xFF212529),
+                    );
+                  },
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF212529)),
+                        strokeWidth: 2,
+                      ),
+                    );
+                  },
+                )
+              : const Icon(
+                  Icons.person_rounded,
+                  size: 40,
+                  color: Color(0xFF212529),
+                ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -142,26 +226,7 @@ class _ScreenPageState extends State<ScreenPage> with TickerProviderStateMixin {
                 ),
                 child: Column(
                   children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFC727),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFFFFC727).withOpacity(0.3),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.person_rounded,
-                        size: 40,
-                        color: Color(0xFF212529),
-                      ),
-                    ),
+                    _buildProfileImage(),  // Use the new profile image widget
                     const SizedBox(height: 16),
                     Text(
                       _username ?? 'Loading...',
@@ -270,7 +335,53 @@ class _ScreenPageState extends State<ScreenPage> with TickerProviderStateMixin {
           ),
         ),
       ),
-      body: _pages[_selectedIndex],
+      body: Stack(
+        children: [
+          _pages[_selectedIndex],
+          // Floating Add Device Button - only show when bottom nav is visible
+          if (isBottomNavPage)
+            Positioned(
+              bottom: 10, // Position above the bottom navigation bar
+              right: 24,
+              child: ScaleTransition(
+                scale: _fabAnimationController,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFFC727), Color(0xFFFFD54F)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFFC727).withOpacity(0.4),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: _onFabPressed,
+                      child: Container(
+                        width: 56,
+                        height: 56,
+                        child: const Icon(
+                          Icons.add_rounded,
+                          color: Color(0xFF212529),
+                          size: 28,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
       bottomNavigationBar: isBottomNavPage
           ? Container(
               margin: const EdgeInsets.all(16),

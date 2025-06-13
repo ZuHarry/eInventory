@@ -48,7 +48,9 @@ class _SignUpState extends State<SignUp> {
         error = 'Please supply a valid email';
         loading = false;
       });
-    } 
+    }if (mounted) {
+        setState(() => loading = false);
+      }
   }
 }
 

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class ModifyAccountPage extends StatefulWidget {
   const ModifyAccountPage({super.key});
@@ -22,6 +25,11 @@ class _ModifyAccountPageState extends State<ModifyAccountPage> {
   bool _isLoading = false;
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
+  bool _isUploadingPhoto = false;
+  
+  File? _imageFile;
+  String? _profileImageUrl;
+  final ImagePicker _picker = ImagePicker();
   
   final List<String> _staffTypes = ['Staff', 'Lecturer', 'Technician'];
 
@@ -59,11 +67,190 @@ class _ModifyAccountPageState extends State<ModifyAccountPage> {
             _emailController.text = data['email'] ?? user.email ?? '';
             _telephoneController.text = data['telephone'] ?? '';
             _selectedStaffType = data['staffType'];
+            _profileImageUrl = data['profileImageUrl'];
             // Don't populate password field for security
           });
         }
       } catch (e) {
         _showErrorDialog('Error loading user data: ${e.toString()}');
+      }
+    }
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: Colors.white,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (BuildContext context) {
+          return Container(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Select Profile Picture',
+                  style: TextStyle(
+                    fontFamily: 'SansRegular',
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildImageSourceOption(
+                      icon: Icons.camera_alt,
+                      label: 'Camera',
+                      onTap: () => _getImage(ImageSource.camera),
+                    ),
+                    _buildImageSourceOption(
+                      icon: Icons.photo_library,
+                      label: 'Gallery',
+                      onTap: () => _getImage(ImageSource.gallery),
+                    ),
+                    if (_profileImageUrl != null || _imageFile != null)
+                      _buildImageSourceOption(
+                        icon: Icons.delete,
+                        label: 'Remove',
+                        onTap: _removeImage,
+                        color: Colors.red,
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      _showErrorDialog('Error opening image picker: ${e.toString()}');
+    }
+  }
+
+  Widget _buildImageSourceOption({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    Color? color,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: (color ?? const Color(0xFFFFC727)).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(
+                color: color ?? const Color(0xFFFFC727),
+                width: 2,
+              ),
+            ),
+            child: Icon(
+              icon,
+              color: color ?? const Color(0xFFFFC727),
+              size: 28,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'SansRegular',
+              fontSize: 14,
+              color: color ?? Colors.black87,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _getImage(ImageSource source) async {
+    Navigator.pop(context); // Close bottom sheet
+    
+    try {
+      final XFile? pickedFile = await _picker.pickImage(
+        source: source,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 85,
+      );
+
+      if (pickedFile != null) {
+        setState(() {
+          _imageFile = File(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      _showErrorDialog('Error picking image: ${e.toString()}');
+    }
+  }
+
+  void _removeImage() {
+    Navigator.pop(context); // Close bottom sheet
+    setState(() {
+      _imageFile = null;
+      _profileImageUrl = null;
+    });
+  }
+
+  Future<String?> _uploadImageToFirebase(File imageFile) async {
+    try {
+      setState(() {
+        _isUploadingPhoto = true;
+      });
+
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return null;
+
+      // Create a unique filename
+      String fileName = 'profile_images/${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      
+      // Upload to Firebase Storage
+      Reference storageRef = FirebaseStorage.instance.ref().child(fileName);
+      UploadTask uploadTask = storageRef.putFile(imageFile);
+      
+      TaskSnapshot snapshot = await uploadTask;
+      String downloadUrl = await snapshot.ref.getDownloadURL();
+      
+      return downloadUrl;
+    } catch (e) {
+      _showErrorDialog('Error uploading image: ${e.toString()}');
+      return null;
+    } finally {
+      setState(() {
+        _isUploadingPhoto = false;
+      });
+    }
+  }
+
+  Future<void> _deleteOldImage() async {
+    if (_profileImageUrl != null && _profileImageUrl!.isNotEmpty) {
+      try {
+        final ref = FirebaseStorage.instance.refFromURL(_profileImageUrl!);
+        await ref.delete();
+      } catch (e) {
+        // Ignore error if image doesn't exist
+        print('Error deleting old image: $e');
       }
     }
   }
@@ -92,11 +279,36 @@ class _ModifyAccountPageState extends State<ModifyAccountPage> {
     }
 
     try {
-      // Check if email is being changed
+      String? finalImageUrl;
+
+      // Handle image upload similar to add_location.dart
+      if (_imageFile != null) {
+        // User selected a new image - upload it
+        finalImageUrl = await _uploadImageToFirebase(_imageFile!);
+        if (finalImageUrl == null) {
+          // Upload failed, don't proceed
+          setState(() {
+            _isLoading = false;
+          });
+          return;
+        }
+        // Delete old image after successful upload
+        if (_profileImageUrl != null && _profileImageUrl != finalImageUrl) {
+          await _deleteOldImage();
+        }
+      } else if (_profileImageUrl == null) {
+        // Image was removed - delete from storage if there was an old one
+        await _deleteOldImage();
+        finalImageUrl = null;
+      } else {
+        // No change to image - keep existing
+        finalImageUrl = _profileImageUrl;
+      }
+
+      // Update Firebase Auth email if changed
       final currentEmail = user.email;
       final newEmail = _emailController.text.trim();
       
-      // Update Firebase Auth email if changed
       if (currentEmail != newEmail) {
         await user.updateEmail(newEmail);
       }
@@ -106,15 +318,24 @@ class _ModifyAccountPageState extends State<ModifyAccountPage> {
         await user.updatePassword(_passwordController.text);
       }
 
-      // Update Firestore document (DO NOT store password in Firestore)
+      // Update Firestore document
       Map<String, dynamic> updateData = {
         'fullname': _fullnameController.text.trim(),
         'username': _usernameController.text.trim(),
         'email': newEmail,
         'telephone': _telephoneController.text.trim(),
         'staffType': _selectedStaffType,
+        'hasCustomImage': _imageFile != null, // Track if it's a custom image
         'updatedAt': FieldValue.serverTimestamp(),
       };
+
+      // Handle profile image URL
+      if (finalImageUrl != null) {
+        updateData['profileImageUrl'] = finalImageUrl;
+      } else {
+        // Remove profile image URL if image was deleted
+        updateData['profileImageUrl'] = FieldValue.delete();
+      }
 
       await FirebaseFirestore.instance
           .collection('users')
@@ -177,6 +398,110 @@ class _ModifyAccountPageState extends State<ModifyAccountPage> {
     );
   }
 
+  Widget _buildProfileImage() {
+    return Stack(
+      children: [
+        Container(
+          width: 120,
+          height: 120,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: const Color(0xFFFFC727),
+              width: 4,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(60),
+            child: _imageFile != null
+                ? Image.file(
+                    _imageFile!,
+                    fit: BoxFit.cover,
+                  )
+                : _profileImageUrl != null && _profileImageUrl!.isNotEmpty
+                    ? Image.network(
+                        _profileImageUrl!,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            color: Colors.grey[100],
+                            child: const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.black,
+                            child: const Icon(
+                              Icons.person,
+                              size: 60,
+                              color: Color(0xFFFFC727),
+                            ),
+                          );
+                        },
+                      )
+                    : Container(
+                        color: Colors.black,
+                        child: const Icon(
+                          Icons.person,
+                          size: 60,
+                          color: Color(0xFFFFC727),
+                        ),
+                      ),
+          ),
+        ),
+        Positioned(
+          bottom: 0,
+          right: 0,
+          child: GestureDetector(
+            onTap: _pickImage,
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFC727),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white,
+                  width: 2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: _isUploadingPhoto
+                  ? const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                      ),
+                    )
+                  : const Icon(
+                      Icons.camera_alt,
+                      color: Colors.black,
+                      size: 18,
+                    ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -203,13 +528,15 @@ class _ModifyAccountPageState extends State<ModifyAccountPage> {
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      const CircleAvatar(
-                        radius: 50,
-                        backgroundColor: Colors.black,
-                        child: Icon(
-                          Icons.person,
-                          size: 60,
-                          color: Color(0xFFFFC727),
+                      // Profile Image with Upload Button
+                      _buildProfileImage(),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Tap camera icon to change photo',
+                        style: TextStyle(
+                          fontFamily: 'SansRegular',
+                          fontSize: 14,
+                          color: Colors.grey[600],
                         ),
                       ),
                       const SizedBox(height: 32),
@@ -336,23 +663,25 @@ class _ModifyAccountPageState extends State<ModifyAccountPage> {
                         width: double.infinity,
                         height: 50,
                         child: ElevatedButton(
-                          onPressed: _updateAccount,
+                          onPressed: _isUploadingPhoto ? null : _updateAccount,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFFC727),
+                            backgroundColor: _isUploadingPhoto ? Colors.grey : const Color(0xFFFFC727),
                             elevation: 2,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text(
-                            'Update Account',
-                            style: TextStyle(
-                              fontFamily: 'SansRegular',
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
+                          child: _isUploadingPhoto
+                              ? const CircularProgressIndicator(color: Colors.black)
+                              : const Text(
+                                  'Update Account',
+                                  style: TextStyle(
+                                    fontFamily: 'SansRegular',
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  ),
+                                ),
                         ),
                       ),
                     ],

@@ -22,20 +22,51 @@ class _SignInState extends State<SignIn> {
   String error = '';
 
   void _login() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() => loading = true);
+  if (_formKey.currentState!.validate()) {
+    setState(() => loading = true);
+    
+    try {
       dynamic result = await _auth.signInWithEmailAndPassword(
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
+      
       if (result == null) {
         setState(() {
           error = 'Could not sign in with those credentials';
           loading = false;
         });
+      } else {
+        // Success - the user will be automatically navigated by your auth state listener
+        // Just reset loading state in case navigation doesn't happen immediately
+        setState(() {
+          loading = false;
+          error = ''; // Clear any previous errors
+        });
       }
+    } catch (e) {
+      // Handle specific Firebase auth exceptions
+      String errorMessage = 'Could not sign in with those credentials';
+      
+      if (e.toString().contains('email-not-verified')) {
+        errorMessage = 'Please verify your email before signing in.';
+      } else if (e.toString().contains('user-not-found')) {
+        errorMessage = 'No user found with this email.';
+      } else if (e.toString().contains('wrong-password')) {
+        errorMessage = 'Incorrect password.';
+      } else if (e.toString().contains('invalid-email')) {
+        errorMessage = 'Invalid email address.';
+      } else if (e.toString().contains('user-disabled')) {
+        errorMessage = 'This user account has been disabled.';
+      }
+      
+      setState(() {
+        error = errorMessage;
+        loading = false;
+      });
     }
   }
+}
 
   @override
   Widget build(BuildContext context) {

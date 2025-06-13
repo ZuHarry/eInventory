@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'modify_location.dart';
-// ...imports remain unchanged
 
 class LocationDetailsPage extends StatefulWidget {
   final String locationId;
@@ -76,14 +76,14 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
   Widget _buildGridItem(String label, IconData icon, String value) {
     return Container(
       decoration: BoxDecoration(
-        color: Color(0xFF212529),
+        color: const Color(0xFF212529),
         borderRadius: BorderRadius.circular(12),
       ),
       padding: const EdgeInsets.all(12),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 40, color: Color(0xFFFFC727)),
+          Icon(icon, size: 40, color: const Color(0xFFFFC727)),
           const SizedBox(height: 8),
           Text(
             label,
@@ -108,6 +108,40 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
       ),
     );
   }
+
+  Widget _buildLocationImage(String imageUrl) {
+  final screenHeight = MediaQuery.of(context).size.height;
+  final screenWidth = MediaQuery.of(context).size.width;
+  final imageHeight = screenHeight * 0.3; // 30% of screen height
+
+  if (imageUrl.endsWith('.svg')) {
+    return Container(
+      margin: const EdgeInsets.all(10),
+      height: imageHeight,
+      width: screenWidth,
+      child: SvgPicture.network(
+        imageUrl,
+        placeholderBuilder: (context) =>
+            const Center(child: CircularProgressIndicator()),
+        fit: BoxFit.contain,
+      ),
+    );
+  } else {
+    return Container(
+      margin: const EdgeInsets.all(10),
+      height: imageHeight,
+      width: screenWidth,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        image: DecorationImage(
+          image: NetworkImage(imageUrl),
+          fit: BoxFit.cover,
+        ),
+      ),
+    );
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -134,18 +168,7 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (locationData!['imageUrl'] != null)
-                    Container(
-                      width: double.infinity,
-                      height: 200,
-                      margin: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        image: DecorationImage(
-                          image: NetworkImage(locationData!['imageUrl']),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
+                    _buildLocationImage(locationData!['imageUrl']),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: GridView.count(

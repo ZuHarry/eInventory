@@ -1,7 +1,9 @@
 import 'package:einventorycomputer/models/user.dart';
 import 'package:einventorycomputer/modules/authentication/authenticate.dart';
+import 'package:einventorycomputer/modules/authentication/verify_email.dart';
 import 'package:einventorycomputer/modules/home/main/screen.dart';
 import 'package:einventorycomputer/modules/home/screen/splash_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -30,10 +32,22 @@ class _WrapperState extends State<Wrapper> {
   Widget build(BuildContext context) {
     final user = Provider.of<MyUser?>(context);
 
+    if (_showSplash) {
+      return const SplashScreenPage();
+    }
+
     if (user == null) {
       return Authenticate();
     } else {
-      return _showSplash ? const SplashScreenPage() : ScreenPage();
+      // Check if the user's email is verified
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+      if (firebaseUser != null && !firebaseUser.emailVerified) {
+        // User is logged in but email is not verified
+        return const EmailVerificationScreen();
+      } else {
+        // User is logged in and email is verified
+        return ScreenPage();
+      }
     }
   }
 }
