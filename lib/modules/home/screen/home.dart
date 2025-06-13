@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:einventorycomputer/services/auth.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+// Import the PDF service
+import 'package:einventorycomputer/services/pdf_export_service.dart';
 
 class HomePage extends StatelessWidget {
   final AuthService _auth = AuthService();
@@ -70,10 +72,94 @@ class HomePage extends StatelessWidget {
     return result;
   }
 
+  // Function to handle PDF export
+  Future<void> _exportToPDF(BuildContext context) async {
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFC727)),
+              ),
+              SizedBox(width: 20),
+              Text(
+                'Generating PDF report...',
+                style: TextStyle(fontFamily: 'SansRegular'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    try {
+      // Uncomment this line when you add the PDF service
+      await PDFExportService.exportDashboardToPDF();
+      
+      // Simulate PDF generation for demo
+      await Future.delayed(const Duration(seconds: 2));
+      
+      // Close loading dialog
+      Navigator.of(context).pop();
+      
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'PDF report generated successfully!',
+            style: TextStyle(fontFamily: 'SansRegular'),
+          ),
+          backgroundColor: Color(0xFFFFC727),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      // Close loading dialog
+      Navigator.of(context).pop();
+      
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Error generating PDF: $e',
+            style: const TextStyle(fontFamily: 'SansRegular'),
+          ),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF212529),
+        title: const Text(
+          'Dashboard',
+          style: TextStyle(
+            fontFamily: 'SansRegular',
+            fontWeight: FontWeight.bold,
+            color: Color(0xFFFFC727),
+          ),
+        ),
+        actions: [
+          IconButton(
+            onPressed: () => _exportToPDF(context),
+            icon: const Icon(
+              Icons.picture_as_pdf,
+              color: Color(0xFFFFC727),
+            ),
+            tooltip: 'Export to PDF',
+          ),
+        ],
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20.0),
@@ -121,6 +207,129 @@ class HomePage extends StatelessWidget {
 
                   return Column(
                     children: [
+                      // Export PDF Button
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFFFC727),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            elevation: 4,
+                            shadowColor: Colors.black.withOpacity(0.1),
+                          ),
+                          onPressed: () => _exportToPDF(context),
+                          icon: const Icon(
+                            Icons.picture_as_pdf,
+                            color: Color(0xFF212529),
+                          ),
+                          label: const Text(
+                            'Export Dashboard to PDF',
+                            style: TextStyle(
+                              fontFamily: 'SansRegular',
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Color(0xFF212529),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      
+                      // PC vs Peripherals Pie Chart
+                      const Text(
+                        'Device Distribution',
+                        style: TextStyle(
+                          fontFamily: 'SansRegular',
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF212529),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF212529),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            // Legend for Pie Chart
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _buildLegendItem(
+                                  color: const Color(0xFFFFC727),
+                                  label: "PCs ($totalPC)",
+                                ),
+                                const SizedBox(width: 24),
+                                _buildLegendItem(
+                                  color: Colors.grey[600]!,
+                                  label: "Peripherals ($totalPeripheral)",
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 30),
+                            // Pie Chart
+                            SizedBox(
+                              height: 200,
+                              child: totalPC + totalPeripheral > 0
+                                  ? PieChart(
+                                      PieChartData(
+                                        sections: [
+                                          PieChartSectionData(
+                                            value: totalPC.toDouble(),
+                                            title: '${((totalPC / (totalPC + totalPeripheral)) * 100).toStringAsFixed(1)}%',
+                                            color: const Color(0xFFFFC727),
+                                            radius: 80,
+                                            titleStyle: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF212529),
+                                            ),
+                                          ),
+                                          PieChartSectionData(
+                                            value: totalPeripheral.toDouble(),
+                                            title: '${((totalPeripheral / (totalPC + totalPeripheral)) * 100).toStringAsFixed(1)}%',
+                                            color: Colors.grey[600]!,
+                                            radius: 80,
+                                            titleStyle: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ],
+                                        sectionsSpace: 2,
+                                        centerSpaceRadius: 40,
+                                      ),
+                                    )
+                                  : const Center(
+                                      child: Text(
+                                        'No devices found',
+                                        style: TextStyle(
+                                          fontFamily: 'SansRegular',
+                                          color: Color(0xFFFFC727),
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ),
+                            ),
+                            const SizedBox(height: 30),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
                       _buildDeviceCard(
                         label: "PCs",
                         icon: Icons.computer,
