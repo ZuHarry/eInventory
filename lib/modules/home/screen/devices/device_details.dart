@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'device_edit_page.dart'; // Make sure this file exists in the same folder or update the import path accordingly.
 
+
 class DeviceDetailsPage extends StatelessWidget {
   final Map<String, dynamic> device;
 

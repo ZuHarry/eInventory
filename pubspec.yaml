@@ -18,6 +18,9 @@ dependencies:
   fl_chart: ^0.68.0
   firebase_storage: ^11.6.0  # Add this
   image_picker: ^1.0.4       # Add this
+  firebase_messaging: ^14.7.10
+  # flutter_local_notifications: ^16.3.2
+  mobile_scanner: ^3.5.6  # Well-maintained alternative
 
   # PDF generation dependencies
   pdf: ^3.10.7
