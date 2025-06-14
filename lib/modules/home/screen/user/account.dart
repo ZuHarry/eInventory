@@ -180,6 +180,8 @@ class _AccountPageState extends State<AccountPage> {
                     const SizedBox(height: 16),
                     _buildInfoTile(Icons.phone, 'Telephone', data['telephone'] ?? 'No Phone Number'),
                     const SizedBox(height: 16),
+                    _buildInfoTile(Icons.badge, 'Staff ID', data['staffId'] ?? 'No Staff ID'),
+                    const SizedBox(height: 16),
                     _buildInfoTile(Icons.work, 'Staff Type', data['staffType'] ?? 'No Staff Type'),
                     
                     const SizedBox(height: 32),

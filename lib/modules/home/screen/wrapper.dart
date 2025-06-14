@@ -18,7 +18,7 @@ class _WrapperState extends State<Wrapper> {
   @override
   void initState() {
     super.initState();
-    // Show splash screen for 2 seconds
+    // Show splash screen for 3 seconds
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
         setState(() {
@@ -39,15 +39,29 @@ class _WrapperState extends State<Wrapper> {
     if (user == null) {
       return Authenticate();
     } else {
-      // Check if the user's email is verified
-      final firebaseUser = FirebaseAuth.instance.currentUser;
-      if (firebaseUser != null && !firebaseUser.emailVerified) {
-        // User is logged in but email is not verified
-        return const EmailVerificationScreen();
-      } else {
-        // User is logged in and email is verified
-        return ScreenPage();
-      }
+      // Use StreamBuilder to listen to auth state changes
+      return StreamBuilder<User?>(
+        stream: FirebaseAuth.instance.userChanges(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+          
+          final firebaseUser = snapshot.data;
+          
+          if (firebaseUser != null && !firebaseUser.emailVerified) {
+            // User is logged in but email is not verified
+            return const VerifyEmail();
+          } else {
+            // User is logged in and email is verified
+            return ScreenPage();
+          }
+        },
+      );
     }
   }
 }

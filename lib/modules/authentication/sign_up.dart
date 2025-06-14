@@ -1,8 +1,7 @@
 import 'package:einventorycomputer/services/auth.dart';
 import 'package:einventorycomputer/shared/loading.dart';
 import 'package:flutter/material.dart';
-import 'package:einventorycomputer/modules/authentication/verify_email.dart'; // Adjust the path if needed
-
+import 'package:einventorycomputer/modules/authentication/verify_email.dart';
 
 class SignUp extends StatefulWidget {
   final Function toggleView;
@@ -23,38 +22,74 @@ class _SignUpState extends State<SignUp> {
   final TextEditingController _confirmpasswordController = TextEditingController();
   final TextEditingController _fullnameController = TextEditingController();
   final TextEditingController _telephoneController = TextEditingController();
+  final TextEditingController _staffIdController = TextEditingController();
+  final TextEditingController _referralCodeController = TextEditingController();
   bool _obscurePassword = true;
+  bool _obscureReferralCode = true;
   String error = '';
   
   // Staff type dropdown
   String? _selectedStaffType;
   final List<String> _staffTypes = ['Staff', 'Lecturer', 'Technician'];
+  
+  // Referral code constant
+  static const String _validReferralCode = "ABC123";
 
   void _register() async {
-  if (_formKey.currentState!.validate()) {
-    setState(() => loading = true);
-
-    dynamic result = await _auth.registerWithEmailAndPassword(
-      _fullnameController.text.trim(),
-      _usernameController.text.trim(),
-      _emailController.text.trim(),
-      _passwordController.text.trim(),
-      _telephoneController.text.trim(),
-      _selectedStaffType!,
-    );
-
-    if (result == null) {
-      setState(() {
-        error = 'Please supply a valid email';
-        loading = false;
-      });
-    }if (mounted) {
-        setState(() => loading = false);
+    if (_formKey.currentState!.validate()) {
+      // Check referral code first
+      if (_referralCodeController.text.trim() != _validReferralCode) {
+        setState(() {
+          error = 'Invalid referral code. Please contact your administrator.';
+        });
+        return;
       }
+
+      setState(() => loading = true);
+
+      dynamic result = await _auth.registerWithEmailAndPassword(
+        _fullnameController.text.trim(),
+        _usernameController.text.trim(),
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+        _telephoneController.text.trim(),
+        _selectedStaffType!,
+        _staffIdController.text.trim(),
+      );
+
+      if (result == null) {
+        setState(() {
+          error = 'Please supply a valid email';
+          loading = false;
+        });
+      } else {
+        if (mounted) {
+          setState(() => loading = false);
+          // Navigate to email verification with callback to return to sign in
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => VerifyEmail(
+                onVerificationComplete: () {
+                  // Pop the verification screen and go back to sign in
+                  Navigator.pop(context);
+                  widget.toggleView(); // This will switch to sign in page
+                  
+                  // Show success message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Email verified successfully! You can now sign in.'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                },
+              ),
+            ),
+          );
+        }
+      }
+    }
   }
-}
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -144,6 +179,14 @@ class _SignUpState extends State<SignUp> {
                               ),
                               const SizedBox(height: 16),
                               _buildInputField(
+                                label: 'Staff ID',
+                                controller: _staffIdController,
+                                icon: Icons.badge,
+                                validator: (val) =>
+                                    val == null || val.isEmpty ? 'Enter your staff ID' : null,
+                              ),
+                              const SizedBox(height: 16),
+                              _buildInputField(
                                 label: 'Your Email',
                                 controller: _emailController,
                                 icon: Icons.email,
@@ -177,6 +220,8 @@ class _SignUpState extends State<SignUp> {
                                     ? 'Passwords do not match'
                                     : null,
                               ),
+                              const SizedBox(height: 16),
+                              _buildReferralCodeField(),
                               const SizedBox(height: 24),
                               ElevatedButton(
                                 onPressed: _register,
@@ -306,6 +351,44 @@ class _SignUpState extends State<SignUp> {
           style: const TextStyle(fontFamily: 'SansRegular'),
           decoration: _passwordDecoration(label),
           validator: validator,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReferralCodeField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Referral Code',
+          style: TextStyle(
+            fontFamily: 'SansRegular',
+            fontSize: 16,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: _referralCodeController,
+          obscureText: _obscureReferralCode,
+          style: const TextStyle(fontFamily: 'SansRegular'),
+          decoration: InputDecoration(
+            labelText: 'Enter referral code',
+            labelStyle: const TextStyle(fontFamily: 'SansRegular'),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.0),
+            ),
+            prefixIcon: const Icon(Icons.vpn_key),
+            suffixIcon: IconButton(
+              icon: Icon(_obscureReferralCode ? Icons.visibility : Icons.visibility_off),
+              onPressed: () {
+                setState(() {
+                  _obscureReferralCode = !_obscureReferralCode;
+                });
+              },
+            ),
+          ),
+          validator: (val) => val == null || val.isEmpty ? 'Enter a referral code' : null,
         ),
       ],
     );

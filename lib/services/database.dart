@@ -19,7 +19,7 @@ class DatabaseService {
     });
   }
 
-  Future registerUserData(String fullname, String username, String email, String password, String telephone, String staffType) async {
+  Future registerUserData(String fullname, String username, String email, String password, String telephone, String staffType, String staffId) async {
     return await accountCollection.doc(uid).set({
       'uid' : uid,
       'fullname' : fullname,
@@ -28,18 +28,20 @@ class DatabaseService {
       'password' : password,
       'telephone': telephone,
       'staffType': staffType,
+      'staffId': staffId,
       'createdAt': FieldValue.serverTimestamp(),
     });
   }
 
   // Update user account data
-  Future updateAccountData(String fullname, String username, String email, String telephone, String staffType, {String? password}) async {
+  Future updateAccountData(String fullname, String username, String email, String telephone, String staffType, String staffId, {String? password}) async {
     Map<String, dynamic> updateData = {
       'fullname': fullname,
       'username': username,
       'email': email,
       'telephone': telephone,
       'staffType': staffType,
+      'staffId': staffId,
       'updatedAt': FieldValue.serverTimestamp(),
     };
 
@@ -54,6 +56,23 @@ class DatabaseService {
   // Get user data
   Future<DocumentSnapshot> getUserData() async {
     return await accountCollection.doc(uid).get();
+  }
+
+  // Check if staff ID already exists (useful for validation)
+  Future<bool> isStaffIdTaken(String staffId) async {
+    final QuerySnapshot result = await accountCollection
+        .where('staffId', isEqualTo: staffId)
+        .limit(1)
+        .get();
+    return result.docs.isNotEmpty;
+  }
+
+  // Get user by staff ID
+  Future<QuerySnapshot> getUserByStaffId(String staffId) async {
+    return await accountCollection
+        .where('staffId', isEqualTo: staffId)
+        .limit(1)
+        .get();
   }
 
   // get brews stream

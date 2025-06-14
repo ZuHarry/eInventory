@@ -28,7 +28,7 @@ class _ScreenPageState extends State<ScreenPage> with TickerProviderStateMixin {
     "Home",
     "Inventory",
     "Add Device",
-    "QR Scanner",
+    "Scanner",
     "Settings",
     "Account",
     "Location",
@@ -298,7 +298,7 @@ class _ScreenPageState extends State<ScreenPage> with TickerProviderStateMixin {
                       _buildDrawerItem(Icons.home_outlined, Icons.home_rounded, "Home", 0),
                       _buildDrawerItem(Icons.inventory_2_outlined, Icons.inventory_2_rounded, "Inventory", 1),
                       _buildDrawerItem(Icons.add_box_outlined, Icons.add_box_rounded, "Add Device", 2),
-                      _buildDrawerItem(Icons.qr_code_scanner_outlined, Icons.qr_code_scanner_rounded, "QR Scanner", 3),
+                      _buildDrawerItem(Icons.qr_code_scanner_outlined, Icons.qr_code_scanner_rounded, "Scan", 3),
                       _buildDrawerItem(Icons.settings_outlined, Icons.settings_rounded, "Settings", 4),
                       _buildDrawerItem(Icons.person_outline_rounded, Icons.person_rounded, "Account", 5),
                       _buildDrawerItem(Icons.location_city_outlined, Icons.location_city_rounded, "Location", 6),
@@ -309,7 +309,7 @@ class _ScreenPageState extends State<ScreenPage> with TickerProviderStateMixin {
               
               // Logout Section
               Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(1),
                 child: Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
@@ -374,7 +374,6 @@ class _ScreenPageState extends State<ScreenPage> with TickerProviderStateMixin {
       ),
       // Replace the existing Stack with floating action buttons in your build method with this:
 
-      // Remove the FAB positioning code from the Stack in your build method:
       body: Stack(
         children: [
           _getCurrentPage(),
@@ -424,7 +423,6 @@ class _ScreenPageState extends State<ScreenPage> with TickerProviderStateMixin {
       ),
 
 
-      // Update your bottom navigation bar to include QR Scanner as the middle item:
       bottomNavigationBar: isBottomNavPage
           ? Container(
               margin: const EdgeInsets.all(16),
@@ -562,7 +560,6 @@ class _ScreenPageState extends State<ScreenPage> with TickerProviderStateMixin {
     );
   }
 
-  // Optional: You can also create a special styling for the QR Scanner icon to make it stand out
   Widget _buildBottomNavIcon(IconData icon, int index, int currentIndex) {
     final isSelected = index == currentIndex;
     final isQRScanner = index == 2; // QR Scanner is at index 2 in bottom nav

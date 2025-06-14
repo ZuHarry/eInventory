@@ -18,6 +18,7 @@ class _ModifyAccountPageState extends State<ModifyAccountPage> {
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _telephoneController = TextEditingController();
+  final _staffIdController = TextEditingController(); // Added Staff ID controller
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   
@@ -45,6 +46,7 @@ class _ModifyAccountPageState extends State<ModifyAccountPage> {
     _usernameController.dispose();
     _emailController.dispose();
     _telephoneController.dispose();
+    _staffIdController.dispose(); // Dispose Staff ID controller
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -66,6 +68,7 @@ class _ModifyAccountPageState extends State<ModifyAccountPage> {
             _usernameController.text = data['username'] ?? '';
             _emailController.text = data['email'] ?? user.email ?? '';
             _telephoneController.text = data['telephone'] ?? '';
+            _staffIdController.text = data['staffId'] ?? ''; // Load Staff ID
             _selectedStaffType = data['staffType'];
             _profileImageUrl = data['profileImageUrl'];
             // Don't populate password field for security
@@ -324,6 +327,7 @@ class _ModifyAccountPageState extends State<ModifyAccountPage> {
         'username': _usernameController.text.trim(),
         'email': newEmail,
         'telephone': _telephoneController.text.trim(),
+        'staffId': _staffIdController.text.trim(), // Include Staff ID in update
         'staffType': _selectedStaffType,
         'hasCustomImage': _imageFile != null, // Track if it's a custom image
         'updatedAt': FieldValue.serverTimestamp(),
@@ -596,6 +600,20 @@ class _ModifyAccountPageState extends State<ModifyAccountPage> {
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter your telephone number';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Staff ID Field - Added this new field
+                      _buildTextField(
+                        controller: _staffIdController,
+                        label: 'Staff ID',
+                        icon: Icons.badge,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your staff ID';
                           }
                           return null;
                         },

@@ -1,15 +1,20 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
 
-class EmailVerificationScreen extends StatefulWidget {
-  const EmailVerificationScreen({super.key});
+class VerifyEmail extends StatefulWidget {
+  final VoidCallback? onVerificationComplete;
+  
+  const VerifyEmail({
+    this.onVerificationComplete,
+    super.key,
+  });
 
   @override
-  State<EmailVerificationScreen> createState() => _EmailVerificationScreenState();
+  State<VerifyEmail> createState() => _VerifyEmailState();
 }
 
-class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
+class _VerifyEmailState extends State<VerifyEmail> {
   bool isEmailVerified = false;
   bool canResendEmail = false;
   Timer? timer;
@@ -18,13 +23,13 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   void initState() {
     super.initState();
     
-    // User needs to be created before calling this
-    isEmailVerified = FirebaseAuth.instance.currentUser!.emailVerified;
+    // User needs to be created but not verified
+    isEmailVerified = FirebaseAuth.instance.currentUser?.emailVerified ?? false;
     
     if (!isEmailVerified) {
       sendVerificationEmail();
       
-      // Set up timer to check verification status periodically
+      // Check email verification status every 3 seconds
       timer = Timer.periodic(
         const Duration(seconds: 3),
         (_) => checkEmailVerified(),
@@ -40,16 +45,16 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
 
   Future<void> checkEmailVerified() async {
     // Call after email verification
-    await FirebaseAuth.instance.currentUser!.reload();
+    await FirebaseAuth.instance.currentUser?.reload();
     
     setState(() {
-      isEmailVerified = FirebaseAuth.instance.currentUser!.emailVerified;
+      isEmailVerified = FirebaseAuth.instance.currentUser?.emailVerified ?? false;
     });
     
     if (isEmailVerified) {
       timer?.cancel();
-      // No manual navigation needed - StreamProvider will handle this automatically
-      // Just show a success message or let the auth wrapper handle navigation
+      // Call the callback to redirect to sign in
+      widget.onVerificationComplete?.call();
     }
   }
 
@@ -62,116 +67,145 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
       await Future.delayed(const Duration(seconds: 5));
       setState(() => canResendEmail = true);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error sending verification email: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      // Handle error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error sending verification email: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFFFC727),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFFFC727),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () async {
-            await FirebaseAuth.instance.signOut();
-          },
-        ),
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.email, size: 100, color: Colors.black),
-              const SizedBox(height: 24),
-              const Text(
-                'Verification Email Sent!',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'SansRegular',
-                  color: Colors.black,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'We have sent a verification email to:\n${FirebaseAuth.instance.currentUser!.email}',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontFamily: 'SansRegular',
-                  color: Colors.black,
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Please check your email and click the verification link before proceeding.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontFamily: 'SansRegular',
-                  color: Colors.black54,
-                ),
-              ),
-              const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: canResendEmail ? sendVerificationEmail : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  disabledBackgroundColor: Colors.grey,
-                  minimumSize: const Size(double.infinity, 50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+  Widget build(BuildContext context) => isEmailVerified
+      ? const Center(child: Text('Email verified! Redirecting...'))
+      : Scaffold(
+          backgroundColor: const Color(0xFFFFC727),
+          body: SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.arrow_back, color: Colors.black),
+                      ),
+                      const Spacer(),
+                    ],
                   ),
                 ),
-                child: Text(
-                  canResendEmail ? 'Resend Email' : 'Email Sent',
-                  style: const TextStyle(
-                    fontFamily: 'SansRegular',
-                    color: Colors.white,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        'Verify Email',
+                        style: TextStyle(
+                          fontFamily: 'SansRegular',
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Check your email for verification',
+                        style: TextStyle(
+                          fontFamily: 'SansRegular',
+                          fontSize: 14,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () => checkEmailVerified(),
-                child: const Text(
-                  'I have verified my email',
-                  style: TextStyle(
-                    fontFamily: 'SansRegular',
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
+                const SizedBox(height: 36),
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(44)),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 34),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.email,
+                            size: 100,
+                            color: Color(0xFFFFC727),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'A verification email has been sent to:',
+                            style: const TextStyle(
+                              fontFamily: 'SansRegular',
+                              fontSize: 16,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            FirebaseAuth.instance.currentUser?.email ?? '',
+                            style: const TextStyle(
+                              fontFamily: 'SansRegular',
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 24),
+                          const Text(
+                            'Please check your email and click the verification link. This page will automatically redirect you to the sign-in page once your email is verified.',
+                            style: TextStyle(
+                              fontFamily: 'SansRegular',
+                              fontSize: 14,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 32),
+                          ElevatedButton(
+                            onPressed: canResendEmail ? sendVerificationEmail : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.black,
+                              minimumSize: const Size(double.infinity, 50),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text(
+                              'Resend Email',
+                              style: TextStyle(
+                                fontFamily: 'SansRegular',
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          TextButton(
+                            onPressed: () => FirebaseAuth.instance.signOut(),
+                            child: const Text(
+                              'Cancel',
+                              style: TextStyle(
+                                fontFamily: 'SansRegular',
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () async {
-                  await FirebaseAuth.instance.signOut();
-                },
-                child: const Text(
-                  'Cancel',
-                  style: TextStyle(
-                    fontFamily: 'SansRegular',
-                    color: Colors.red,
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ),
-    );
-  }
+        );
 }
