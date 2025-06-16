@@ -20,6 +20,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
 
   String _deviceType = 'PC'; // Default value for device type
   String _deviceStatus = 'Online'; // Default value for device status
+  String _peripheralType = 'Monitor'; // Default value for peripheral type
   String? _selectedLocationName;
 
   // Check for duplicate device name or IP address
@@ -91,7 +92,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
       }
 
       try {
-        await FirebaseFirestore.instance.collection('devices').add({
+        Map<String, dynamic> deviceData = {
           'name': name,
           'type': _deviceType,
           'ip': ip,
@@ -99,7 +100,14 @@ class _AddDevicePageState extends State<AddDevicePage> {
           'status': _deviceStatus,
           'location': _selectedLocationName,
           'created_at': FieldValue.serverTimestamp(),
-        });
+        };
+
+        // Add peripheral type if device type is Peripheral
+        if (_deviceType == 'Peripheral') {
+          deviceData['peripheral_type'] = _peripheralType;
+        }
+
+        await FirebaseFirestore.instance.collection('devices').add(deviceData);
 
         // Show success dialog
         _showSuccessDialog(name);
@@ -111,6 +119,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
         setState(() {
           _deviceType = 'PC';
           _deviceStatus = 'Online';
+          _peripheralType = 'Monitor';
           _selectedLocationName = null;
         });
       } catch (e) {
@@ -451,6 +460,16 @@ class _AddDevicePageState extends State<AddDevicePage> {
                     onChanged: (val) => setState(() => _deviceType = val!),
                   ),
                   const SizedBox(height: 16),
+                  // Show peripheral type dropdown only when Peripheral is selected
+                  if (_deviceType == 'Peripheral') ...[
+                    _buildDropdown(
+                      value: _peripheralType,
+                      items: ['Monitor', 'Printer', 'Tablet', 'Others'],
+                      onChanged: (val) => setState(() => _peripheralType = val!),
+                      label: 'Peripheral Type',
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   _buildTextField(_ipController, 'IP Address'),
                   const SizedBox(height: 16),
                   _buildTextField(_macController, 'MAC Address'),
@@ -557,6 +576,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
     required String value,
     required List<String> items,
     required void Function(String?) onChanged,
+    String? label,
   }) {
     return DropdownButtonFormField<String>(
       value: value,
@@ -573,6 +593,11 @@ class _AddDevicePageState extends State<AddDevicePage> {
       decoration: InputDecoration(
         fillColor: Colors.white,
         filled: true,
+        labelText: label,
+        labelStyle: const TextStyle(
+          color: Colors.black,
+          fontFamily: 'SansRegular',
+        ),
         border: const OutlineInputBorder(),
         focusedBorder: const OutlineInputBorder(
           borderSide: BorderSide(color: Colors.black, width: 2),

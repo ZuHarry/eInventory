@@ -1,5 +1,6 @@
 import 'package:einventorycomputer/services/auth.dart';
 import 'package:einventorycomputer/shared/loading.dart';
+import 'package:einventorycomputer/modules/authentication/forgot_password.dart'; // Add this import
 import 'package:flutter/material.dart';
 
 class SignIn extends StatefulWidget {
@@ -22,51 +23,48 @@ class _SignInState extends State<SignIn> {
   String error = '';
 
   void _login() async {
-  if (_formKey.currentState!.validate()) {
-    setState(() => loading = true);
-    
-    try {
-      dynamic result = await _auth.signInWithEmailAndPassword(
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
-      );
+    if (_formKey.currentState!.validate()) {
+      setState(() => loading = true);
       
-      if (result == null) {
+      try {
+        dynamic result = await _auth.signInWithEmailAndPassword(
+          _emailController.text.trim(),
+          _passwordController.text.trim(),
+        );
+        
+        if (result == null) {
+          setState(() {
+            error = 'Could not sign in with those credentials';
+            loading = false;
+          });
+        } else {
+          setState(() {
+            loading = false;
+            error = '';
+          });
+        }
+      } catch (e) {
+        String errorMessage = 'Could not sign in with those credentials';
+        
+        if (e.toString().contains('email-not-verified')) {
+          errorMessage = 'Please verify your email before signing in.';
+        } else if (e.toString().contains('user-not-found')) {
+          errorMessage = 'No user found with this email.';
+        } else if (e.toString().contains('wrong-password')) {
+          errorMessage = 'Incorrect password.';
+        } else if (e.toString().contains('invalid-email')) {
+          errorMessage = 'Invalid email address.';
+        } else if (e.toString().contains('user-disabled')) {
+          errorMessage = 'This user account has been disabled.';
+        }
+        
         setState(() {
-          error = 'Could not sign in with those credentials';
+          error = errorMessage;
           loading = false;
         });
-      } else {
-        // Success - the user will be automatically navigated by your auth state listener
-        // Just reset loading state in case navigation doesn't happen immediately
-        setState(() {
-          loading = false;
-          error = ''; // Clear any previous errors
-        });
       }
-    } catch (e) {
-      // Handle specific Firebase auth exceptions
-      String errorMessage = 'Could not sign in with those credentials';
-      
-      if (e.toString().contains('email-not-verified')) {
-        errorMessage = 'Please verify your email before signing in.';
-      } else if (e.toString().contains('user-not-found')) {
-        errorMessage = 'No user found with this email.';
-      } else if (e.toString().contains('wrong-password')) {
-        errorMessage = 'Incorrect password.';
-      } else if (e.toString().contains('invalid-email')) {
-        errorMessage = 'Invalid email address.';
-      } else if (e.toString().contains('user-disabled')) {
-        errorMessage = 'This user account has been disabled.';
-      }
-      
-      setState(() {
-        error = errorMessage;
-        loading = false;
-      });
     }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -209,11 +207,12 @@ class _SignInState extends State<SignIn> {
                                     alignment: Alignment.centerRight,
                                     child: TextButton(
                                       onPressed: () {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(const SnackBar(
-                                          content:
-                                              Text('Forgot Password clicked'),
-                                        ));
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => const ForgotPassword(),
+                                          ),
+                                        );
                                       },
                                       child: const Text(
                                         'Forgot Password?',
@@ -262,6 +261,6 @@ class _SignInState extends State<SignIn> {
                 ],
               ),
             ),
-          );
+          ); // Fixed: Removed extra comma, added proper closing
   }
 }

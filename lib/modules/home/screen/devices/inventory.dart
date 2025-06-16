@@ -180,7 +180,7 @@ class _InventoryPageState extends State<InventoryPage> {
                                 ),
                                 items: const [
                                   DropdownMenuItem(value: 'All', child: Text('All Floors')),
-                                  DropdownMenuItem(value: 'Ground', child: Text('Ground')),
+                                  DropdownMenuItem(value: 'Ground Floor', child: Text('Ground')),
                                   DropdownMenuItem(value: '1st Floor', child: Text('1st Floor')),
                                   DropdownMenuItem(value: '2nd Floor', child: Text('2nd Floor')),
                                   DropdownMenuItem(value: '3rd Floor', child: Text('3rd Floor')),
@@ -421,6 +421,16 @@ class _InventoryPageState extends State<InventoryPage> {
                                               _buildInfoChip('${data['floor'] ?? 'Unknown'}'),
                                             ],
                                           ),
+                                          // Show peripheral_type chip below if it exists and is not empty
+                                          if (data['peripheral_type'] != null && 
+                                              data['peripheral_type'].toString().isNotEmpty) ...[
+                                            const SizedBox(height: 8),
+                                            Row(
+                                              children: [
+                                                _buildInfoChip('${data['peripheral_type']}'),
+                                              ],
+                                            ),
+                                          ],
                                           const SizedBox(height: 8),
                                           Text(
                                             '${data['locationName'] ?? 'Unknown Location'}',

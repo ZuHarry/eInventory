@@ -1,7 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'add_location.dart';
-import 'location_details.dart'; // Import the details page
+import 'location_details.dart';
+import 'location_overview.dart'; // Import the new overview page
 
 class LocationPage extends StatefulWidget {
   const LocationPage({super.key});
@@ -375,36 +376,89 @@ class _LocationPageState extends State<LocationPage> {
               },
             ),
           ),
-          // Add Location Button
+          // Buttons Row - Overview and Add Location
           Padding(
             padding: const EdgeInsets.all(20),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const AddLocationPage()),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF212529),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const LocationsOverviewPage()),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFFC727),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.analytics_outlined,
+                          color: Color(0xFF212529),
+                          size: 20,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Overview',
+                          style: TextStyle(
+                            color: Color(0xFF212529),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            fontFamily: 'SansRegular',
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  elevation: 0,
                 ),
-                child: const Text(
-                  'Add Location',
-                  style: TextStyle(
-                    color: Color(0xFFFFC727),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'SansRegular',
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const AddLocationPage()),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF212529),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.add_location_outlined,
+                          color: Color(0xFFFFC727),
+                          size: 20,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Add Location',
+                          style: TextStyle(
+                            color: Color(0xFFFFC727),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            fontFamily: 'SansRegular',
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
         ],

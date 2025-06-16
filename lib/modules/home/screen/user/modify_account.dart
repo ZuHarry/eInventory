@@ -18,15 +18,21 @@ class _ModifyAccountPageState extends State<ModifyAccountPage> {
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _telephoneController = TextEditingController();
-  final _staffIdController = TextEditingController(); // Added Staff ID controller
+  final _staffIdController = TextEditingController();
+  final _currentPasswordController = TextEditingController(); // For re-authentication
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   
   String? _selectedStaffType;
   bool _isLoading = false;
+  bool _isCurrentPasswordVisible = false;
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   bool _isUploadingPhoto = false;
+  bool _isEmailChanged = false;
+  bool _isPasswordChanged = false;
+  
+  String? _originalEmail; // Store original email for comparison
   
   File? _imageFile;
   String? _profileImageUrl;
@@ -38,6 +44,22 @@ class _ModifyAccountPageState extends State<ModifyAccountPage> {
   void initState() {
     super.initState();
     _loadUserData();
+    // Listen for email changes to show re-authentication fields
+    _emailController.addListener(_onEmailChanged);
+    _passwordController.addListener(_onPasswordChanged);
+  }
+
+  void _onEmailChanged() {
+    final newEmail = _emailController.text.trim();
+    setState(() {
+      _isEmailChanged = _originalEmail != null && _originalEmail != newEmail;
+    });
+  }
+
+  void _onPasswordChanged() {
+    setState(() {
+      _isPasswordChanged = _passwordController.text.isNotEmpty;
+    });
   }
 
   @override
@@ -46,7 +68,8 @@ class _ModifyAccountPageState extends State<ModifyAccountPage> {
     _usernameController.dispose();
     _emailController.dispose();
     _telephoneController.dispose();
-    _staffIdController.dispose(); // Dispose Staff ID controller
+    _staffIdController.dispose();
+    _currentPasswordController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -67,16 +90,127 @@ class _ModifyAccountPageState extends State<ModifyAccountPage> {
             _fullnameController.text = data['fullname'] ?? '';
             _usernameController.text = data['username'] ?? '';
             _emailController.text = data['email'] ?? user.email ?? '';
+            _originalEmail = data['email'] ?? user.email ?? '';
             _telephoneController.text = data['telephone'] ?? '';
-            _staffIdController.text = data['staffId'] ?? ''; // Load Staff ID
+            _staffIdController.text = data['staffId'] ?? '';
             _selectedStaffType = data['staffType'];
             _profileImageUrl = data['profileImageUrl'];
-            // Don't populate password field for security
           });
         }
       } catch (e) {
         _showErrorDialog('Error loading user data: ${e.toString()}');
       }
+    }
+  }
+
+  // Re-authenticate user before sensitive operations
+  Future<bool> _reauthenticateUser() async {
+    if (!_isEmailChanged && !_isPasswordChanged) {
+      return true; // No re-authentication needed
+    }
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return false;
+
+    try {
+      // Create credential with current password
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: _currentPasswordController.text,
+      );
+
+      // Re-authenticate
+      await user.reauthenticateWithCredential(credential);
+      return true;
+    } catch (e) {
+      String errorMessage = 'Re-authentication failed. Please check your current password.';
+      
+      if (e.toString().contains('wrong-password')) {
+        errorMessage = 'Current password is incorrect.';
+      } else if (e.toString().contains('too-many-requests')) {
+        errorMessage = 'Too many failed attempts. Please try again later.';
+      }
+      
+      _showErrorDialog(errorMessage);
+      return false;
+    }
+  }
+
+  // Send email notification about account changes
+  Future<void> _sendEmailNotification({
+    required String newEmail,
+    bool emailChanged = false,
+    bool passwordChanged = false,
+  }) async {
+    try {
+      // You can implement this using Firebase Functions or a custom email service
+      // For now, we'll use Firebase's built-in email verification for new emails
+      
+      if (emailChanged) {
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null) {
+          // Firebase automatically sends verification email to new address
+          await user.sendEmailVerification();
+          
+          // Optionally, you can also send a notification to the old email
+          // This would require a cloud function or third-party email service
+          await _sendAccountChangeNotification(
+            email: _originalEmail!,
+            changeType: 'Email address changed',
+            newValue: newEmail,
+          );
+        }
+      }
+      
+      if (passwordChanged) {
+        // Send notification about password change
+        await _sendAccountChangeNotification(
+          email: newEmail,
+          changeType: 'Password changed',
+          newValue: 'Your password has been successfully updated',
+        );
+      }
+    } catch (e) {
+      print('Error sending email notification: $e');
+      // Don't fail the whole operation if email notification fails
+    }
+  }
+
+  // This would typically be implemented as a Firebase Cloud Function
+  Future<void> _sendAccountChangeNotification({
+    required String email,
+    required String changeType,
+    required String newValue,
+  }) async {
+    // For demonstration purposes - you would implement this using:
+    // 1. Firebase Cloud Functions with email service (SendGrid, Mailgun, etc.)
+    // 2. Direct integration with email service in your app
+    // 3. Custom backend API
+    
+    try {
+      // Example implementation using Firestore to trigger a cloud function
+      await FirebaseFirestore.instance.collection('email_notifications').add({
+        'to': email,
+        'subject': 'Account Information Changed',
+        'body': '''
+Dear User,
+
+Your account information has been updated:
+
+Change: $changeType
+Details: $newValue
+Time: ${DateTime.now().toIso8601String()}
+
+If you did not make this change, please contact support immediately.
+
+Best regards,
+Your App Team
+        ''',
+        'timestamp': FieldValue.serverTimestamp(),
+        'processed': false,
+      });
+    } catch (e) {
+      print('Error queuing email notification: $e');
     }
   }
 
@@ -188,7 +322,7 @@ class _ModifyAccountPageState extends State<ModifyAccountPage> {
   }
 
   Future<void> _getImage(ImageSource source) async {
-    Navigator.pop(context); // Close bottom sheet
+    Navigator.pop(context);
     
     try {
       final XFile? pickedFile = await _picker.pickImage(
@@ -209,7 +343,7 @@ class _ModifyAccountPageState extends State<ModifyAccountPage> {
   }
 
   void _removeImage() {
-    Navigator.pop(context); // Close bottom sheet
+    Navigator.pop(context);
     setState(() {
       _imageFile = null;
       _profileImageUrl = null;
@@ -225,10 +359,8 @@ class _ModifyAccountPageState extends State<ModifyAccountPage> {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return null;
 
-      // Create a unique filename
       String fileName = 'profile_images/${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
       
-      // Upload to Firebase Storage
       Reference storageRef = FirebaseStorage.instance.ref().child(fileName);
       UploadTask uploadTask = storageRef.putFile(imageFile);
       
@@ -252,7 +384,6 @@ class _ModifyAccountPageState extends State<ModifyAccountPage> {
         final ref = FirebaseStorage.instance.refFromURL(_profileImageUrl!);
         await ref.delete();
       } catch (e) {
-        // Ignore error if image doesn't exist
         print('Error deleting old image: $e');
       }
     }
@@ -282,42 +413,47 @@ class _ModifyAccountPageState extends State<ModifyAccountPage> {
     }
 
     try {
-      String? finalImageUrl;
-
-      // Handle image upload similar to add_location.dart
-      if (_imageFile != null) {
-        // User selected a new image - upload it
-        finalImageUrl = await _uploadImageToFirebase(_imageFile!);
-        if (finalImageUrl == null) {
-          // Upload failed, don't proceed
+      // Re-authenticate if email or password is being changed
+      if (_isEmailChanged || _isPasswordChanged) {
+        final reauthenticated = await _reauthenticateUser();
+        if (!reauthenticated) {
           setState(() {
             _isLoading = false;
           });
           return;
         }
-        // Delete old image after successful upload
+      }
+
+      String? finalImageUrl;
+
+      // Handle image upload
+      if (_imageFile != null) {
+        finalImageUrl = await _uploadImageToFirebase(_imageFile!);
+        if (finalImageUrl == null) {
+          setState(() {
+            _isLoading = false;
+          });
+          return;
+        }
         if (_profileImageUrl != null && _profileImageUrl != finalImageUrl) {
           await _deleteOldImage();
         }
       } else if (_profileImageUrl == null) {
-        // Image was removed - delete from storage if there was an old one
         await _deleteOldImage();
         finalImageUrl = null;
       } else {
-        // No change to image - keep existing
         finalImageUrl = _profileImageUrl;
       }
 
-      // Update Firebase Auth email if changed
-      final currentEmail = user.email;
       final newEmail = _emailController.text.trim();
       
-      if (currentEmail != newEmail) {
+      // Update Firebase Auth email if changed
+      if (_isEmailChanged) {
         await user.updateEmail(newEmail);
       }
 
       // Update Firebase Auth password if provided
-      if (_passwordController.text.isNotEmpty) {
+      if (_isPasswordChanged) {
         await user.updatePassword(_passwordController.text);
       }
 
@@ -327,17 +463,15 @@ class _ModifyAccountPageState extends State<ModifyAccountPage> {
         'username': _usernameController.text.trim(),
         'email': newEmail,
         'telephone': _telephoneController.text.trim(),
-        'staffId': _staffIdController.text.trim(), // Include Staff ID in update
+        'staffId': _staffIdController.text.trim(),
         'staffType': _selectedStaffType,
-        'hasCustomImage': _imageFile != null, // Track if it's a custom image
+        'hasCustomImage': _imageFile != null,
         'updatedAt': FieldValue.serverTimestamp(),
       };
 
-      // Handle profile image URL
       if (finalImageUrl != null) {
         updateData['profileImageUrl'] = finalImageUrl;
       } else {
-        // Remove profile image URL if image was deleted
         updateData['profileImageUrl'] = FieldValue.delete();
       }
 
@@ -346,20 +480,32 @@ class _ModifyAccountPageState extends State<ModifyAccountPage> {
           .doc(user.uid)
           .update(updateData);
 
+      // Send email notifications
+      await _sendEmailNotification(
+        newEmail: newEmail,
+        emailChanged: _isEmailChanged,
+        passwordChanged: _isPasswordChanged,
+      );
+
       setState(() {
         _isLoading = false;
       });
 
-      // Show success message and navigate back
+      // Show success message based on what was changed
+      String successMessage = 'Account updated successfully!';
+      if (_isEmailChanged && _isPasswordChanged) {
+        successMessage = 'Account updated successfully! Please verify your new email address and check your email for notifications.';
+      } else if (_isEmailChanged) {
+        successMessage = 'Account updated successfully! Please verify your new email address.';
+      } else if (_isPasswordChanged) {
+        successMessage = 'Account updated successfully! Check your email for password change notification.';
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            currentEmail != newEmail 
-                ? 'Account updated successfully! Please verify your new email address.'
-                : 'Account updated successfully!'
-          ),
+          content: Text(successMessage),
           backgroundColor: Colors.green,
-          duration: const Duration(seconds: 4),
+          duration: const Duration(seconds: 5),
         ),
       );
 
@@ -369,11 +515,10 @@ class _ModifyAccountPageState extends State<ModifyAccountPage> {
         _isLoading = false;
       });
       
-      // Handle specific Firebase Auth errors
       String errorMessage = 'Error updating account: ${e.toString()}';
       
       if (e.toString().contains('requires-recent-login')) {
-        errorMessage = 'For security reasons, please sign out and sign back in before changing your email or password.';
+        errorMessage = 'For security reasons, please re-enter your current password.';
       } else if (e.toString().contains('email-already-in-use')) {
         errorMessage = 'This email address is already in use by another account.';
       } else if (e.toString().contains('invalid-email')) {
@@ -606,7 +751,7 @@ class _ModifyAccountPageState extends State<ModifyAccountPage> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Staff ID Field - Added this new field
+                      // Staff ID Field
                       _buildTextField(
                         controller: _staffIdController,
                         label: 'Staff ID',
@@ -624,7 +769,62 @@ class _ModifyAccountPageState extends State<ModifyAccountPage> {
                       _buildDropdownField(),
                       const SizedBox(height: 16),
 
-                      // Password Field
+                      // Show current password field if email or password is being changed
+                      if (_isEmailChanged || _isPasswordChanged) ...[
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.security, color: Colors.orange[700], size: 20),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Security verification required for email or password changes',
+                                  style: TextStyle(
+                                    fontFamily: 'SansRegular',
+                                    fontSize: 12,
+                                    color: Colors.orange[700],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        _buildTextField(
+                          controller: _currentPasswordController,
+                          label: 'Current Password',
+                          icon: Icons.lock_outline,
+                          obscureText: !_isCurrentPasswordVisible,
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isCurrentPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                              color: Colors.grey,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isCurrentPasswordVisible = !_isCurrentPasswordVisible;
+                              });
+                            },
+                          ),
+                          validator: (value) {
+                            if ((_isEmailChanged || _isPasswordChanged) && 
+                                (value == null || value.isEmpty)) {
+                              return 'Current password is required for security';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
+                      // New Password Field
                       _buildTextField(
                         controller: _passwordController,
                         label: 'New Password (optional)',
@@ -651,30 +851,34 @@ class _ModifyAccountPageState extends State<ModifyAccountPage> {
                       const SizedBox(height: 16),
 
                       // Confirm Password Field
-                      _buildTextField(
-                        controller: _confirmPasswordController,
-                        label: 'Confirm New Password',
-                        icon: Icons.lock_outline,
-                        obscureText: !_isConfirmPasswordVisible,
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                            color: Colors.grey,
+                      if (_passwordController.text.isNotEmpty) ...[
+                        _buildTextField(
+                          controller: _confirmPasswordController,
+                          label: 'Confirm New Password',
+                          icon: Icons.lock_outline,
+                          obscureText: !_isConfirmPasswordVisible,
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                              color: Colors.grey,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                              });
+                            },
                           ),
-                          onPressed: () {
-                            setState(() {
-                              _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
-                            });
+                          validator: (value) {
+                            if (_passwordController.text.isNotEmpty && value != _passwordController.text) {
+                              return 'Passwords do not match';
+                            }
+                            return null;
                           },
                         ),
-                        validator: (value) {
-                          if (_passwordController.text.isNotEmpty && value != _passwordController.text) {
-                            return 'Passwords do not match';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 32),
+                        const SizedBox(height: 16),
+                      ],
+                      
+                      const SizedBox(height: 16),
 
                       // Update Button
                       SizedBox(

@@ -69,6 +69,16 @@ class AuthService {
     }
   }
 
+   // Password reset method
+  Future<void> resetPassword(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } catch (e) {
+      throw e;
+    }
+  }
+  
+
   // Check if current user's email is verified
   bool get isEmailVerified {
     return _auth.currentUser?.emailVerified ?? false;

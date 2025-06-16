@@ -38,6 +38,7 @@ class DeviceDetailsPage extends StatelessWidget {
     final location = device['location'] ?? 'N/A';
     final floor = device['floor'] ?? 'Unknown';
     final building = device['building'] ?? 'Unknown';
+    final peripheralType = device['peripheral_type'] ?? '';
     final deviceId = device['id']?.toString() ?? '';
 
     return Scaffold(
@@ -153,6 +154,11 @@ class DeviceDetailsPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   _buildDetailRow(Icons.category_outlined, 'Type', type),
+                  // Show peripheral type if device is a peripheral and has peripheral_type
+                  if (type.toLowerCase() == 'peripheral' && peripheralType.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    _buildDetailRow(Icons.memory_outlined, 'Peripheral Type', peripheralType),
+                  ],
                   const SizedBox(height: 16),
                   _buildDetailRow(Icons.wifi_outlined, 'IP Address', ip),
                   const SizedBox(height: 16),

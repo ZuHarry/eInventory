@@ -2,8 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:einventorycomputer/services/auth.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-// Import the PDF service
 import 'package:einventorycomputer/services/pdf_export_service.dart';
+import 'package:einventorycomputer/modules/home/screen/analytics/pie_chart.dart';
 
 class HomePage extends StatelessWidget {
   final AuthService _auth = AuthService();
@@ -281,49 +281,95 @@ class HomePage extends StatelessWidget {
                             ),
                             const SizedBox(height: 30),
                             // Pie Chart
-                            SizedBox(
-                              height: 200,
-                              child: totalPC + totalPeripheral > 0
-                                  ? PieChart(
-                                      PieChartData(
-                                        sections: [
-                                          PieChartSectionData(
-                                            value: totalPC.toDouble(),
-                                            title: '${((totalPC / (totalPC + totalPeripheral)) * 100).toStringAsFixed(1)}%',
-                                            color: const Color(0xFFFFC727),
-                                            radius: 80,
-                                            titleStyle: const TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.bold,
-                                              color: Color(0xFF212529),
+                            // Pie Chart (Clickable)
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => DetailedPieChartPage(),
+                                  ),
+                                );
+                              },
+                              child: SizedBox(
+                                height: 200,
+                                child: totalPC + totalPeripheral > 0
+                                    ? Stack(
+                                        children: [
+                                          PieChart(
+                                            PieChartData(
+                                              sections: [
+                                                PieChartSectionData(
+                                                  value: totalPC.toDouble(),
+                                                  title: '${((totalPC / (totalPC + totalPeripheral)) * 100).toStringAsFixed(1)}%',
+                                                  color: const Color(0xFFFFC727),
+                                                  radius: 80,
+                                                  titleStyle: const TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Color(0xFF212529),
+                                                  ),
+                                                ),
+                                                PieChartSectionData(
+                                                  value: totalPeripheral.toDouble(),
+                                                  title: '${((totalPeripheral / (totalPC + totalPeripheral)) * 100).toStringAsFixed(1)}%',
+                                                  color: Colors.grey[600]!,
+                                                  radius: 80,
+                                                  titleStyle: const TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              ],
+                                              sectionsSpace: 2,
+                                              centerSpaceRadius: 40,
                                             ),
                                           ),
-                                          PieChartSectionData(
-                                            value: totalPeripheral.toDouble(),
-                                            title: '${((totalPeripheral / (totalPC + totalPeripheral)) * 100).toStringAsFixed(1)}%',
-                                            color: Colors.grey[600]!,
-                                            radius: 80,
-                                            titleStyle: const TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white,
+                                          // Clickable indicator
+                                          Positioned(
+                                            bottom: 1,
+                                            right: 10,
+                                            child: Container(
+                                              padding: EdgeInsets.all(8),
+                                              decoration: BoxDecoration(
+                                                color: Color(0xFFFFC727),
+                                                borderRadius: BorderRadius.circular(20),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    Icons.touch_app,
+                                                    size: 16,
+                                                    color: Color(0xFF212529),
+                                                  ),
+                                                  SizedBox(width: 10),
+                                                  Text(
+                                                    'Tap for details',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: Color(0xFF212529),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ),
                                         ],
-                                        sectionsSpace: 2,
-                                        centerSpaceRadius: 40,
-                                      ),
-                                    )
-                                  : const Center(
-                                      child: Text(
-                                        'No devices found',
-                                        style: TextStyle(
-                                          fontFamily: 'SansRegular',
-                                          color: Color(0xFFFFC727),
-                                          fontSize: 16,
+                                      )
+                                    : const Center(
+                                        child: Text(
+                                          'No devices found',
+                                          style: TextStyle(
+                                            fontFamily: 'SansRegular',
+                                            color: Color(0xFFFFC727),
+                                            fontSize: 16,
+                                          ),
                                         ),
                                       ),
-                                    ),
+                              ),
                             ),
                             const SizedBox(height: 30),
                           ],

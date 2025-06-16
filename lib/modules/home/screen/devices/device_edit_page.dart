@@ -21,6 +21,7 @@ class _DeviceEditPageState extends State<DeviceEditPage> {
   String? selectedLocation;
   String status = 'Online';
   String type = 'PC';
+  String peripheralType = 'Monitor'; // Add peripheral type
   bool _isDeleting = false;
   bool _isUpdating = false;
 
@@ -33,6 +34,7 @@ class _DeviceEditPageState extends State<DeviceEditPage> {
     selectedLocation = widget.deviceData['location'];
     status = widget.deviceData['status'] ?? 'Online';
     type = widget.deviceData['type'] ?? 'PC';
+    peripheralType = widget.deviceData['peripheral_type'] ?? 'Monitor'; // Initialize peripheral type
   }
 
   void _showErrorDialog(List<String> emptyFields) {
@@ -403,14 +405,25 @@ class _DeviceEditPageState extends State<DeviceEditPage> {
     }
 
     try {
-      await FirebaseFirestore.instance.collection('devices').doc(widget.deviceId).update({
+      // Prepare update data
+      Map<String, dynamic> updateData = {
         'name': nameController.text.trim(),
         'ip': ipController.text.trim(),
         'mac': macController.text.trim(),
         'location': selectedLocation,
         'status': status,
         'type': type,
-      });
+      };
+
+      // Add peripheral_type only if device type is Peripheral
+      if (type == 'Peripheral') {
+        updateData['peripheral_type'] = peripheralType;
+      } else {
+        // Remove peripheral_type field if device type is not Peripheral
+        updateData['peripheral_type'] = FieldValue.delete();
+      }
+
+      await FirebaseFirestore.instance.collection('devices').doc(widget.deviceId).update(updateData);
 
       if (!mounted) return;
       
@@ -617,9 +630,27 @@ class _DeviceEditPageState extends State<DeviceEditPage> {
                   _buildDropdown(
                     value: type,
                     items: ['PC', 'Peripheral'],
-                    onChanged: isProcessing ? null : (val) => setState(() => type = val!),
+                    onChanged: isProcessing ? null : (val) {
+                      setState(() {
+                        type = val!;
+                        // Reset peripheral type when switching device type
+                        if (type == 'Peripheral') {
+                          peripheralType = 'Monitor';
+                        }
+                      });
+                    },
                   ),
                   const SizedBox(height: 16),
+                  // Show peripheral type dropdown only when device type is Peripheral
+                  if (type == 'Peripheral') ...[
+                    _buildDropdown(
+                      value: peripheralType,
+                      items: ['Monitor', 'Printer', 'Tablet', 'Others'],
+                      onChanged: isProcessing ? null : (val) => setState(() => peripheralType = val!),
+                      label: 'Peripheral Type',
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   _buildTextField(ipController, 'IP Address'),
                   const SizedBox(height: 16),
                   _buildTextField(macController, 'MAC Address'),
@@ -833,6 +864,7 @@ class _DeviceEditPageState extends State<DeviceEditPage> {
     required String value,
     required List<String> items,
     required void Function(String?)? onChanged,
+    String? label,
   }) {
     bool isProcessing = _isDeleting || _isUpdating;
     
@@ -851,6 +883,11 @@ class _DeviceEditPageState extends State<DeviceEditPage> {
       decoration: InputDecoration(
         fillColor: isProcessing ? Colors.grey[200] : Colors.white,
         filled: true,
+        labelText: label,
+        labelStyle: label != null ? TextStyle(
+          color: isProcessing ? Colors.grey : Colors.black,
+          fontFamily: 'SansRegular',
+        ) : null,
         border: const OutlineInputBorder(),
         focusedBorder: const OutlineInputBorder(
           borderSide: BorderSide(color: Colors.black, width: 2),
