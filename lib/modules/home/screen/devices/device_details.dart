@@ -38,8 +38,16 @@ class DeviceDetailsPage extends StatelessWidget {
     final location = device['location'] ?? 'N/A';
     final floor = device['floor'] ?? 'Unknown';
     final building = device['building'] ?? 'Unknown';
-    final peripheralType = device['peripheral_type'] ?? '';
     final deviceId = device['id']?.toString() ?? '';
+
+    // PC-specific fields
+    final brand = device['brand'] ?? '';
+    final model = device['model'] ?? '';
+    final processor = device['processor'] ?? '';
+    final storage = device['storage'] ?? '';
+
+    // Peripheral-specific fields
+    final peripheralType = device['peripheral_type'] ?? '';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
@@ -153,16 +161,49 @@ class DeviceDetailsPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
+                  
+                  // Common fields
                   _buildDetailRow(Icons.category_outlined, 'Type', type),
-                  // Show peripheral type if device is a peripheral and has peripheral_type
+                  
+                  // Brand and Model (common for both PC and Peripheral)
+                  if (brand.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    _buildDetailRow(Icons.business_outlined, 'Brand', brand),
+                  ],
+                  if (model.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    _buildDetailRow(Icons.info_outline, 'Model', model),
+                  ],
+                  
+                  // PC-specific fields
+                  if (type.toLowerCase() == 'pc') ...[
+                    if (processor.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      _buildDetailRow(Icons.memory_outlined, 'Processor', processor),
+                    ],
+                    if (storage.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      _buildDetailRow(Icons.storage_outlined, 'Storage', storage),
+                    ],
+                  ],
+                  
+                  // Peripheral-specific fields
                   if (type.toLowerCase() == 'peripheral' && peripheralType.isNotEmpty) ...[
                     const SizedBox(height: 16),
-                    _buildDetailRow(Icons.memory_outlined, 'Peripheral Type', peripheralType),
+                    _buildDetailRow(Icons.devices_other_outlined, 'Peripheral Type', peripheralType),
                   ],
-                  const SizedBox(height: 16),
-                  _buildDetailRow(Icons.wifi_outlined, 'IP Address', ip),
-                  const SizedBox(height: 16),
-                  _buildDetailRow(Icons.router_outlined, 'MAC Address', mac),
+                  
+                  // Network Information
+                  if (ip != 'N/A' && ip.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    _buildDetailRow(Icons.wifi_outlined, 'IP Address', ip),
+                  ],
+                  if (mac != 'N/A' && mac.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    _buildDetailRow(Icons.router_outlined, 'MAC Address', mac),
+                  ],
+                  
+                  // Location Information
                   const SizedBox(height: 16),
                   _buildDetailRow(Icons.location_on_outlined, 'Location', location),
                   const SizedBox(height: 16),

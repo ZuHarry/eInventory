@@ -35,7 +35,10 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
 
   late String oldLocationName;
 
-  final List<String> buildingOptions = ['Left Wing', 'Right Wing'];
+  // Replace the existing buildingOptions list declaration with:
+  List<String> buildingOptions = []; // Initialize as empty list
+  final TextEditingController buildingController = TextEditingController();
+  bool isCustomBuilding = false;
   final List<String> floorOptions = [
     'Ground Floor',
     '1st Floor',
@@ -44,6 +47,7 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
   ];
   final List<String> typeOptions = ['Lab', 'Lecture Room'];
 
+  // Update the initState method to include the building loading:
   @override
   void initState() {
     super.initState();
@@ -51,9 +55,20 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
     oldLocationName = widget.locationData['name'] ?? '';
     currentImageUrl = widget.locationData['imageUrl'];
 
-    selectedBuilding = buildingOptions.contains(widget.locationData['building'])
-        ? widget.locationData['building']
-        : null;
+    // Load buildings first, then set selected values
+    _loadBuildings().then((_) {
+      setState(() {
+        if (buildingOptions.contains(widget.locationData['building'])) {
+          selectedBuilding = widget.locationData['building'];
+          isCustomBuilding = false;
+        } else if (widget.locationData['building'] != null && widget.locationData['building'].toString().isNotEmpty) {
+          // If building exists but not in list, treat as custom
+          buildingController.text = widget.locationData['building'];
+          isCustomBuilding = true;
+          selectedBuilding = null;
+        }
+      });
+    });
 
     selectedFloor = floorOptions.contains(widget.locationData['floor'])
         ? widget.locationData['floor']
@@ -82,6 +97,35 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error picking image: $e")),
+      );
+    }
+  }
+
+  // Add this method to load buildings from Firestore:
+  Future<void> _loadBuildings() async {
+    try {
+      final QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('buildings')
+          .get();
+      
+      setState(() {
+        buildingOptions = snapshot.docs
+            .map((doc) => doc.data() as Map<String, dynamic>)
+            .map((data) => data['name'] as String)
+            .toList();
+        
+        // Re-validate selectedBuilding after loading buildings
+        if (selectedBuilding != null && !buildingOptions.contains(selectedBuilding)) {
+          // If current building is not in the list, treat it as custom
+          buildingController.text = selectedBuilding!;
+          isCustomBuilding = true;
+          selectedBuilding = null;
+        }
+      });
+    } catch (e) {
+      print('Error loading buildings: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error loading buildings: $e")),
       );
     }
   }
@@ -479,6 +523,30 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
     }
   }
 
+
+  Future<void> _saveNewBuildingToFirestore(String buildingName) async {
+    try {
+      // Check if building already exists
+      final QuerySnapshot existingBuilding = await FirebaseFirestore.instance
+          .collection('buildings')
+          .where('name', isEqualTo: buildingName)
+          .get();
+      
+      if (existingBuilding.docs.isEmpty) {
+        // Add new building to Firestore
+        await FirebaseFirestore.instance
+            .collection('buildings')
+            .add({
+          'name': buildingName,
+          'created_at': FieldValue.serverTimestamp(),
+        });
+      }
+    } catch (e) {
+      print('Error saving building: $e');
+    }
+  }
+
+
   void _resetToDefaultImage() {
     setState(() {
       _selectedNewImage = null;
@@ -517,14 +585,23 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
     }
   }
 
+  // Update the updateLocation method to handle custom buildings:
   Future<void> updateLocation() async {
+    // Get the final building value
+    String? finalBuilding;
+    if (isCustomBuilding) {
+      finalBuilding = buildingController.text.trim();
+    } else {
+      finalBuilding = selectedBuilding;
+    }
+
     // Check if all required fields are filled
     List<String> emptyFields = [];
     
     if (nameController.text.trim().isEmpty) {
       emptyFields.add('Location Name');
     }
-    if (selectedBuilding == null) {
+    if (finalBuilding == null || finalBuilding.isEmpty) {
       emptyFields.add('Building');
     }
     if (selectedFloor == null) {
@@ -552,6 +629,11 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
     String? finalImageUrl = currentImageUrl;
 
     try {
+      // If user entered a custom building, save it to Firestore first
+      if (isCustomBuilding && finalBuilding!.isNotEmpty) {
+        await _saveNewBuildingToFirestore(finalBuilding);
+      }
+
       // If user selected a new image, upload it
       if (_selectedNewImage != null) {
         finalImageUrl = await _uploadImageToFirebase(_selectedNewImage!);
@@ -567,7 +649,7 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
       // Update the location document
       Map<String, dynamic> updateData = {
         'name': newName,
-        'building': selectedBuilding,
+        'building': finalBuilding,
         'floor': selectedFloor,
         'type': selectedType,
       };
@@ -931,4 +1013,54 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
       style: const TextStyle(fontFamily: 'SansRegular', color: Colors.black),
     );
   }
+
+  // Replace the existing _buildDropdown method with this updated version for buildings:
+  Widget _buildBuildingField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Toggle between dropdown and custom input
+        Row(
+          children: [
+            Expanded(
+              child: isCustomBuilding
+                  ? _buildTextField(buildingController, 'Building Name')
+                  : _buildBuildingField(),
+            ),
+            IconButton(
+              onPressed: () {
+                setState(() {
+                  isCustomBuilding = !isCustomBuilding;
+                  if (isCustomBuilding) {
+                    buildingController.clear();
+                    selectedBuilding = null;
+                  } else {
+                    buildingController.clear();
+                  }
+                });
+              },
+              icon: Icon(
+                isCustomBuilding ? Icons.list : Icons.add,
+                color: Colors.white,
+              ),
+              tooltip: isCustomBuilding ? 'Select from list' : 'Add custom building',
+            ),
+          ],
+        ),
+        if (isCustomBuilding)
+          const Padding(
+            padding: EdgeInsets.only(top: 4),
+            child: Text(
+              'Enter a new building name',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
+                fontFamily: 'SansRegular',
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
 }

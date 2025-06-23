@@ -17,14 +17,18 @@ class _AddDevicePageState extends State<AddDevicePage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _ipController = TextEditingController();
   final TextEditingController _macController = TextEditingController();
+  final TextEditingController _brandController = TextEditingController();
+  final TextEditingController _modelController = TextEditingController();
+  final TextEditingController _processorController = TextEditingController();
+  final TextEditingController _storageController = TextEditingController();
 
   String _deviceType = 'PC'; // Default value for device type
   String _deviceStatus = 'Online'; // Default value for device status
   String _peripheralType = 'Monitor'; // Default value for peripheral type
   String? _selectedLocationName;
 
-  // Check for duplicate device name or IP address
-  Future<List<String>> _checkDuplicates(String name, String ip) async {
+  // Check for duplicate device name only
+  Future<List<String>> _checkDuplicates(String name) async {
     List<String> duplicateFields = [];
     
     try {
@@ -36,16 +40,6 @@ class _AddDevicePageState extends State<AddDevicePage> {
       
       if (nameQuery.docs.isNotEmpty) {
         duplicateFields.add('Device Name: "$name"');
-      }
-
-      // Check for duplicate IP address
-      QuerySnapshot ipQuery = await FirebaseFirestore.instance
-          .collection('devices')
-          .where('ip', isEqualTo: ip)
-          .get();
-      
-      if (ipQuery.docs.isNotEmpty) {
-        duplicateFields.add('IP Address: "$ip"');
       }
     } catch (e) {
       print('Error checking duplicates: $e');
@@ -61,12 +55,6 @@ class _AddDevicePageState extends State<AddDevicePage> {
     if (_nameController.text.trim().isEmpty) {
       emptyFields.add('Device Name');
     }
-    if (_ipController.text.trim().isEmpty) {
-      emptyFields.add('IP Address');
-    }
-    if (_macController.text.trim().isEmpty) {
-      emptyFields.add('MAC Address');
-    }
     if (_selectedLocationName == null) {
       emptyFields.add('Location');
     }
@@ -80,11 +68,9 @@ class _AddDevicePageState extends State<AddDevicePage> {
     // Proceed with form validation
     if (_formKey.currentState!.validate()) {
       String name = _nameController.text.trim();
-      String ip = _ipController.text.trim();
-      String mac = _macController.text.trim();
 
       // Check for duplicates
-      List<String> duplicateFields = await _checkDuplicates(name, ip);
+      List<String> duplicateFields = await _checkDuplicates(name);
       
       if (duplicateFields.isNotEmpty) {
         _showDuplicateDialog(duplicateFields);
@@ -95,16 +81,41 @@ class _AddDevicePageState extends State<AddDevicePage> {
         Map<String, dynamic> deviceData = {
           'name': name,
           'type': _deviceType,
-          'ip': ip,
-          'mac': mac,
           'status': _deviceStatus,
           'location': _selectedLocationName,
           'created_at': FieldValue.serverTimestamp(),
         };
 
-        // Add peripheral type if device type is Peripheral
-        if (_deviceType == 'Peripheral') {
+        // Add IP and MAC if they are provided
+        if (_ipController.text.trim().isNotEmpty) {
+          deviceData['ip'] = _ipController.text.trim();
+        }
+        if (_macController.text.trim().isNotEmpty) {
+          deviceData['mac'] = _macController.text.trim();
+        }
+
+        // Add fields based on device type
+        if (_deviceType == 'PC') {
+          if (_brandController.text.trim().isNotEmpty) {
+            deviceData['brand'] = _brandController.text.trim();
+          }
+          if (_modelController.text.trim().isNotEmpty) {
+            deviceData['model'] = _modelController.text.trim();
+          }
+          if (_processorController.text.trim().isNotEmpty) {
+            deviceData['processor'] = _processorController.text.trim();
+          }
+          if (_storageController.text.trim().isNotEmpty) {
+            deviceData['storage'] = _storageController.text.trim();
+          }
+        } else if (_deviceType == 'Peripheral') {
           deviceData['peripheral_type'] = _peripheralType;
+          if (_brandController.text.trim().isNotEmpty) {
+            deviceData['brand'] = _brandController.text.trim();
+          }
+          if (_modelController.text.trim().isNotEmpty) {
+            deviceData['model'] = _modelController.text.trim();
+          }
         }
 
         await FirebaseFirestore.instance.collection('devices').add(deviceData);
@@ -116,6 +127,10 @@ class _AddDevicePageState extends State<AddDevicePage> {
         _nameController.clear();
         _ipController.clear();
         _macController.clear();
+        _brandController.clear();
+        _modelController.clear();
+        _processorController.clear();
+        _storageController.clear();
         setState(() {
           _deviceType = 'PC';
           _deviceStatus = 'Online';
@@ -429,6 +444,18 @@ class _AddDevicePageState extends State<AddDevicePage> {
   }
 
   @override
+  void dispose() {
+    _nameController.dispose();
+    _ipController.dispose();
+    _macController.dispose();
+    _brandController.dispose();
+    _modelController.dispose();
+    _processorController.dispose();
+    _storageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA), // Match the background color
@@ -452,16 +479,27 @@ class _AddDevicePageState extends State<AddDevicePage> {
               key: _formKey,
               child: Column(
                 children: [
-                  _buildTextField(_nameController, 'Device Name'),
+                  _buildTextField(_nameController, 'Device Name', isRequired: true),
                   const SizedBox(height: 16),
                   _buildDropdown(
                     value: _deviceType,
                     items: ['PC', 'Peripheral'],
                     onChanged: (val) => setState(() => _deviceType = val!),
+                    label: 'Device Type',
                   ),
                   const SizedBox(height: 16),
-                  // Show peripheral type dropdown only when Peripheral is selected
-                  if (_deviceType == 'Peripheral') ...[
+                  
+                  // Show fields based on device type
+                  if (_deviceType == 'PC') ...[
+                    _buildTextField(_brandController, 'Brand'),
+                    const SizedBox(height: 16),
+                    _buildTextField(_modelController, 'Model'),
+                    const SizedBox(height: 16),
+                    _buildTextField(_processorController, 'Processor'),
+                    const SizedBox(height: 16),
+                    _buildTextField(_storageController, 'Storage (GB)', keyboardType: TextInputType.number),
+                    const SizedBox(height: 16),
+                  ] else if (_deviceType == 'Peripheral') ...[
                     _buildDropdown(
                       value: _peripheralType,
                       items: ['Monitor', 'Printer', 'Tablet', 'Others'],
@@ -469,15 +507,21 @@ class _AddDevicePageState extends State<AddDevicePage> {
                       label: 'Peripheral Type',
                     ),
                     const SizedBox(height: 16),
+                    _buildTextField(_brandController, 'Brand'),
+                    const SizedBox(height: 16),
+                    _buildTextField(_modelController, 'Model'),
+                    const SizedBox(height: 16),
                   ],
-                  _buildTextField(_ipController, 'IP Address'),
+                  
+                  _buildTextField(_ipController, 'IP Address (Optional)', keyboardType: TextInputType.number),
                   const SizedBox(height: 16),
-                  _buildTextField(_macController, 'MAC Address'),
+                  _buildTextField(_macController, 'MAC Address (Optional)'),
                   const SizedBox(height: 16),
                   _buildDropdown(
                     value: _deviceStatus,
                     items: ['Online', 'Offline'],
                     onChanged: (val) => setState(() => _deviceStatus = val!),
+                    label: 'Device Status',
                   ),
                   const SizedBox(height: 16),
                   GestureDetector(
@@ -506,7 +550,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            _selectedLocationName ?? 'Choose Location',
+                            _selectedLocationName ?? 'Choose Location *',
                             style: TextStyle(
                               fontFamily: 'SansRegular',
                               color: _selectedLocationName != null ? Colors.black87 : Colors.black54,
@@ -550,14 +594,15 @@ class _AddDevicePageState extends State<AddDevicePage> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label) {
+  Widget _buildTextField(TextEditingController controller, String label, {bool isRequired = false, TextInputType? keyboardType}) {
     return TextFormField(
       controller: controller,
+      keyboardType: keyboardType,
       style: const TextStyle(fontFamily: 'SansRegular', fontSize: 16, color: Colors.black),
       decoration: InputDecoration(
         fillColor: Colors.white,
         filled: true,
-        labelText: label,
+        labelText: isRequired ? '$label *' : label,
         labelStyle: const TextStyle(
           color: Colors.black,
           fontFamily: 'SansRegular',
@@ -567,8 +612,8 @@ class _AddDevicePageState extends State<AddDevicePage> {
           borderSide: BorderSide(color: Colors.black, width: 2),
         ),
       ),
-      validator: (value) =>
-          value == null || value.trim().isEmpty ? 'Enter $label' : null,
+      validator: isRequired ? (value) =>
+          value == null || value.trim().isEmpty ? 'Enter $label' : null : null,
     );
   }
 

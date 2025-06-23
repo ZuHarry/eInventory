@@ -10,23 +10,23 @@ import 'package:einventorycomputer/modules/home/screen/user/account.dart';
 import 'package:einventorycomputer/modules/home/screen/devices/add_device.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:einventorycomputer/modules/home/screen/devices/device_details.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class ScreenPage extends StatefulWidget {
   @override
   _ScreenPageState createState() => _ScreenPageState();
 }
 
-class _ScreenPageState extends State<ScreenPage> with TickerProviderStateMixin {
+class _ScreenPageState extends State<ScreenPage> {
   final AuthService _auth = AuthService();
   int _selectedIndex = 0;
   String? _username;
   String? _profileImageUrl;
-  late AnimationController _drawerAnimationController;
-  late AnimationController _fabAnimationController;
 
   final List<String> _titles = [
     "Home",
-    "Inventory",
+    "Inventory", 
     "Add Device",
     "Scanner",
     "Settings",
@@ -34,38 +34,18 @@ class _ScreenPageState extends State<ScreenPage> with TickerProviderStateMixin {
     "Location",
   ];
 
-  // Method to navigate to inventory page
   void _navigateToInventory() {
     setState(() {
-      _selectedIndex = 1; // Inventory page index
+      _selectedIndex = 1;
     });
   }
 
-  // Define which indices are in the bottom navigation
-  
-  // Update your _bottomNavIndexes to include the QR Scanner in the middle
-  final List<int> _bottomNavIndexes = [0, 1, 3, 5, 6]; // Added QR Scanner (index 3) in the middle
+  final List<int> _bottomNavIndexes = [0, 1, 3, 5, 6];
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
-    _drawerAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    _fabAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    _fabAnimationController.forward();
-  }
-
-  @override
-  void dispose() {
-    _drawerAnimationController.dispose();
-    _fabAnimationController.dispose();
-    super.dispose();
   }
 
   Future<void> _loadUserData() async {
@@ -79,7 +59,6 @@ class _ScreenPageState extends State<ScreenPage> with TickerProviderStateMixin {
             _username = data?['username'] ?? 'User';
             _profileImageUrl = data?['profileImageUrl'];
           });
-          print('Profile image URL: $_profileImageUrl');
         }
       } catch (e) {
         print('Error loading user data: $e');
@@ -92,86 +71,38 @@ class _ScreenPageState extends State<ScreenPage> with TickerProviderStateMixin {
       setState(() {
         _selectedIndex = index;
       });
-      // Refresh user data when navigating to Account page
-      if (index == 5) { // Account page index (updated)
+      if (index == 5) {
         _loadUserData();
       }
     }
-    Navigator.pop(context); // Close drawer
-  }
-
-  void _onFabPressed() {
-    // Add a small animation when pressed
-    _fabAnimationController.reverse().then((_) {
-      _fabAnimationController.forward();
-    });
-    
-    setState(() {
-      _selectedIndex = 2; // Navigate to Add Device page (index 2)
-    });
-  }
-
-  // New method to handle QR scanner FAB press
-  void _onQRScannerPressed() {
-    _fabAnimationController.reverse().then((_) {
-      _fabAnimationController.forward();
-    });
-    
-    setState(() {
-      _selectedIndex = 3; // Navigate to QR Scanner page (index 3)
-    });
+    Navigator.pop(context);
   }
 
   Widget _buildProfileImage() {
     return Container(
-      width: 80,
-      height: 80,
+      width: 50,
+      height: 50,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFFFC727).withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(12),
+        color: const Color(0xFFFFC727),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          width: 80,
-          height: 80,
-          color: const Color(0xFFFFC727),
-          child: _profileImageUrl != null && _profileImageUrl!.isNotEmpty
-              ? Image.network(
-                  _profileImageUrl!,
-                  width: 80,
-                  height: 80,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    print('Error loading image: $error');
-                    return const Icon(
-                      Icons.person_rounded,
-                      size: 40,
-                      color: Color(0xFF212529),
-                    );
-                  },
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return const Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF212529)),
-                        strokeWidth: 2,
-                      ),
-                    );
-                  },
-                )
-              : const Icon(
+        borderRadius: BorderRadius.circular(12),
+        child: _profileImageUrl != null && _profileImageUrl!.isNotEmpty
+            ? Image.network(
+                _profileImageUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => const Icon(
                   Icons.person_rounded,
-                  size: 40,
+                  size: 24,
                   color: Color(0xFF212529),
                 ),
-        ),
+              )
+            : const Icon(
+                Icons.person_rounded,
+                size: 24,
+                color: Color(0xFF212529),
+              ),
       ),
     );
   }
@@ -201,7 +132,6 @@ class _ScreenPageState extends State<ScreenPage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final isBottomNavPage = _bottomNavIndexes.contains(_selectedIndex);
     final safeCurrentIndex = _bottomNavIndexes.indexWhere((i) => i == _selectedIndex);
-    final isQRScannerPage = _selectedIndex == 3;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
@@ -212,73 +142,54 @@ class _ScreenPageState extends State<ScreenPage> with TickerProviderStateMixin {
             fontFamily: 'SansRegular',
             color: Color(0xFF212529),
             fontWeight: FontWeight.w600,
-            fontSize: 20,
+            fontSize: 18,
           ),
         ),
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF212529)),
+        iconTheme: const IconThemeData(color: Color(0xFF212529), size: 20),
         leading: Builder(
           builder: (context) => IconButton(
-            icon: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.menu_rounded,
-                color: Color(0xFF212529),
-                size: 20,
-              ),
-            ),
+            icon: const Icon(Icons.menu_rounded),
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
       ),
       drawer: Drawer(
         backgroundColor: Colors.white,
-        elevation: 0,
+        width: 260,
         child: SafeArea(
           child: Column(
             children: [
-              // Header Section
+              // Compact Header
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(16),
                 decoration: const BoxDecoration(
                   color: Color(0xFF212529),
                   borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(24),
-                    bottomRight: Radius.circular(24),
+                    bottomLeft: Radius.circular(16),
+                    bottomRight: Radius.circular(16),
                   ),
                 ),
                 child: Column(
                   children: [
                     _buildProfileImage(),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 8),
                     Text(
                       _username ?? 'Loading...',
                       style: const TextStyle(
                         fontFamily: 'SansRegular',
                         fontWeight: FontWeight.w600,
-                        fontSize: 18,
+                        fontSize: 14,
                         color: Color(0xFFFFC727),
                       ),
                     ),
-                    const SizedBox(height: 4),
                     Text(
                       FirebaseAuth.instance.currentUser?.email ?? '',
                       style: const TextStyle(
                         fontFamily: 'SansRegular',
-                        fontSize: 14,
+                        fontSize: 11,
                         color: Color(0xFFADB5BD),
                       ),
                       overflow: TextOverflow.ellipsis,
@@ -287,12 +198,12 @@ class _ScreenPageState extends State<ScreenPage> with TickerProviderStateMixin {
                 ),
               ),
               
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               
-              // Navigation Items
+              // Compact Navigation Items
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Column(
                     children: [
                       _buildDrawerItem(Icons.home_outlined, Icons.home_rounded, "Home", 0),
@@ -307,55 +218,37 @@ class _ScreenPageState extends State<ScreenPage> with TickerProviderStateMixin {
                 ),
               ),
               
-              // Logout Section
+              // Compact Logout
               Padding(
-                padding: const EdgeInsets.all(1),
+                padding: const EdgeInsets.all(12),
                 child: Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF212529), Color(0xFF343A40)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    color: const Color(0xFF212529),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(12),
                       onTap: () async {
                         await _auth.signOut();
                       },
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFFC727).withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(
-                                Icons.logout_rounded,
-                                color: Color(0xFFFFC727),
-                                size: 20,
-                              ),
+                            const Icon(
+                              Icons.logout_rounded,
+                              color: Color(0xFFFFC727),
+                              size: 18,
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 8),
                             const Text(
                               "Sign Out",
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: Color(0xFFFFC727),
                                 fontFamily: 'SansRegular',
@@ -372,73 +265,24 @@ class _ScreenPageState extends State<ScreenPage> with TickerProviderStateMixin {
           ),
         ),
       ),
-      // Replace the existing Stack with floating action buttons in your build method with this:
-
-      body: Stack(
-        children: [
-          _getCurrentPage(),
-          // Only keep the Add Device FAB in the top-right corner
-          if (isBottomNavPage && _selectedIndex != 3) // Don't show when QR scanner is active
-            Positioned(
-              bottom: 5,
-              right: 24,
-              child: ScaleTransition(
-                scale: _fabAnimationController,
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFFC727), Color(0xFFFFD54F)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFFFFC727).withOpacity(0.4),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(20),
-                      onTap: _onFabPressed,
-                      child: Container(
-                        width: 56,
-                        height: 56,
-                        child: const Icon(
-                          Icons.add_rounded,
-                          color: Color(0xFF212529),
-                          size: 28,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-
-
+      body: _getCurrentPage(),
       bottomNavigationBar: isBottomNavPage
           ? Container(
-              margin: const EdgeInsets.all(16),
+              margin: const EdgeInsets.all(12),
+              height: 60,
               decoration: BoxDecoration(
                 color: const Color(0xFF212529),
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(16),
                 child: BottomNavigationBar(
                   currentIndex: safeCurrentIndex,
                   selectedItemColor: const Color(0xFFFFC727),
@@ -454,12 +298,12 @@ class _ScreenPageState extends State<ScreenPage> with TickerProviderStateMixin {
                   selectedLabelStyle: const TextStyle(
                     fontFamily: 'SansRegular',
                     fontWeight: FontWeight.w600,
-                    fontSize: 12,
+                    fontSize: 10,
                   ),
                   unselectedLabelStyle: const TextStyle(
                     fontFamily: 'SansRegular',
                     fontWeight: FontWeight.w400,
-                    fontSize: 12,
+                    fontSize: 10,
                   ),
                   items: [
                     BottomNavigationBarItem(
@@ -472,7 +316,6 @@ class _ScreenPageState extends State<ScreenPage> with TickerProviderStateMixin {
                       activeIcon: _buildBottomNavIcon(Icons.inventory_2_rounded, 1, safeCurrentIndex),
                       label: "Inventory",
                     ),
-                    // QR Scanner in the middle
                     BottomNavigationBarItem(
                       icon: _buildBottomNavIcon(Icons.qr_code_scanner_outlined, 2, safeCurrentIndex),
                       activeIcon: _buildBottomNavIcon(Icons.qr_code_scanner_rounded, 2, safeCurrentIndex),
@@ -500,58 +343,37 @@ class _ScreenPageState extends State<ScreenPage> with TickerProviderStateMixin {
     final isSelected = _selectedIndex == index;
 
     return Container(
+      margin: const EdgeInsets.only(bottom: 4),
       decoration: BoxDecoration(
         color: isSelected ? const Color(0xFFFFC727).withOpacity(0.1) : Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(8),
           onTap: () => _onSelect(index),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: isSelected 
-                        ? const Color(0xFFFFC727) 
-                        : const Color(0xFFF8F9FA),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    isSelected ? activeIcon : icon,
-                    color: isSelected 
-                        ? const Color(0xFF212529) 
-                        : const Color(0xFF6C757D),
-                    size: 20,
-                  ),
+                Icon(
+                  isSelected ? activeIcon : icon,
+                  color: isSelected ? const Color(0xFFFFC727) : const Color(0xFF6C757D),
+                  size: 18,
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     title,
                     style: TextStyle(
-                      color: isSelected 
-                          ? const Color(0xFF212529) 
-                          : const Color(0xFF6C757D),
+                      color: isSelected ? const Color(0xFF212529) : const Color(0xFF6C757D),
                       fontFamily: 'SansRegular',
                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                      fontSize: 16,
+                      fontSize: 14,
                     ),
                   ),
                 ),
-                if (isSelected)
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFFFC727),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
               ],
             ),
           ),
@@ -562,28 +384,19 @@ class _ScreenPageState extends State<ScreenPage> with TickerProviderStateMixin {
 
   Widget _buildBottomNavIcon(IconData icon, int index, int currentIndex) {
     final isSelected = index == currentIndex;
-    final isQRScanner = index == 2; // QR Scanner is at index 2 in bottom nav
+    final isQRScanner = index == 2;
     
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: isSelected 
-            ? (isQRScanner ? const Color(0xFF007BFF).withOpacity(0.2) : const Color(0xFFFFC727).withOpacity(0.2))
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Icon(
-        icon,
-        size: isQRScanner ? 26 : 24, // Make QR scanner icon slightly larger
-        color: isSelected 
-            ? (isQRScanner ? const Color(0xFF007BFF) : const Color(0xFFFFC727))
-            : const Color(0xFF6C757D),
-      ),
+    return Icon(
+      icon,
+      size: isQRScanner ? 22 : 20,
+      color: isSelected 
+          ? (isQRScanner ? const Color(0xFF007BFF) : const Color(0xFFFFC727))
+          : const Color(0xFF6C757D),
     );
   }
 }
 
-// QR Scanner Page Widget
+// Enhanced QR Scanner Page with Gallery Import
 class QRScannerPage extends StatefulWidget {
   @override
   _QRScannerPageState createState() => _QRScannerPageState();
@@ -591,6 +404,7 @@ class QRScannerPage extends StatefulWidget {
 
 class _QRScannerPageState extends State<QRScannerPage> {
   MobileScannerController cameraController = MobileScannerController();
+  final ImagePicker _imagePicker = ImagePicker();
   bool isScanning = true;
   String? scannedData;
 
@@ -616,318 +430,364 @@ class _QRScannerPageState extends State<QRScannerPage> {
     }
   }
 
-  // Also modify the _showScannedDataDialog method to make the Process button more intuitive
-void _showScannedDataDialog(String data) {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFC727).withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.qr_code_rounded,
-                color: Color(0xFF212529),
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'QR Code Scanned',
-              style: TextStyle(
-                fontFamily: 'SansRegular',
-                fontWeight: FontWeight.w600,
-                fontSize: 18,
-                color: Color(0xFF212529),
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Device Name:',
-              style: TextStyle(
-                fontFamily: 'SansRegular',
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-                color: Color(0xFF212529),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8F9FA),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: const Color(0xFFE9ECEF),
-                  width: 1,
-                ),
-              ),
-              child: Text(
-                data,
-                style: const TextStyle(
-                  fontFamily: 'SansRegular',
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF495057),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Tap "Find Device" to search for this device in your inventory.',
-              style: TextStyle(
-                fontFamily: 'SansRegular',
-                fontSize: 14,
-                color: Color(0xFF6C757D),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              setState(() {
-                isScanning = true;
-                scannedData = null;
-              });
-            },
-            child: const Text(
-              'Scan Again',
-              style: TextStyle(
-                fontFamily: 'SansRegular',
-                color: Color(0xFF6C757D),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _processDeviceData(data);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFFC727),
-              foregroundColor: const Color(0xFF212529),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              elevation: 0,
-            ),
-            child: const Text(
-              'Find Device',
-              style: TextStyle(
-                fontFamily: 'SansRegular',
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      );
-    },
-  );
-}
-
-  // Replace the _processDeviceData method in your QRScannerPage class
-void _processDeviceData(String data) async {
+  Future<void> _pickImageFromGallery() async {
   try {
-    // Show loading indicator
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return const Center(
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFC727)),
-          ),
-        );
-      },
+    final XFile? image = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 100,
     );
-
-    // Search for device in Firestore
-    final querySnapshot = await FirebaseFirestore.instance
-        .collection('devices')
-        .where('name', isEqualTo: data.trim())
-        .get();
-
-    // Close loading dialog
-    Navigator.of(context).pop();
-
-    if (querySnapshot.docs.isNotEmpty) {
-      // Device found - get the first matching device
-      final deviceDoc = querySnapshot.docs.first;
-      final deviceData = deviceDoc.data();
-      deviceData['id'] = deviceDoc.id; // Add document ID to the data
-
-      // Navigate to device details page
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => DeviceDetailsPage(device: deviceData),
-        ),
+    
+    if (image != null) {
+      setState(() {
+        isScanning = false;
+      });
+      
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFC727)),
+            ),
+          );
+        },
       );
 
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Device found: ${deviceData['name']}'),
-          backgroundColor: const Color(0xFF28A745),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-      );
-    } else {
-      // Device not found
-      _showDeviceNotFoundDialog(data);
+      // Create a temporary controller for image analysis
+      final MobileScannerController tempController = MobileScannerController();
+      
+      // Set up a listener for barcode detection
+      bool barcodeFound = false;
+      String? detectedCode;
+      
+      // Listen for barcode detection
+      final subscription = tempController.barcodes.listen((BarcodeCapture capture) {
+        if (!barcodeFound && capture.barcodes.isNotEmpty) {
+          barcodeFound = true;
+          detectedCode = capture.barcodes.first.rawValue;
+        }
+      });
+      
+      try {
+        // Analyze the image
+        await tempController.analyzeImage(image.path);
+        
+        // Wait a bit for the detection to process
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        // Clean up
+        await subscription.cancel();
+        tempController.dispose();
+        
+        Navigator.of(context).pop(); // Close loading dialog
+        
+        if (barcodeFound && detectedCode != null) {
+          _showScannedDataDialog(detectedCode!);
+        } else {
+          _showNoQRCodeFoundDialog();
+        }
+        
+      } catch (e) {
+        await subscription.cancel();
+        tempController.dispose();
+        Navigator.of(context).pop(); // Close loading dialog
+        _showNoQRCodeFoundDialog();
+      }
+    }
+  } catch (e) {
+    if (Navigator.canPop(context)) {
+      Navigator.of(context).pop(); // Close loading dialog if open
     }
     
-    // Reset scanner state
-    setState(() {
-      isScanning = true;
-      scannedData = null;
-    });
-    
-  } catch (e) {
-    // Close loading dialog if still open
-    Navigator.of(context).pop();
-    
-    // Show error message
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Error searching for device: $e'),
+        content: Text('Error reading image: $e'),
         backgroundColor: const Color(0xFFDC3545),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
     
-    // Reset scanner state
     setState(() {
       isScanning = true;
-      scannedData = null;
     });
   }
 }
 
-
-
-// Add this new method to show device not found dialog
-void _showDeviceNotFoundDialog(String deviceName) {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFDC3545).withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.error_outline,
-                color: Color(0xFFDC3545),
-                size: 24,
+  void _showNoQRCodeFoundDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          title: const Text(
+            'No QR Code Found',
+            style: TextStyle(
+              fontFamily: 'SansRegular',
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              color: Color(0xFF212529),
+            ),
+          ),
+          content: const Text(
+            'No QR code was detected in the selected image. Please try another image.',
+            style: TextStyle(
+              fontFamily: 'SansRegular',
+              fontSize: 14,
+              color: Color(0xFF495057),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                setState(() {
+                  isScanning = true;
+                });
+              },
+              child: const Text(
+                'Try Again',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  color: Color(0xFF007BFF),
+                  fontSize: 12,
+                ),
               ),
             ),
-            const SizedBox(width: 12),
-            const Text(
-              'Device Not Found',
-              style: TextStyle(
-                fontFamily: 'SansRegular',
-                fontWeight: FontWeight.w600,
-                fontSize: 18,
-                color: Color(0xFF212529),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _pickImageFromGallery();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFFC727),
+                foregroundColor: const Color(0xFF212529),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                elevation: 0,
+                minimumSize: const Size(80, 36),
+              ),
+              child: const Text(
+                'Pick Another',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
               ),
             ),
           ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'No device found with the name "$deviceName".',
-              style: const TextStyle(
-                fontFamily: 'SansRegular',
-                fontSize: 16,
-                color: Color(0xFF495057),
+        );
+      },
+    );
+  }
+
+  void _showScannedDataDialog(String data) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          title: const Text(
+            'Device Scanned',
+            style: TextStyle(
+              fontFamily: 'SansRegular',
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              color: Color(0xFF212529),
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Device: $data',
+                style: const TextStyle(
+                  fontFamily: 'SansRegular',
+                  fontSize: 14,
+                  color: Color(0xFF495057),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                setState(() {
+                  isScanning = true;
+                  scannedData = null;
+                });
+              },
+              child: const Text(
+                'Scan Again',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  color: Color(0xFF6C757D),
+                  fontSize: 12,
+                ),
               ),
             ),
-            const SizedBox(height: 12),
-            const Text(
-              'Please check the QR code or make sure the device is registered in the system.',
-              style: TextStyle(
-                fontFamily: 'SansRegular',
-                fontSize: 14,
-                color: Color(0xFF6C757D),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _processDeviceData(data);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFFC727),
+                foregroundColor: const Color(0xFF212529),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                elevation: 0,
+                minimumSize: const Size(80, 36),
+              ),
+              child: const Text(
+                'Find',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
               ),
             ),
           ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text(
-              'Scan Again',
-              style: TextStyle(
-                fontFamily: 'SansRegular',
-                color: Color(0xFF007BFF),
-                fontWeight: FontWeight.w500,
-              ),
+        );
+      },
+    );
+  }
+
+  void _processDeviceData(String data) async {
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFC727)),
             ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              // Navigate to Add Device page with pre-filled name
-              // You can modify this based on your app's navigation structure
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFFC727),
-              foregroundColor: const Color(0xFF212529),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              elevation: 0,
-            ),
-            child: const Text(
-              'Add Device',
-              style: TextStyle(
-                fontFamily: 'SansRegular',
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
+          );
+        },
       );
-    },
-  );
-}
+
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('devices')
+          .where('name', isEqualTo: data.trim())
+          .get();
+
+      Navigator.of(context).pop();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        final deviceDoc = querySnapshot.docs.first;
+        final deviceData = deviceDoc.data();
+        deviceData['id'] = deviceDoc.id;
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DeviceDetailsPage(device: deviceData),
+          ),
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Found: ${deviceData['name']}'),
+            backgroundColor: const Color(0xFF28A745),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        );
+      } else {
+        _showDeviceNotFoundDialog(data);
+      }
+      
+      setState(() {
+        isScanning = true;
+        scannedData = null;
+      });
+      
+    } catch (e) {
+      Navigator.of(context).pop();
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: const Color(0xFFDC3545),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
+      
+      setState(() {
+        isScanning = true;
+        scannedData = null;
+      });
+    }
+  }
+
+  void _showDeviceNotFoundDialog(String deviceName) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          title: const Text(
+            'Not Found',
+            style: TextStyle(
+              fontFamily: 'SansRegular',
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              color: Color(0xFF212529),
+            ),
+          ),
+          content: Text(
+            'Device "$deviceName" not found.',
+            style: const TextStyle(
+              fontFamily: 'SansRegular',
+              fontSize: 14,
+              color: Color(0xFF495057),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text(
+                'Scan Again',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  color: Color(0xFF007BFF),
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFFC727),
+                foregroundColor: const Color(0xFF212529),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                elevation: 0,
+                minimumSize: const Size(80, 36),
+              ),
+              child: const Text(
+                'Add Device',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -935,87 +795,81 @@ void _showDeviceNotFoundDialog(String deviceName) {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Camera View
           MobileScanner(
             controller: cameraController,
             onDetect: _onDetect,
           ),
           
-          // Overlay with scanning frame
           Container(
             decoration: ShapeDecoration(
               shape: QRScannerOverlayShape(
                 borderColor: const Color(0xFFFFC727),
-                borderRadius: 16,
-                borderLength: 30,
-                borderWidth: 4,
-                cutOutSize: 250,
+                borderRadius: 12,
+                borderLength: 24,
+                borderWidth: 3,
+                cutOutSize: 220,
               ),
             ),
           ),
           
-          // Top instruction
           Positioned(
-            top: 100,
+            top: 80,
             left: 0,
             right: 0,
             child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 24),
-              padding: const EdgeInsets.all(16),
+              margin: const EdgeInsets.symmetric(horizontal: 32),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.7),
-                borderRadius: BorderRadius.circular(12),
+                color: Colors.black.withOpacity(0.6),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: const Text(
-                'Position the QR code within the frame to scan device details',
+                'Position QR code in frame or import from gallery',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 16,
+                  fontSize: 14,
                   fontFamily: 'SansRegular',
-                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
           ),
           
-          // Bottom controls
           Positioned(
-            bottom: 100,
+            bottom: 80,
             left: 0,
             right: 0,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                // Flash toggle
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
-                    borderRadius: BorderRadius.circular(30),
+                    color: Colors.black.withOpacity(0.6),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   child: IconButton(
                     onPressed: () => cameraController.toggleTorch(),
-                    icon: const Icon(
-                      Icons.flash_on,
-                      color: Colors.white,
-                      size: 28,
-                    ),
+                    icon: const Icon(Icons.flash_on, color: Colors.white, size: 24),
                   ),
                 ),
-                
-                // Switch camera
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
-                    borderRadius: BorderRadius.circular(30),
+                    color: Colors.black.withOpacity(0.6),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: IconButton(
+                    onPressed: _pickImageFromGallery,
+                    icon: const Icon(Icons.photo_library, color: Colors.white, size: 24),
+                  ),
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   child: IconButton(
                     onPressed: () => cameraController.switchCamera(),
-                    icon: const Icon(
-                      Icons.flip_camera_ios,
-                      color: Colors.white,
-                      size: 28,
-                    ),
+                    icon: const Icon(Icons.flip_camera_ios, color: Colors.white, size: 24),
                   ),
                 ),
               ],
@@ -1027,7 +881,7 @@ void _showDeviceNotFoundDialog(String deviceName) {
   }
 }
 
-// Custom QR Scanner Overlay Shape
+// Simplified QR Scanner Overlay
 class QRScannerOverlayShape extends ShapeBorder {
   const QRScannerOverlayShape({
     this.borderColor = Colors.white,
@@ -1078,7 +932,6 @@ class QRScannerOverlayShape extends ShapeBorder {
 
     canvas.drawPath(getOuterPath(rect), paint);
 
-    // Draw border corners
     final Paint borderPaint = Paint()
       ..color = borderColor
       ..style = PaintingStyle.stroke

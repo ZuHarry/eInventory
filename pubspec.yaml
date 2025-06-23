@@ -21,6 +21,7 @@ dependencies:
   firebase_messaging: ^14.7.10
   # flutter_local_notifications: ^16.3.2
   mobile_scanner: ^3.5.6  # Well-maintained alternative
+  http: ^1.1.0
 
   # PDF generation dependencies
   pdf: ^3.10.7

@@ -16,14 +16,228 @@ class _AddLocationPageState extends State<AddLocationPage> {
   final ImagePicker _picker = ImagePicker();
 
   final TextEditingController _locationNameController = TextEditingController();
-  String _building = 'Right Wing';
+  final TextEditingController _customBuildingController = TextEditingController();
+  String _building = 'Add Custom Building...';
   String _floor = 'Ground Floor';
   String _locationType = 'Lecture Room';
   String? _imageUrl; // For default images
   File? _selectedImage; // For user-uploaded image
   bool _isUploading = false;
+  bool _isCustomBuilding = false; // Track if user selected custom building option
 
+  // 1. Add new state variable to track temporary custom building
+  String? _tempCustomBuilding; // Add this line near other state variables
+
+  // Available buildings from Firestore + default options
+  List<String> _availableBuildings = ['Add Custom Building...'];
   Color hex(String hexCode) => Color(int.parse('FF$hexCode', radix: 16));
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExistingBuildings();
+  }
+
+  // Load existing custom buildings from Firestore
+  Future<void> _loadExistingBuildings() async {
+    try {
+      QuerySnapshot buildingsSnapshot = await FirebaseFirestore.instance
+          .collection('buildings')
+          .orderBy('name')
+          .get();
+      
+      List<String> customBuildings = buildingsSnapshot.docs
+          .map((doc) => doc['name'] as String)
+          .toList();
+      
+      setState(() {
+        _availableBuildings = [
+          ...customBuildings,
+          'Add Custom Building...'
+        ];
+        // Set default building to first available or empty if none exist
+        if (customBuildings.isNotEmpty) {
+          _building = customBuildings.first;
+        } else {
+          _building = 'Add Custom Building...';
+        }
+      });
+    } catch (e) {
+      print('Error loading buildings: $e');
+      // If error loading, still show the option to add custom building
+      setState(() {
+        _availableBuildings = ['Add Custom Building...'];
+        _building = 'Add Custom Building...';
+      });
+    }
+  }
+
+  // // Save custom building to Firestore
+  // Future<void> _saveCustomBuilding(String buildingName) async {
+  //   try {
+  //     await FirebaseFirestore.instance.collection('buildings').add({
+  //       'name': buildingName,
+  //       'created_at': FieldValue.serverTimestamp(),
+  //     });
+      
+  //     // Reload buildings list
+  //     await _loadExistingBuildings();
+      
+  //     // Set the new building as selected
+  //     setState(() {
+  //       _building = buildingName;
+  //       _isCustomBuilding = false;
+  //       _customBuildingController.clear();
+  //     });
+      
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text("Building '$buildingName' added successfully")),
+  //     );
+  //   } catch (e) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text("Error adding building: $e")),
+  //     );
+  //   }
+  // }
+
+  // 2. Modify _showCustomBuildingDialog() - Remove automatic saving
+void _showCustomBuildingDialog() {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        backgroundColor: const Color(0xFF212529),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFC727).withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.business,
+                color: Color(0xFFFFC727),
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Add Custom Building',
+              style: TextStyle(
+                fontFamily: 'SansRegular',
+                fontWeight: FontWeight.w600,
+                fontSize: 18,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Enter the name of the new building:',
+              style: TextStyle(
+                fontFamily: 'SansRegular',
+                fontSize: 14,
+                color: Colors.white70,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _customBuildingController,
+              style: const TextStyle(
+                fontFamily: 'SansRegular', 
+                fontSize: 16, 
+                color: Colors.white
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Building Name',
+                labelStyle: TextStyle(
+                  color: Colors.white70,
+                  fontFamily: 'SansRegular',
+                ),
+                border: OutlineInputBorder(),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Color(0xFFFFC727), width: 2),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white70),
+                ),
+              ),
+              autofocus: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              _customBuildingController.clear();
+              Navigator.of(context).pop();
+              // Reset dropdown to previous value
+              setState(() {
+                _building = _availableBuildings.first;
+              });
+            },
+            child: const Text(
+              'Cancel',
+              style: TextStyle(
+                fontFamily: 'SansRegular',
+                color: Colors.white70,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              String buildingName = _customBuildingController.text.trim();
+              if (buildingName.isNotEmpty) {
+                // Check if building already exists in the list OR in temp storage
+                if (_availableBuildings.contains(buildingName)) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Building '$buildingName' already exists")),
+                  );
+                  return;
+                }
+                
+                Navigator.of(context).pop();
+                // Just store temporarily, don't save to Firestore yet
+                setState(() {
+                  _tempCustomBuilding = buildingName;
+                  _building = buildingName;
+                  _customBuildingController.clear();
+                });
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Please enter a building name")),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFFC727),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Add Building',
+              style: TextStyle(
+                fontFamily: 'SansRegular',
+                color: Colors.black,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      );
+    },
+  );
+}
 
   void _showErrorDialog(List<String> emptyFields) {
     showDialog(
@@ -429,81 +643,97 @@ class _AddLocationPageState extends State<AddLocationPage> {
     }
   }
 
-  void _submitForm() async {
-    // Check if all required fields are filled
-    List<String> emptyFields = [];
-    
-    if (_locationNameController.text.trim().isEmpty) {
-      emptyFields.add('Location Name');
-    }
+  // 4. Modify _submitForm() to save custom building only when location is submitted
+void _submitForm() async {
+  // Check if all required fields are filled
+  List<String> emptyFields = [];
+  
+  if (_locationNameController.text.trim().isEmpty) {
+    emptyFields.add('Location Name');
+  }
 
-    // If there are empty fields, show error dialog
-    if (emptyFields.isNotEmpty) {
-      _showErrorDialog(emptyFields);
+  // If there are empty fields, show error dialog
+  if (emptyFields.isNotEmpty) {
+    _showErrorDialog(emptyFields);
+    return;
+  }
+
+  // Check if location name already exists
+  String locationName = _locationNameController.text.trim();
+  bool nameExists = await _checkLocationNameExists(locationName);
+  
+  if (nameExists) {
+    _showDuplicateNameDialog(locationName);
+    return;
+  }
+
+  // Show confirmation dialog
+  final confirmed = await _showConfirmationDialog();
+  if (!confirmed) return;
+
+  String? finalImageUrl;
+
+  // If user uploaded a custom image, upload it to Firebase Storage
+  if (_selectedImage != null) {
+    finalImageUrl = await _uploadImageToFirebase(_selectedImage!);
+    if (finalImageUrl == null) {
+      // Upload failed, don't proceed
       return;
     }
-
-    // Check if location name already exists
-    String locationName = _locationNameController.text.trim();
-    bool nameExists = await _checkLocationNameExists(locationName);
-    
-    if (nameExists) {
-      _showDuplicateNameDialog(locationName);
-      return;
-    }
-
-    // Show confirmation dialog
-    final confirmed = await _showConfirmationDialog();
-    if (!confirmed) return;
-
-    String? finalImageUrl;
-
-    // If user uploaded a custom image, upload it to Firebase Storage
-    if (_selectedImage != null) {
-      finalImageUrl = await _uploadImageToFirebase(_selectedImage!);
-      if (finalImageUrl == null) {
-        // Upload failed, don't proceed
-        return;
-      }
-    } else {
-      // Use default image based on location type
-      if (_locationType == 'Lecture Room') {
-        finalImageUrl = 'https://drive.google.com/uc?export=view&id=1VRibpXtVrgUGokLdUrzCSIl8nZ3zanGy';
-      } else if (_locationType == 'Lab') {
-        finalImageUrl = 'https://drive.google.com/uc?export=view&id=1OOjtYkVwFJEc_zWhw6DADl3WunbqKsfU';
-      }
-    }
-
-    try {
-      await FirebaseFirestore.instance.collection('locations').add({
-        'name': locationName,
-        'building': _building,
-        'floor': _floor,
-        'type': _locationType,
-        'imageUrl': finalImageUrl,
-        'hasCustomImage': _selectedImage != null, // Track if it's a custom image
-        'created_at': FieldValue.serverTimestamp(),
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Location added successfully")),
-      );
-
-      // Clear form
-      _locationNameController.clear();
-      setState(() {
-        _building = 'Right Wing';
-        _floor = 'Ground Floor';
-        _locationType = 'Lecture Room';
-        _imageUrl = null;
-        _selectedImage = null;
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
+  } else {
+    // Use default image based on location type
+    if (_locationType == 'Lecture Room') {
+      finalImageUrl = 'https://drive.google.com/uc?export=view&id=1VRibpXtVrgUGokLdUrzCSIl8nZ3zanGy';
+    } else if (_locationType == 'Lab') {
+      finalImageUrl = 'https://drive.google.com/uc?export=view&id=1OOjtYkVwFJEc_zWhw6DADl3WunbqKsfU';
     }
   }
+
+  try {
+    // SAVE CUSTOM BUILDING FIRST (if exists)
+    if (_tempCustomBuilding != null && _tempCustomBuilding!.isNotEmpty) {
+      await FirebaseFirestore.instance.collection('buildings').add({
+        'name': _tempCustomBuilding!,
+        'created_at': FieldValue.serverTimestamp(),
+      });
+      
+      // Add to available buildings list for future use
+      setState(() {
+        _availableBuildings.insert(_availableBuildings.length - 1, _tempCustomBuilding!);
+      });
+    }
+
+    // THEN SAVE THE LOCATION
+    await FirebaseFirestore.instance.collection('locations').add({
+      'name': locationName,
+      'building': _building,
+      'floor': _floor,
+      'type': _locationType,
+      'imageUrl': finalImageUrl,
+      'hasCustomImage': _selectedImage != null,
+      'created_at': FieldValue.serverTimestamp(),
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Location added successfully")),
+    );
+
+    // Clear form INCLUDING temp custom building
+    _locationNameController.clear();
+    setState(() {
+      _building = _availableBuildings.first;
+      _floor = 'Ground Floor';
+      _locationType = 'Lecture Room';
+      _imageUrl = null;
+      _selectedImage = null;
+      _tempCustomBuilding = null; // Clear temp custom building
+    });
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Error: $e")),
+    );
+  }
+}
 
   void _removeSelectedImage() {
     setState(() {
@@ -559,8 +789,14 @@ class _AddLocationPageState extends State<AddLocationPage> {
                   _buildDropdown(
                     label: 'Building',
                     value: _building,
-                    items: ['Right Wing', 'Left Wing'],
-                    onChanged: (val) => setState(() => _building = val!),
+                    items: _availableBuildings,
+                    onChanged: (val) {
+                      if (val == 'Add Custom Building...') {
+                        _showCustomBuildingDialog();
+                      } else {
+                        setState(() => _building = val!);
+                      }
+                    },
                   ),
                   const SizedBox(height: 16),
                   _buildDropdown(
@@ -749,54 +985,66 @@ class _AddLocationPageState extends State<AddLocationPage> {
     );
   }
 
+  // 5. Update the building dropdown to show temp custom building
   Widget _buildDropdown({
-  required String label,
-  required String value,
-  required List<String> items,
-  required void Function(String?) onChanged,
-}) {
-  return DropdownButtonFormField<String>(
-    value: value,
-    onChanged: onChanged,
-    dropdownColor: const Color(0xFF212529), // Set dropdown background to dark
-    items: items
-        .map((item) => DropdownMenuItem(
-              value: item,
-              child: Text(
-                item,
-                style: const TextStyle(
-                  fontFamily: 'SansRegular', 
-                  color: Colors.white, // White text for dropdown items
+    required String label,
+    required String value,
+    required List<String> items,
+    required void Function(String?) onChanged,
+  }) {
+    // For building dropdown, include temp custom building if it exists
+    List<String> displayItems = [...items];
+    if (label == 'Building' && _tempCustomBuilding != null && !displayItems.contains(_tempCustomBuilding)) {
+      displayItems.insert(displayItems.length - 1, _tempCustomBuilding!);
+    }
+    
+    return DropdownButtonFormField<String>(
+      value: value,
+      onChanged: onChanged,
+      dropdownColor: const Color(0xFF212529),
+      items: displayItems
+          .map((item) => DropdownMenuItem(
+                value: item,
+                child: Text(
+                  item,
+                  style: TextStyle(
+                    fontFamily: 'SansRegular', 
+                    color: item == 'Add Custom Building...' 
+                        ? const Color(0xFFFFC727)
+                        : Colors.white,
+                    fontWeight: item == 'Add Custom Building...' 
+                        ? FontWeight.bold 
+                        : FontWeight.normal,
+                  ),
                 ),
-              ),
-            ))
-        .toList(),
-    decoration: InputDecoration(
-      labelText: label,
-      labelStyle: const TextStyle(
+              ))
+          .toList(),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(
+          color: Colors.white,
+          fontFamily: 'SansRegular',
+        ),
+        border: const OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.white),
+        ),
+        enabledBorder: const OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.white),
+        ),
+        focusedBorder: const OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.white, width: 2),
+        ),
+        fillColor: Colors.transparent,
+        filled: true,
+      ),
+      style: const TextStyle(
+        fontFamily: 'SansRegular', 
         color: Colors.white,
-        fontFamily: 'SansRegular',
       ),
-      border: const OutlineInputBorder(
-        borderSide: BorderSide(color: Colors.white),
+      icon: const Icon(
+        Icons.arrow_drop_down,
+        color: Colors.white,
       ),
-      enabledBorder: const OutlineInputBorder(
-        borderSide: BorderSide(color: Colors.white),
-      ),
-      focusedBorder: const OutlineInputBorder(
-        borderSide: BorderSide(color: Colors.white, width: 2),
-      ),
-      fillColor: Colors.transparent, // Keep the field transparent
-      filled: true,
-    ),
-    style: const TextStyle(
-      fontFamily: 'SansRegular', 
-      color: Colors.white, // White text for selected value
-    ),
-    icon: const Icon(
-      Icons.arrow_drop_down,
-      color: Colors.white, // White dropdown arrow
-    ),
-  );
-}
+    );
+  }
 }
