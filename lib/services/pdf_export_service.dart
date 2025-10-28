@@ -97,45 +97,60 @@ class PDFExportService {
     };
   }
   
-  // Get device counts by building (same logic as in HomePage)
+  // Get device counts by building - dynamically fetch from buildings collection
   static Future<Map<String, Map<String, int>>> _getDeviceCountsByBuilding() async {
     final firestore = FirebaseFirestore.instance;
     
+    // First, get all buildings from the buildings collection
+    final buildingsSnapshot = await firestore.collection('buildings').get();
+    final Map<String, Map<String, int>> result = {};
+    
+    // Initialize result map with all buildings
+    for (var doc in buildingsSnapshot.docs) {
+      final data = doc.data();
+      final buildingName = data['name'] as String?;
+      if (buildingName != null) {
+        result[buildingName] = {'pc': 0, 'peripherals': 0};
+      }
+    }
+    
+    // Get location to building mapping
     final locationsSnapshot = await firestore.collection('locations').get();
     final Map<String, String> locationToBuilding = {};
     for (var doc in locationsSnapshot.docs) {
       final data = doc.data();
-      final locationName = data['name'];
-      final building = data['building'];
-      if (locationName != null && building != null) {
-        locationToBuilding[locationName] = building;
+      final locationName = data['name'] as String?;
+      final buildingName = data['building'] as String?; // This is the building name, not ID
+      
+      if (locationName != null && buildingName != null) {
+        locationToBuilding[locationName] = buildingName;
       }
     }
     
-    Map<String, Map<String, int>> result = {
-      'Right Wing': {'pc': 0, 'peripherals': 0},
-      'Left Wing': {'pc': 0, 'peripherals': 0},
-    };
-    
+    // Count devices by building
     final devicesSnapshot = await firestore.collection('devices').get();
     for (var doc in devicesSnapshot.docs) {
       final data = doc.data();
-      final locationName = data['location'];
+      final locationName = data['location'] as String?;
       final type = (data['type'] as String?)?.toLowerCase();
       
       if (locationName != null &&
           locationToBuilding.containsKey(locationName) &&
-          (type == 'pc' || type == 'peripheral' || type == 'peripherals')) {
-        final building = locationToBuilding[locationName]!;
-        if (result.containsKey(building)) {
+          (type == 'pc' || type == 'peripheral')) {
+        final buildingName = locationToBuilding[locationName]!;
+        if (result.containsKey(buildingName)) {
           if (type == 'pc') {
-            result[building]!['pc'] = result[building]!['pc']! + 1;
-          } else {
-            result[building]!['peripherals'] = result[building]!['peripherals']! + 1;
+            result[buildingName]!['pc'] = result[buildingName]!['pc']! + 1;
+          } else if (type == 'peripheral') {
+            result[buildingName]!['peripherals'] = result[buildingName]!['peripherals']! + 1;
           }
         }
       }
     }
+    
+    // Debug print to help troubleshoot
+    print('Location to Building mapping: $locationToBuilding');
+    print('Final building counts: $result');
     
     return result;
   }
@@ -305,38 +320,40 @@ class PDFExportService {
           style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
         ),
         pw.SizedBox(height: 16),
-        pw.Table(
-          border: pw.TableBorder.all(color: PdfColors.grey300),
-          children: [
-            // Header
-            pw.TableRow(
-              decoration: pw.BoxDecoration(color: PdfColors.grey100),
+        buildingCounts.isEmpty 
+          ? pw.Text('No buildings found', style: pw.TextStyle(fontSize: 12, color: PdfColors.grey600))
+          : pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.grey300),
               children: [
-                _buildTableCell('Building', isHeader: true),
-                _buildTableCell('PCs', isHeader: true),
-                _buildTableCell('Peripherals', isHeader: true),
-                _buildTableCell('Total', isHeader: true),
+                // Header
+                pw.TableRow(
+                  decoration: pw.BoxDecoration(color: PdfColors.grey100),
+                  children: [
+                    _buildTableCell('Building', isHeader: true),
+                    _buildTableCell('PCs', isHeader: true),
+                    _buildTableCell('Peripherals', isHeader: true),
+                    _buildTableCell('Total', isHeader: true),
+                  ],
+                ),
+                // Building rows - dynamically generated from buildings collection
+                ...buildingCounts.entries.map((entry) {
+                  final building = entry.key;
+                  final counts = entry.value;
+                  final pcCount = counts['pc'] ?? 0;
+                  final peripheralCount = counts['peripherals'] ?? 0;
+                  final total = pcCount + peripheralCount;
+                  
+                  return pw.TableRow(
+                    children: [
+                      _buildTableCell(building),
+                      _buildTableCell('$pcCount'),
+                      _buildTableCell('$peripheralCount'),
+                      _buildTableCell('$total'),
+                    ],
+                  );
+                }).toList(),
               ],
             ),
-            // Building rows
-            ...buildingCounts.entries.map((entry) {
-              final building = entry.key;
-              final counts = entry.value;
-              final pcCount = counts['pc'] ?? 0;
-              final peripheralCount = counts['peripherals'] ?? 0;
-              final total = pcCount + peripheralCount;
-              
-              return pw.TableRow(
-                children: [
-                  _buildTableCell(building),
-                  _buildTableCell('$pcCount'),
-                  _buildTableCell('$peripheralCount'),
-                  _buildTableCell('$total'),
-                ],
-              );
-            }).toList(),
-          ],
-        ),
       ],
     );
   }

@@ -80,7 +80,7 @@ class DevicePingService {
   Future<MapEntry<String, bool>> _pingDeviceWithId(String deviceId, String ipAddress) async {
     try {
       final isOnline = await pingDevice(ipAddress);
-      print('Device $deviceId ($ipAddress): ${isOnline ? 'Offline' : 'Online'}');
+      print('Device $deviceId ($ipAddress): ${isOnline ? 'Online' : 'Offline'}');
       return MapEntry(deviceId, isOnline);
     } catch (e) {
       print('Error pinging device $deviceId: $e');
@@ -95,7 +95,7 @@ class DevicePingService {
     for (final entry in results.entries) {
       final deviceRef = _firestore.collection('devices').doc(entry.key);
       batch.update(deviceRef, {
-        'status': entry.value ? 'Offline' : 'Online',
+        'status': entry.value ? 'Online' : 'Offline',
         'last_ping': FieldValue.serverTimestamp(),
       });
     }
@@ -153,7 +153,7 @@ class DevicePingService {
       
       // Update this specific device
       await _firestore.collection('devices').doc(deviceId).update({
-        'status': isOnline ? 'Offline' : 'Online',
+        'status': isOnline ? 'Online' : 'Offline',
         'last_ping': FieldValue.serverTimestamp(),
       });
       

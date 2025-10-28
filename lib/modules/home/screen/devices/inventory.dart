@@ -14,7 +14,42 @@ class _InventoryPageState extends State<InventoryPage> {
   String _selectedType = 'All';
   String _selectedFloor = 'All';
   String _selectedBuilding = 'All';
-  String _selectedStatus = 'All'; // Added status filter
+  String _selectedStatus = 'All';
+  List<String> _buildingOptions = ['All']; // Dynamic building list
+  bool _isBuildingDataLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBuildingOptions();
+  }
+
+  // Load building names from Firestore
+  Future<void> _loadBuildingOptions() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance.collection('buildings').get();
+      final buildingNames = <String>['All'];
+      
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        final name = data['name'];
+        if (name != null && name.toString().isNotEmpty) {
+          buildingNames.add(name.toString());
+        }
+      }
+      
+      setState(() {
+        _buildingOptions = buildingNames;
+        _isBuildingDataLoaded = true;
+      });
+    } catch (e) {
+      print('Error loading building options: $e');
+      setState(() {
+        _buildingOptions = ['All']; // Fallback to default
+        _isBuildingDataLoaded = true;
+      });
+    }
+  }
 
   Icon _getDeviceIcon(String? type) {
     if (type == 'PC') return const Icon(Icons.computer_outlined, color: Color(0xFFFFC727), size: 20);
@@ -59,7 +94,7 @@ class _InventoryPageState extends State<InventoryPage> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Color(0xFF212529)),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(100), // Increased height to accommodate new filter row
+          preferredSize: const Size.fromHeight(100),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
             child: Column(
@@ -199,7 +234,7 @@ class _InventoryPageState extends State<InventoryPage> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    // Building Filter
+                    // Building Filter - Now Dynamic
                     Expanded(
                       child: Container(
                         height: 32,
@@ -220,24 +255,37 @@ class _InventoryPageState extends State<InventoryPage> {
                             const Icon(Icons.business_outlined, size: 14, color: Color(0xFF6C757D)),
                             const SizedBox(width: 6),
                             Expanded(
-                              child: DropdownButton<String>(
-                                value: _selectedBuilding,
-                                dropdownColor: Colors.white,
-                                underline: const SizedBox(),
-                                isExpanded: true,
-                                isDense: true,
-                                style: const TextStyle(
-                                  color: Color(0xFF212529),
-                                  fontFamily: 'SansRegular',
-                                  fontSize: 12,
-                                ),
-                                items: const [
-                                  DropdownMenuItem(value: 'All', child: Text('All')),
-                                  DropdownMenuItem(value: 'Left Wing', child: Text('Left')),
-                                  DropdownMenuItem(value: 'Right Wing', child: Text('Right')),
-                                ],
-                                onChanged: (value) => setState(() => _selectedBuilding = value!),
-                              ),
+                              child: _isBuildingDataLoaded 
+                                ? DropdownButton<String>(
+                                    value: _selectedBuilding,
+                                    dropdownColor: Colors.white,
+                                    underline: const SizedBox(),
+                                    isExpanded: true,
+                                    isDense: true,
+                                    style: const TextStyle(
+                                      color: Color(0xFF212529),
+                                      fontFamily: 'SansRegular',
+                                      fontSize: 12,
+                                    ),
+                                    items: _buildingOptions.map((building) {
+                                      return DropdownMenuItem(
+                                        value: building,
+                                        child: Text(
+                                          building == 'All' ? 'All' : building,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      );
+                                    }).toList(),
+                                    onChanged: (value) => setState(() => _selectedBuilding = value!),
+                                  )
+                                : const SizedBox(
+                                    width: 12,
+                                    height: 12,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 1,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6C757D)),
+                                    ),
+                                  ),
                             ),
                           ],
                         ),
@@ -366,13 +414,13 @@ class _InventoryPageState extends State<InventoryPage> {
                 final type = (data['type'] ?? 'Unknown').toString();
                 final floor = (data['floor'] ?? 'Unknown').toString();
                 final building = (data['building'] ?? 'Unknown').toString();
-                final status = (data['status'] ?? '').toString(); // Added status filtering
+                final status = (data['status'] ?? '').toString();
 
                 if (_searchQuery.isNotEmpty && !name.contains(_searchQuery.toLowerCase())) return false;
                 if (_selectedType != 'All' && type != _selectedType) return false;
                 if (_selectedFloor != 'All' && floor != _selectedFloor) return false;
                 if (_selectedBuilding != 'All' && building != _selectedBuilding) return false;
-                if (_selectedStatus != 'All' && status.toLowerCase() != _selectedStatus.toLowerCase()) return false; // Added status filter logic
+                if (_selectedStatus != 'All' && status.toLowerCase() != _selectedStatus.toLowerCase()) return false;
                 return true;
               }).toList();
 

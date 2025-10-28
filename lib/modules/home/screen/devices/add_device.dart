@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import '../location/choose_location.dart'; // Import this
+import '../location/choose_location.dart';
+import '../devices/choose_brand.dart'; // Add this import
 
 class AddDevicePage extends StatefulWidget {
   final VoidCallback? onNavigateToInventory;
@@ -17,22 +18,20 @@ class _AddDevicePageState extends State<AddDevicePage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _ipController = TextEditingController();
   final TextEditingController _macController = TextEditingController();
-  final TextEditingController _brandController = TextEditingController();
   final TextEditingController _modelController = TextEditingController();
   final TextEditingController _processorController = TextEditingController();
   final TextEditingController _storageController = TextEditingController();
 
-  String _deviceType = 'PC'; // Default value for device type
-  String _deviceStatus = 'Online'; // Default value for device status
-  String _peripheralType = 'Monitor'; // Default value for peripheral type
+  String _deviceType = 'PC';
+  String _deviceStatus = 'Online';
+  String _peripheralType = 'Monitor';
   String? _selectedLocationName;
+  String? _selectedBrand; // Changed from TextEditingController to String?
 
-  // Check for duplicate device name only
   Future<List<String>> _checkDuplicates(String name) async {
     List<String> duplicateFields = [];
     
     try {
-      // Check for duplicate device name
       QuerySnapshot nameQuery = await FirebaseFirestore.instance
           .collection('devices')
           .where('name', isEqualTo: name)
@@ -49,7 +48,6 @@ class _AddDevicePageState extends State<AddDevicePage> {
   }
 
   void _submitForm() async {
-    // Check if all required fields are filled
     List<String> emptyFields = [];
     
     if (_nameController.text.trim().isEmpty) {
@@ -59,17 +57,14 @@ class _AddDevicePageState extends State<AddDevicePage> {
       emptyFields.add('Location');
     }
 
-    // If there are empty fields, show error dialog
     if (emptyFields.isNotEmpty) {
       _showErrorDialog(emptyFields);
       return;
     }
 
-    // Proceed with form validation
     if (_formKey.currentState!.validate()) {
       String name = _nameController.text.trim();
 
-      // Check for duplicates
       List<String> duplicateFields = await _checkDuplicates(name);
       
       if (duplicateFields.isNotEmpty) {
@@ -86,7 +81,6 @@ class _AddDevicePageState extends State<AddDevicePage> {
           'created_at': FieldValue.serverTimestamp(),
         };
 
-        // Add IP and MAC if they are provided
         if (_ipController.text.trim().isNotEmpty) {
           deviceData['ip'] = _ipController.text.trim();
         }
@@ -94,10 +88,9 @@ class _AddDevicePageState extends State<AddDevicePage> {
           deviceData['mac'] = _macController.text.trim();
         }
 
-        // Add fields based on device type
         if (_deviceType == 'PC') {
-          if (_brandController.text.trim().isNotEmpty) {
-            deviceData['brand'] = _brandController.text.trim();
+          if (_selectedBrand != null) {
+            deviceData['brand'] = _selectedBrand;
           }
           if (_modelController.text.trim().isNotEmpty) {
             deviceData['model'] = _modelController.text.trim();
@@ -110,8 +103,8 @@ class _AddDevicePageState extends State<AddDevicePage> {
           }
         } else if (_deviceType == 'Peripheral') {
           deviceData['peripheral_type'] = _peripheralType;
-          if (_brandController.text.trim().isNotEmpty) {
-            deviceData['brand'] = _brandController.text.trim();
+          if (_selectedBrand != null) {
+            deviceData['brand'] = _selectedBrand;
           }
           if (_modelController.text.trim().isNotEmpty) {
             deviceData['model'] = _modelController.text.trim();
@@ -120,14 +113,11 @@ class _AddDevicePageState extends State<AddDevicePage> {
 
         await FirebaseFirestore.instance.collection('devices').add(deviceData);
 
-        // Show success dialog
         _showSuccessDialog(name);
 
-        // Clear form after showing dialog
         _nameController.clear();
         _ipController.clear();
         _macController.clear();
-        _brandController.clear();
         _modelController.clear();
         _processorController.clear();
         _storageController.clear();
@@ -136,6 +126,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
           _deviceStatus = 'Online';
           _peripheralType = 'Monitor';
           _selectedLocationName = null;
+          _selectedBrand = null;
         });
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -148,7 +139,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
   void _showErrorDialog(List<String> emptyFields) {
     showDialog(
       context: context,
-      barrierDismissible: false, // User must tap button to dismiss
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
@@ -213,7 +204,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
                     ),
                   ],
                 ),
-              )).toList(),
+              )),
             ],
           ),
           actions: [
@@ -243,7 +234,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
   void _showDuplicateDialog(List<String> duplicateFields) {
     showDialog(
       context: context,
-      barrierDismissible: false, // User must tap button to dismiss
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
@@ -308,7 +299,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
                     ),
                   ],
                 ),
-              )).toList(),
+              )),
               const SizedBox(height: 8),
               const Text(
                 'Please use different values for these fields.',
@@ -347,7 +338,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
   void _showSuccessDialog(String deviceName) {
     showDialog(
       context: context,
-      barrierDismissible: false, // User must tap button to dismiss
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
@@ -404,7 +395,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(), // Just closes dialog, stays on add device page
+              onPressed: () => Navigator.of(context).pop(),
               child: const Text(
                 'Add Another',
                 style: TextStyle(
@@ -416,8 +407,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
             ),
             ElevatedButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close dialog first
-                // Navigate to inventory page using the callback
+                Navigator.of(context).pop();
                 if (widget.onNavigateToInventory != null) {
                   widget.onNavigateToInventory!();
                 }
@@ -448,7 +438,6 @@ class _AddDevicePageState extends State<AddDevicePage> {
     _nameController.dispose();
     _ipController.dispose();
     _macController.dispose();
-    _brandController.dispose();
     _modelController.dispose();
     _processorController.dispose();
     _storageController.dispose();
@@ -458,12 +447,12 @@ class _AddDevicePageState extends State<AddDevicePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA), // Match the background color
+      backgroundColor: const Color(0xFFF8F9FA),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF212529), // Set card background to dark color
+            color: const Color(0xFF212529),
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
@@ -489,9 +478,46 @@ class _AddDevicePageState extends State<AddDevicePage> {
                   ),
                   const SizedBox(height: 16),
                   
-                  // Show fields based on device type
                   if (_deviceType == 'PC') ...[
-                    _buildTextField(_brandController, 'Brand'),
+                    // Brand selection button
+                    GestureDetector(
+                      onTap: () async {
+                        final selected = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ChooseBrandPage(),
+                          ),
+                        );
+                        if (selected != null) {
+                          setState(() {
+                            _selectedBrand = selected;
+                          });
+                        }
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.black54),
+                          borderRadius: BorderRadius.circular(8),
+                          color: Colors.white,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              _selectedBrand ?? 'Choose Brand',
+                              style: TextStyle(
+                                fontFamily: 'SansRegular',
+                                color: _selectedBrand != null ? Colors.black87 : Colors.black54,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.black54),
+                          ],
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     _buildTextField(_modelController, 'Model'),
                     const SizedBox(height: 16),
@@ -507,7 +533,45 @@ class _AddDevicePageState extends State<AddDevicePage> {
                       label: 'Peripheral Type',
                     ),
                     const SizedBox(height: 16),
-                    _buildTextField(_brandController, 'Brand'),
+                    // Brand selection button for peripheral
+                    GestureDetector(
+                      onTap: () async {
+                        final selected = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ChooseBrandPage(),
+                          ),
+                        );
+                        if (selected != null) {
+                          setState(() {
+                            _selectedBrand = selected;
+                          });
+                        }
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.black54),
+                          borderRadius: BorderRadius.circular(8),
+                          color: Colors.white,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              _selectedBrand ?? 'Choose Brand',
+                              style: TextStyle(
+                                fontFamily: 'SansRegular',
+                                color: _selectedBrand != null ? Colors.black87 : Colors.black54,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.black54),
+                          ],
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     _buildTextField(_modelController, 'Model'),
                     const SizedBox(height: 16),
@@ -568,7 +632,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
                     child: ElevatedButton(
                       onPressed: _submitForm,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFC727), // Button color
+                        backgroundColor: const Color(0xFFFFC727),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),

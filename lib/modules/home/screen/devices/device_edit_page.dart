@@ -15,6 +15,10 @@ class DeviceEditPage extends StatefulWidget {
 
 class _DeviceEditPageState extends State<DeviceEditPage> {
   final _formKey = GlobalKey<FormState>();
+  late TextEditingController brandController;
+  late TextEditingController modelController;
+  late TextEditingController processorController;
+  late TextEditingController storageController;
   late TextEditingController nameController;
   late TextEditingController ipController;
   late TextEditingController macController;
@@ -35,6 +39,24 @@ class _DeviceEditPageState extends State<DeviceEditPage> {
     status = widget.deviceData['status'] ?? 'Online';
     type = widget.deviceData['type'] ?? 'PC';
     peripheralType = widget.deviceData['peripheral_type'] ?? 'Monitor'; // Initialize peripheral type
+
+    brandController = TextEditingController(text: widget.deviceData['brand'] ?? '');
+    modelController = TextEditingController(text: widget.deviceData['model'] ?? '');
+    processorController = TextEditingController(text: widget.deviceData['processor'] ?? '');
+    storageController = TextEditingController(text: widget.deviceData['storage'] ?? '');
+
+  }
+
+  @override
+  void dispose() {
+    // ... existing dispose calls ...
+    
+    // Dispose PC-specific controllers
+    brandController.dispose();
+    modelController.dispose();
+    processorController.dispose();
+    storageController.dispose();
+    super.dispose();
   }
 
   void _showErrorDialog(List<String> emptyFields) {
@@ -286,6 +308,25 @@ class _DeviceEditPageState extends State<DeviceEditPage> {
       emptyFields.add('Location');
     }
 
+    // Brand and Model are required for both PC and Peripheral
+  if (brandController.text.trim().isEmpty) {
+    emptyFields.add('Brand');
+  }
+  if (modelController.text.trim().isEmpty) {
+    emptyFields.add('Model');
+  }
+
+  // PC-specific field validation
+  if (type == 'PC') {
+    if (processorController.text.trim().isEmpty) {
+      emptyFields.add('Processor');
+    }
+    if (storageController.text.trim().isEmpty) {
+      emptyFields.add('Storage');
+    }
+  }
+
+
     // If there are empty fields, show error dialog
     if (emptyFields.isNotEmpty) {
       _showErrorDialog(emptyFields);
@@ -413,15 +454,22 @@ class _DeviceEditPageState extends State<DeviceEditPage> {
         'location': selectedLocation,
         'status': status,
         'type': type,
+        'brand': brandController.text.trim(),  // Always include brand
+        'model': modelController.text.trim(),  // Always include model
       };
 
-      // Add peripheral_type only if device type is Peripheral
-      if (type == 'Peripheral') {
-        updateData['peripheral_type'] = peripheralType;
-      } else {
-        // Remove peripheral_type field if device type is not Peripheral
-        updateData['peripheral_type'] = FieldValue.delete();
-      }
+       // Add type-specific fields
+    if (type == 'Peripheral') {
+      updateData['peripheral_type'] = peripheralType;
+      // Remove PC-specific fields if switching from PC to Peripheral
+      updateData['processor'] = FieldValue.delete();
+      updateData['storage'] = FieldValue.delete();
+    } else if (type == 'PC') {
+      updateData['processor'] = processorController.text.trim();
+      updateData['storage'] = storageController.text.trim();
+      // Remove peripheral-specific field if switching from Peripheral to PC
+      updateData['peripheral_type'] = FieldValue.delete();
+    }
 
       await FirebaseFirestore.instance.collection('devices').doc(widget.deviceId).update(updateData);
 
@@ -633,7 +681,7 @@ class _DeviceEditPageState extends State<DeviceEditPage> {
                     onChanged: isProcessing ? null : (val) {
                       setState(() {
                         type = val!;
-                        // Reset peripheral type when switching device type
+                        // Reset fields when switching device type
                         if (type == 'Peripheral') {
                           peripheralType = 'Monitor';
                         }
@@ -641,8 +689,20 @@ class _DeviceEditPageState extends State<DeviceEditPage> {
                     },
                   ),
                   const SizedBox(height: 16),
-                  // Show peripheral type dropdown only when device type is Peripheral
-                  if (type == 'Peripheral') ...[
+                  
+                  // Common fields for both PC and Peripheral
+                  _buildTextField(brandController, 'Brand'),
+                  const SizedBox(height: 16),
+                  _buildTextField(modelController, 'Model'),
+                  const SizedBox(height: 16),
+                  
+                  // Conditional fields based on device type
+                  if (type == 'PC') ...[
+                    _buildTextField(processorController, 'Processor'),
+                    const SizedBox(height: 16),
+                    _buildTextField(storageController, 'Storage'),
+                    const SizedBox(height: 16),
+                  ] else if (type == 'Peripheral') ...[
                     _buildDropdown(
                       value: peripheralType,
                       items: ['Monitor', 'Printer', 'Tablet', 'Others'],
@@ -651,6 +711,7 @@ class _DeviceEditPageState extends State<DeviceEditPage> {
                     ),
                     const SizedBox(height: 16),
                   ],
+                  
                   _buildTextField(ipController, 'IP Address'),
                   const SizedBox(height: 16),
                   _buildTextField(macController, 'MAC Address'),

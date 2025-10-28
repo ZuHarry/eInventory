@@ -48,7 +48,7 @@ class _WrapperState extends State<Wrapper> with WidgetsBindingObserver {
       case AppLifecycleState.resumed:
         // App came to foreground - restart pinging if user is authenticated
         if (_isPingingStarted) {
-          _pingService.startPeriodicPing(interval: const Duration(seconds: 10));
+          _pingService.startPeriodicPing(interval: const Duration(seconds: 30));
         }
         break;
       case AppLifecycleState.paused:
@@ -70,7 +70,7 @@ class _WrapperState extends State<Wrapper> with WidgetsBindingObserver {
   void _startPingingIfNeeded() {
     if (!_isPingingStarted) {
       _isPingingStarted = true;
-      _pingService.startPeriodicPing(interval: const Duration(seconds: 10));
+      _pingService.startPeriodicPing(interval: const Duration(seconds: 30));
       
       // Optional: Do an initial ping immediately
       _pingService.pingAllDevices();

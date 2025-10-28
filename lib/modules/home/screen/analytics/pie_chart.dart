@@ -17,26 +17,36 @@ class DetailedPieChartPage extends StatelessWidget {
   Future<Map<String, int>> getDeviceCountsByBuilding() async {
     final firestore = FirebaseFirestore.instance;
 
+    // First, get all buildings from the buildings collection
+    final buildingsSnapshot = await firestore.collection('buildings').get();
+    Map<String, int> result = {};
+    
+    // Initialize the result map with building names from the buildings collection
+    for (var doc in buildingsSnapshot.docs) {
+      final data = doc.data();
+      final buildingName = data['name'] as String?;
+      if (buildingName != null) {
+        result[buildingName] = 0;
+      }
+    }
+
+    // Get the mapping from location to building
     final locationsSnapshot = await firestore.collection('locations').get();
     final Map<String, String> locationToBuilding = {};
     for (var doc in locationsSnapshot.docs) {
       final data = doc.data();
-      final locationName = data['name'];
-      final building = data['building'];
+      final locationName = data['name'] as String?;
+      final building = data['building'] as String?;
       if (locationName != null && building != null) {
         locationToBuilding[locationName] = building;
       }
     }
 
-    Map<String, int> result = {
-      'Right Wing': 0,
-      'Left Wing': 0,
-    };
-
+    // Count devices by building
     final devicesSnapshot = await firestore.collection('devices').get();
     for (var doc in devicesSnapshot.docs) {
       final data = doc.data();
-      final locationName = data['location'];
+      final locationName = data['location'] as String?;
 
       if (locationName != null && locationToBuilding.containsKey(locationName)) {
         final building = locationToBuilding[locationName]!;
@@ -79,6 +89,26 @@ class DetailedPieChartPage extends StatelessWidget {
       }
     }
 
+    return result;
+  }
+
+  // Generate dynamic colors for buildings
+  List<Color> _generateBuildingColors(int count) {
+    final List<Color> colors = [
+      const Color(0xFFFFC727), // Yellow
+      const Color(0xFF28A745), // Green
+      const Color(0xFF007BFF), // Blue
+      const Color(0xFFDC3545), // Red
+      const Color(0xFF6F42C1), // Purple
+      const Color(0xFFFD7E14), // Orange
+      const Color(0xFF20C997), // Teal
+      const Color(0xFFE83E8C), // Pink
+    ];
+    
+    List<Color> result = [];
+    for (int i = 0; i < count; i++) {
+      result.add(colors[i % colors.length]);
+    }
     return result;
   }
 
@@ -146,6 +176,14 @@ class DetailedPieChartPage extends StatelessWidget {
               final buildingCounts = snapshot.data![2] as Map<String, int>;
               final peripheralTypeCounts = snapshot.data![3] as Map<String, int>;
 
+              // Generate dynamic colors for buildings
+              final buildingNames = buildingCounts.keys.toList();
+              final buildingColors = _generateBuildingColors(buildingNames.length);
+              final Map<String, Color> buildingColorMap = {};
+              for (int i = 0; i < buildingNames.length; i++) {
+                buildingColorMap[buildingNames[i]] = buildingColors[i];
+              }
+
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -179,14 +217,11 @@ class DetailedPieChartPage extends StatelessWidget {
                   
                   const SizedBox(height: 40),
                   
-                  // Building Distribution Chart
+                  // Building Distribution Chart (now dynamic)
                   _buildPieChartSection(
                     title: 'Devices by Building',
                     data: buildingCounts,
-                    colors: {
-                      'Right Wing': const Color(0xFFFFC727),
-                      'Left Wing': const Color(0xFF6C757D),
-                    },
+                    colors: buildingColorMap,
                   ),
                   
                   const SizedBox(height: 40),

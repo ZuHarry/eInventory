@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'device_edit_page.dart'; // Make sure this file exists in the same folder or update the import path accordingly.
-
+import 'device_edit_page.dart';
+import 'device_staff_page.dart'; // Import the new staff page
 
 class DeviceDetailsPage extends StatelessWidget {
   final Map<String, dynamic> device;
@@ -28,6 +28,89 @@ class DeviceDetailsPage extends StatelessWidget {
     }
   }
 
+  void _handleAssignedByTap(BuildContext context) {
+    final assignedBy = device['assigned_by'] ?? 'Unassigned';
+    final staffId = device['staffId'] ?? '';
+    
+    if (assignedBy == 'Unassigned' || assignedBy.isEmpty || staffId.isEmpty) {
+      // Show dialog for unassigned devices
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFC727).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.info_outline,
+                    color: Color(0xFFFFC727),
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'No Staff Assigned',
+                  style: TextStyle(
+                    fontFamily: 'SansRegular',
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            content: const Text(
+              'This device is currently not assigned to any staff member.',
+              style: TextStyle(
+                fontFamily: 'SansRegular',
+                fontSize: 16,
+                color: Color(0xFF6C757D),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF212529),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                ),
+                child: const Text(
+                  'OK',
+                  style: TextStyle(
+                    fontFamily: 'SansRegular',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      // Navigate to staff details page
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => DeviceStaffPage(
+            staffId: staffId,
+            staffName: assignedBy,
+            device: device,
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final type = device['type'] ?? 'Unknown';
@@ -39,6 +122,7 @@ class DeviceDetailsPage extends StatelessWidget {
     final floor = device['floor'] ?? 'Unknown';
     final building = device['building'] ?? 'Unknown';
     final deviceId = device['id']?.toString() ?? '';
+    final assignedBy = device['assigned_by'] ?? 'Unassigned';
 
     // PC-specific fields
     final brand = device['brand'] ?? '';
@@ -210,6 +294,76 @@ class DeviceDetailsPage extends StatelessWidget {
                   _buildDetailRow(Icons.layers_outlined, 'Floor', floor),
                   const SizedBox(height: 16),
                   _buildDetailRow(Icons.business_outlined, 'Building', building),
+                  
+                  // Clickable Assigned By Information
+                  const SizedBox(height: 16),
+                  InkWell(
+                    onTap: () => _handleAssignedByTap(context),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFC727).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.person_outline,
+                              size: 18,
+                              color: Color(0xFFFFC727),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Assigned By',
+                                  style: TextStyle(
+                                    fontFamily: 'SansRegular',
+                                    fontSize: 12,
+                                    color: Color(0xFF6C757D),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        assignedBy,
+                                        style: TextStyle(
+                                          fontFamily: 'SansRegular',
+                                          fontSize: 16,
+                                          color: assignedBy == 'Unassigned' 
+                                              ? const Color(0xFF6C757D)
+                                              : const Color(0xFF212529),
+                                          fontWeight: FontWeight.w500,
+                                          decoration: assignedBy != 'Unassigned'
+                                              ? TextDecoration.underline
+                                              : TextDecoration.none,
+                                        ),
+                                      ),
+                                    ),
+                                    if (assignedBy != 'Unassigned')
+                                      const Icon(
+                                        Icons.arrow_forward_ios,
+                                        size: 14,
+                                        color: Color(0xFF6C757D),
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
