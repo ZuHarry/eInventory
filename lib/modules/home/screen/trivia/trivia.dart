@@ -8,7 +8,7 @@ class TriviaPage extends StatefulWidget {
 
 class _TriviaPageState extends State<TriviaPage> {
   String _selectedCategory = 'All';
-  final List<String> _categories = ['All', 'Brand', 'Model', 'Type', 'Location', 'Status'];
+  final List<String> _categories = ['All', 'Brand', 'Model', 'Type', 'Location', 'Status', 'Buildings'];
 
   @override
   Widget build(BuildContext context) {
@@ -137,6 +137,7 @@ class _TriviaPageState extends State<TriviaPage> {
       'Type': {},
       'Location': {},
       'Status': {},
+      'Buildings': {},
     };
 
     for (var device in devices) {
@@ -170,6 +171,12 @@ class _TriviaPageState extends State<TriviaPage> {
       if (deviceData['status'] != null) {
         final status = deviceData['status'].toString();
         data['Status']![status] = (data['Status']![status] ?? 0) + 1;
+      }
+
+      // Count buildings
+      if (deviceData['buildings'] != null) {
+        final building = deviceData['buildings'].toString();
+        data['Buildings']![building] = (data['Buildings']![building] ?? 0) + 1;
       }
     }
 
@@ -285,75 +292,102 @@ class _TriviaPageState extends State<TriviaPage> {
               final entry = sortedItems[index];
               final percentage = (entry.value / totalCount * 100).toStringAsFixed(1);
 
-              return Row(
-                children: [
-                  // Rank badge
-                  Container(
-                    width: 28,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      color: index < 3 
-                          ? const Color(0xFFFFC727).withOpacity(0.2)
-                          : const Color(0xFFF8F9FA),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Center(
-                      child: Text(
-                        '${index + 1}',
-                        style: TextStyle(
-                          fontFamily: 'SansRegular',
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: index < 3 
-                              ? const Color(0xFF212529)
-                              : const Color(0xFF6C757D),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-
-                  // Item name
-                  Expanded(
-                    child: Text(
-                      entry.key,
-                      style: const TextStyle(
-                        fontFamily: 'SansRegular',
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF212529),
-                      ),
-                    ),
-                  ),
-
-                  // Count and percentage
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+              return InkWell(
+                onTap: () {
+                  _navigateToFilteredDevices(category, entry.key);
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
                     children: [
-                      Text(
-                        '${entry.value}',
-                        style: const TextStyle(
-                          fontFamily: 'SansRegular',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF212529),
+                      // Rank badge
+                      Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: index < 3 
+                              ? const Color(0xFFFFC727).withOpacity(0.2)
+                              : const Color(0xFFF8F9FA),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '${index + 1}',
+                            style: TextStyle(
+                              fontFamily: 'SansRegular',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: index < 3 
+                                  ? const Color(0xFF212529)
+                                  : const Color(0xFF6C757D),
+                            ),
+                          ),
                         ),
                       ),
-                      Text(
-                        '$percentage%',
-                        style: const TextStyle(
-                          fontFamily: 'SansRegular',
-                          fontSize: 11,
-                          color: Color(0xFF6C757D),
+                      const SizedBox(width: 12),
+
+                      // Item name
+                      Expanded(
+                        child: Text(
+                          entry.key,
+                          style: const TextStyle(
+                            fontFamily: 'SansRegular',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF212529),
+                          ),
                         ),
+                      ),
+
+                      // Count and percentage
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            '${entry.value}',
+                            style: const TextStyle(
+                              fontFamily: 'SansRegular',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF212529),
+                            ),
+                          ),
+                          Text(
+                            '$percentage%',
+                            style: const TextStyle(
+                              fontFamily: 'SansRegular',
+                              fontSize: 11,
+                              color: Color(0xFF6C757D),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 14,
+                        color: const Color(0xFF6C757D),
                       ),
                     ],
                   ),
-                ],
+                ),
               );
             },
           ),
         ],
+      ),
+    );
+  }
+
+  void _navigateToFilteredDevices(String category, String value) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FilteredDevicesPage(
+          category: category,
+          value: value,
+        ),
       ),
     );
   }
@@ -370,8 +404,250 @@ class _TriviaPageState extends State<TriviaPage> {
         return Icons.location_on_rounded;
       case 'Status':
         return Icons.info_rounded;
+      case 'Buildings':
+        return Icons.apartment_rounded;
       default:
         return Icons.quiz_rounded;
+    }
+  }
+}
+
+// New page to show filtered devices
+class FilteredDevicesPage extends StatelessWidget {
+  final String category;
+  final String value;
+
+  const FilteredDevicesPage({
+    Key? key,
+    required this.category,
+    required this.value,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FA),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF212529),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_rounded, color: Color(0xFFFFC727)),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              value,
+              style: const TextStyle(
+                fontFamily: 'SansRegular',
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFFFC727),
+              ),
+            ),
+            Text(
+              category,
+              style: const TextStyle(
+                fontFamily: 'SansRegular',
+                fontSize: 12,
+                color: Color(0xFF6C757D),
+              ),
+            ),
+          ],
+        ),
+      ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: _getFilteredStream(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFC727)),
+              ),
+            );
+          }
+
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                'Error loading devices',
+                style: const TextStyle(
+                  fontFamily: 'SansRegular',
+                  color: Color(0xFF6C757D),
+                  fontSize: 14,
+                ),
+              ),
+            );
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.devices_other_rounded,
+                    size: 64,
+                    color: const Color(0xFFDEE2E6),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No devices found',
+                    style: const TextStyle(
+                      fontFamily: 'SansRegular',
+                      color: Color(0xFF6C757D),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final devices = snapshot.data!.docs;
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: devices.length,
+            itemBuilder: (context, index) {
+              final device = devices[index].data() as Map<String, dynamic>;
+              return _buildDeviceCard(device);
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Stream<QuerySnapshot> _getFilteredStream() {
+    final fieldName = category.toLowerCase();
+    return FirebaseFirestore.instance
+        .collection('devices')
+        .where(fieldName, isEqualTo: value)
+        .snapshots();
+  }
+
+  Widget _buildDeviceCard(Map<String, dynamic> device) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Brand and Model
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '${device['brand'] ?? 'Unknown'} ${device['model'] ?? ''}',
+                    style: const TextStyle(
+                      fontFamily: 'SansRegular',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF212529),
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(device['status']),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    device['status'] ?? 'Unknown',
+                    style: const TextStyle(
+                      fontFamily: 'SansRegular',
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            
+            // Device details
+            if (device['name'] != null) ...[
+              _buildDetailRow(Icons.label_rounded, 'Name', device['name']),
+              const SizedBox(height: 8),
+            ],
+            _buildDetailRow(Icons.category_rounded, 'Type', device['type']),
+            const SizedBox(height: 8),
+            _buildDetailRow(Icons.location_on_rounded, 'Location', device['location']),
+            if (device['building'] != null) ...[
+              const SizedBox(height: 8),
+              _buildDetailRow(Icons.apartment_rounded, 'Building', device['building']),
+            ],
+            if (device['serialNumber'] != null) ...[
+              const SizedBox(height: 8),
+              _buildDetailRow(Icons.tag_rounded, 'Serial', device['serialNumber']),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(IconData icon, String label, dynamic value) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 16,
+          color: const Color(0xFF6C757D),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          '$label: ',
+          style: const TextStyle(
+            fontFamily: 'SansRegular',
+            fontSize: 13,
+            color: Color(0xFF6C757D),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value?.toString() ?? 'N/A',
+            style: const TextStyle(
+              fontFamily: 'SansRegular',
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF212529),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Color _getStatusColor(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'active':
+        return const Color(0xFF28A745);
+      case 'inactive':
+        return const Color(0xFF6C757D);
+      case 'maintenance':
+        return const Color(0xFFC107);
+      case 'retired':
+        return const Color(0xFFDC3545);
+      default:
+        return const Color(0xFF6C757D);
     }
   }
 }
