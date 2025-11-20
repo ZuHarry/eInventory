@@ -90,19 +90,40 @@ class AuthService {
   }
 
   // Send or resend verification email with better error handling
-  Future<bool> sendEmailVerification() async {
-    try {
-      User? user = _auth.currentUser;
-      if (user != null && !user.emailVerified) {
-        await user.sendEmailVerification();
-        return true;
-      }
-      return false;
-    } catch (e) {
-      print('Error sending verification email: ${e.toString()}');
-      return false;
+  // Future<bool> sendEmailVerification() async {
+  //   try {
+  //     User? user = _auth.currentUser;
+  //     if (user != null && !user.emailVerified) {
+  //       await user.sendEmailVerification();
+  //       return true;
+  //     }
+  //     return false;
+  //   } catch (e) {
+  //     print('Error sending verification email: ${e.toString()}');
+  //     return false;
+  //   }
+  // }
+
+  Future<void> sendEmailVerification() async {
+  try {
+    User? user = _auth.currentUser;
+    if (user != null && !user.emailVerified) {
+      await user.sendEmailVerification();
+    } else if (user == null) {
+      throw Exception('No user logged in');
     }
+  } catch (e) {
+    print('Error sending verification email: $e');
+    rethrow;
   }
+}
+
+//   Future<void> sendEmailVerification() async {
+//   User? user = _auth.currentUser;
+//   if (user != null && !user.emailVerified) {
+//     await user.sendEmailVerification();
+//   }
+// }
 
   // Reload user to check verification status
   Future<void> reloadUser() async {

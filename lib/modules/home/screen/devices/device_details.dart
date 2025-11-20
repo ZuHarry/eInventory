@@ -1,11 +1,67 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'device_edit_page.dart';
-import 'device_staff_page.dart'; // Import the new staff page
+import 'device_staff_page.dart';
 
-class DeviceDetailsPage extends StatelessWidget {
+class DeviceDetailsPage extends StatefulWidget {
   final Map<String, dynamic> device;
 
   const DeviceDetailsPage({super.key, required this.device});
+
+  @override
+  State<DeviceDetailsPage> createState() => _DeviceDetailsPageState();
+}
+
+class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
+  String? assignedByFullName;
+  bool isLoadingStaffName = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAssignedByFullName();
+  }
+
+  Future<void> _fetchAssignedByFullName() async {
+    final assignedByUid = widget.device['assigned_by'];
+    
+    if (assignedByUid == null || assignedByUid.toString().isEmpty) {
+      setState(() {
+        assignedByFullName = 'Unassigned';
+        isLoadingStaffName = false;
+      });
+      return;
+    }
+
+    try {
+      // Query users collection to find the user with matching uid
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('uid', isEqualTo: assignedByUid)
+          .limit(1)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        final userData = querySnapshot.docs.first.data();
+        final fullName = userData['fullname'] ?? 'Unknown User';
+        setState(() {
+          assignedByFullName = fullName;
+          isLoadingStaffName = false;
+        });
+      } else {
+        setState(() {
+          assignedByFullName = 'Unknown User';
+          isLoadingStaffName = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching assigned by user: $e');
+      setState(() {
+        assignedByFullName = 'Error loading name';
+        isLoadingStaffName = false;
+      });
+    }
+  }
 
   Icon _getDeviceIcon(String? type) {
     if (type == 'PC') {
@@ -29,10 +85,10 @@ class DeviceDetailsPage extends StatelessWidget {
   }
 
   void _handleAssignedByTap(BuildContext context) {
-    final assignedBy = device['assigned_by'] ?? 'Unassigned';
-    final staffId = device['staffId'] ?? '';
+    final assignedBy = assignedByFullName ?? 'Unassigned';
+    final assignedByUid = widget.device['assigned_by'] ?? '';
     
-    if (assignedBy == 'Unassigned' || assignedBy.isEmpty || staffId.isEmpty) {
+    if (assignedBy == 'Unassigned' || assignedBy.isEmpty || assignedByUid.isEmpty) {
       // Show dialog for unassigned devices
       showDialog(
         context: context,
@@ -97,14 +153,14 @@ class DeviceDetailsPage extends StatelessWidget {
         },
       );
     } else {
-      // Navigate to staff details page
+      // Navigate to staff details page with the UID
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => DeviceStaffPage(
-            staffId: staffId,
+            staffId: assignedByUid,
             staffName: assignedBy,
-            device: device,
+            device: widget.device,
           ),
         ),
       );
@@ -113,25 +169,24 @@ class DeviceDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final type = device['type'] ?? 'Unknown';
-    final name = device['name'] ?? 'No name';
-    final ip = device['ip'] ?? 'N/A';
-    final mac = device['mac'] ?? 'N/A';
-    final status = (device['status'] ?? 'N/A').toString();
-    final location = device['location'] ?? 'N/A';
-    final floor = device['floor'] ?? 'Unknown';
-    final building = device['building'] ?? 'Unknown';
-    final deviceId = device['id']?.toString() ?? '';
-    final assignedBy = device['assigned_by'] ?? 'Unassigned';
+    final type = widget.device['type'] ?? 'Unknown';
+    final name = widget.device['name'] ?? 'No name';
+    final ip = widget.device['ip'] ?? 'N/A';
+    final mac = widget.device['mac'] ?? 'N/A';
+    final status = (widget.device['status'] ?? 'N/A').toString();
+    final location = widget.device['location'] ?? 'N/A';
+    final floor = widget.device['floor'] ?? 'Unknown';
+    final building = widget.device['building'] ?? 'Unknown';
+    final deviceId = widget.device['id']?.toString() ?? '';
 
     // PC-specific fields
-    final brand = device['brand'] ?? '';
-    final model = device['model'] ?? '';
-    final processor = device['processor'] ?? '';
-    final storage = device['storage'] ?? '';
+    final brand = widget.device['brand'] ?? '';
+    final model = widget.device['model'] ?? '';
+    final processor = widget.device['processor'] ?? '';
+    final storage = widget.device['storage'] ?? '';
 
     // Peripheral-specific fields
-    final peripheralType = device['peripheral_type'] ?? '';
+    final peripheralType = widget.device['peripheral_type'] ?? '';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
@@ -334,22 +389,37 @@ class DeviceDetailsPage extends StatelessWidget {
                                 Row(
                                   children: [
                                     Expanded(
-                                      child: Text(
-                                        assignedBy,
-                                        style: TextStyle(
-                                          fontFamily: 'SansRegular',
-                                          fontSize: 16,
-                                          color: assignedBy == 'Unassigned' 
-                                              ? const Color(0xFF6C757D)
-                                              : const Color(0xFF212529),
-                                          fontWeight: FontWeight.w500,
-                                          decoration: assignedBy != 'Unassigned'
-                                              ? TextDecoration.underline
-                                              : TextDecoration.none,
-                                        ),
-                                      ),
+                                      child: isLoadingStaffName
+                                          ? const SizedBox(
+                                              height: 16,
+                                              width: 16,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                valueColor: AlwaysStoppedAnimation<Color>(
+                                                  Color(0xFFFFC727),
+                                                ),
+                                              ),
+                                            )
+                                          : Text(
+                                              assignedByFullName ?? 'Unassigned',
+                                              style: TextStyle(
+                                                fontFamily: 'SansRegular',
+                                                fontSize: 16,
+                                                color: (assignedByFullName == 'Unassigned' || 
+                                                        assignedByFullName == null)
+                                                    ? const Color(0xFF6C757D)
+                                                    : const Color(0xFF212529),
+                                                fontWeight: FontWeight.w500,
+                                                decoration: (assignedByFullName != 'Unassigned' && 
+                                                            assignedByFullName != null)
+                                                    ? TextDecoration.underline
+                                                    : TextDecoration.none,
+                                              ),
+                                            ),
                                     ),
-                                    if (assignedBy != 'Unassigned')
+                                    if (!isLoadingStaffName && 
+                                        assignedByFullName != 'Unassigned' &&
+                                        assignedByFullName != null)
                                       const Icon(
                                         Icons.arrow_forward_ios,
                                         size: 14,
@@ -380,7 +450,7 @@ class DeviceDetailsPage extends StatelessWidget {
                     MaterialPageRoute(
                       builder: (context) => DeviceEditPage(
                         deviceId: deviceId,
-                        deviceData: device,
+                        deviceData: widget.device,
                       ),
                     ),
                   );

@@ -1,7 +1,6 @@
 import 'package:einventorycomputer/services/auth.dart';
 import 'package:einventorycomputer/shared/loading.dart';
 import 'package:flutter/material.dart';
-import 'package:einventorycomputer/modules/authentication/verify_email.dart';
 
 class SignUp extends StatefulWidget {
   final Function toggleView;
@@ -35,18 +34,32 @@ class _SignUpState extends State<SignUp> {
   // Referral code constant
   static const String _validReferralCode = "ABC123";
 
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmpasswordController.dispose();
+    _fullnameController.dispose();
+    _telephoneController.dispose();
+    _staffIdController.dispose();
+    _referralCodeController.dispose();
+    super.dispose();
+  }
+
   void _register() async {
-    if (_formKey.currentState!.validate()) {
-      // Check referral code first
-      if (_referralCodeController.text.trim() != _validReferralCode) {
-        setState(() {
-          error = 'Invalid referral code. Please contact your administrator.';
-        });
-        return;
-      }
+  if (_formKey.currentState!.validate()) {
+    // Check referral code first
+    if (_referralCodeController.text.trim() != _validReferralCode) {
+      setState(() {
+        error = 'Invalid referral code. Please contact your administrator.';
+      });
+      return;
+    }
 
-      setState(() => loading = true);
+    setState(() => loading = true);
 
+    try {
       dynamic result = await _auth.registerWithEmailAndPassword(
         _fullnameController.text.trim(),
         _usernameController.text.trim(),
@@ -57,39 +70,64 @@ class _SignUpState extends State<SignUp> {
         _staffIdController.text.trim(),
       );
 
+      if (!mounted) return;
+
       if (result == null) {
         setState(() {
           error = 'Please supply a valid email';
           loading = false;
         });
-      } else {
-        if (mounted) {
-          setState(() => loading = false);
-          // Navigate to email verification with callback to return to sign in
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => VerifyEmail(
-                onVerificationComplete: () {
-                  // Pop the verification screen and go back to sign in
-                  Navigator.pop(context);
-                  widget.toggleView(); // This will switch to sign in page
-                  
-                  // Show success message
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Email verified successfully! You can now sign in.'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                },
-              ),
-            ),
-          );
-        }
+        return;
       }
+
+      // Send verification email
+      try {
+        await _auth.sendEmailVerification();
+        
+        if (!mounted) return;
+
+        setState(() => loading = false);
+        
+        // Clear error if successful
+        setState(() => error = '');
+        
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Registration successful! Check your email to verify your account.'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 5),
+          ),
+        );
+        
+        // Switch to sign in page after delay
+        Future.delayed(const Duration(milliseconds: 2000), () {
+          if (mounted) {
+            widget.toggleView();
+          }
+        });
+      } catch (emailError) {
+        print('Email verification error: $emailError');
+        
+        if (!mounted) return;
+        
+        setState(() {
+          error = 'Account created, but failed to send verification email. Please check your email settings.';
+          loading = false;
+        });
+      }
+    } catch (e) {
+      print('Registration error: $e');
+      
+      if (!mounted) return;
+      
+      setState(() {
+        error = 'Registration failed: ${e.toString()}';
+        loading = false;
+      });
     }
   }
+}
 
   @override
   Widget build(BuildContext context) {

@@ -42,7 +42,7 @@ class _ScreenPageState extends State<ScreenPage> {
     });
   }
 
-  final List<int> _bottomNavIndexes = [0, 1, 3, 4, 5, 6];  // Changed from [0, 1, 3, 5, 6]
+  final List<int> _bottomNavIndexes = [0, 1, 3, 4, 5, 5];  // Changed from [0, 1, 3, 5, 6]
 
   @override
   void initState() {

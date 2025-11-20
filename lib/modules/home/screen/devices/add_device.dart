@@ -1,7 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Add this import
 import 'package:flutter/material.dart';
 import '../location/choose_location.dart';
-import '../devices/choose_brand.dart'; // Add this import
+import '../devices/choose_brand.dart';
 
 class AddDevicePage extends StatefulWidget {
   final VoidCallback? onNavigateToInventory;
@@ -26,7 +27,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
   String _deviceStatus = 'Online';
   String _peripheralType = 'Monitor';
   String? _selectedLocationName;
-  String? _selectedBrand; // Changed from TextEditingController to String?
+  String? _selectedBrand;
 
   Future<List<String>> _checkDuplicates(String name) async {
     List<String> duplicateFields = [];
@@ -73,11 +74,21 @@ class _AddDevicePageState extends State<AddDevicePage> {
       }
 
       try {
+        // Get current user UID
+        final currentUser = FirebaseAuth.instance.currentUser;
+        if (currentUser == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Error: No user logged in")),
+          );
+          return;
+        }
+
         Map<String, dynamic> deviceData = {
           'name': name,
           'type': _deviceType,
           'status': _deviceStatus,
           'location': _selectedLocationName,
+          'assigned_by': currentUser.uid, // Add current user's UID
           'created_at': FieldValue.serverTimestamp(),
         };
 
@@ -479,7 +490,6 @@ class _AddDevicePageState extends State<AddDevicePage> {
                   const SizedBox(height: 16),
                   
                   if (_deviceType == 'PC') ...[
-                    // Brand selection button
                     GestureDetector(
                       onTap: () async {
                         final selected = await Navigator.push(
@@ -533,7 +543,6 @@ class _AddDevicePageState extends State<AddDevicePage> {
                       label: 'Peripheral Type',
                     ),
                     const SizedBox(height: 16),
-                    // Brand selection button for peripheral
                     GestureDetector(
                       onTap: () async {
                         final selected = await Navigator.push(

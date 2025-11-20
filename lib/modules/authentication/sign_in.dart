@@ -1,6 +1,6 @@
 import 'package:einventorycomputer/services/auth.dart';
 import 'package:einventorycomputer/shared/loading.dart';
-import 'package:einventorycomputer/modules/authentication/forgot_password.dart'; // Add this import
+import 'package:einventorycomputer/modules/authentication/forgot_password.dart';
 import 'package:flutter/material.dart';
 
 class SignIn extends StatefulWidget {
@@ -22,8 +22,16 @@ class _SignInState extends State<SignIn> {
   bool loading = false;
   String error = '';
 
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   void _login() async {
     if (_formKey.currentState!.validate()) {
+      if (!mounted) return;
       setState(() => loading = true);
       
       try {
@@ -31,6 +39,8 @@ class _SignInState extends State<SignIn> {
           _emailController.text.trim(),
           _passwordController.text.trim(),
         );
+        
+        if (!mounted) return;
         
         if (result == null) {
           setState(() {
@@ -44,6 +54,8 @@ class _SignInState extends State<SignIn> {
           });
         }
       } catch (e) {
+        if (!mounted) return;
+        
         String errorMessage = 'Could not sign in with those credentials';
         
         if (e.toString().contains('email-not-verified')) {
@@ -187,10 +199,12 @@ class _SignInState extends State<SignIn> {
                                             ? Icons.visibility
                                             : Icons.visibility_off),
                                         onPressed: () {
-                                          setState(() {
-                                            _obscurePassword =
-                                                !_obscurePassword;
-                                          });
+                                          if (mounted) {
+                                            setState(() {
+                                              _obscurePassword =
+                                                  !_obscurePassword;
+                                            });
+                                          }
                                         },
                                       ),
                                       border: const OutlineInputBorder(
@@ -261,6 +275,6 @@ class _SignInState extends State<SignIn> {
                 ],
               ),
             ),
-          ); // Fixed: Removed extra comma, added proper closing
+          );
   }
 }

@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 
-class DeviceStaffPage extends StatelessWidget {
-  final String staffId;
+class DeviceStaffPage extends StatefulWidget {
+  final String staffId; // This is the UID
   final String staffName;
   final Map<String, dynamic> device;
 
@@ -13,23 +13,77 @@ class DeviceStaffPage extends StatelessWidget {
     required this.device,
   });
 
-  Future<Map<String, dynamic>?> _fetchStaffData() async {
+  @override
+  State<DeviceStaffPage> createState() => _DeviceStaffPageState();
+}
+
+class _DeviceStaffPageState extends State<DeviceStaffPage> {
+  late Future<Map<String, dynamic>> _staffDataFuture;
+  late Future<List<Map<String, dynamic>>> _assignedDevicesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _staffDataFuture = _fetchStaffData();
+    _assignedDevicesFuture = _fetchAssignedDevices();
+  }
+
+  Future<Map<String, dynamic>> _fetchStaffData() async {
     try {
-      if (staffId.isEmpty) return null;
-      
-      // Fetch staff data from Firestore
-      final staffDoc = await FirebaseFirestore.instance
+      final querySnapshot = await FirebaseFirestore.instance
           .collection('users')
-          .doc(staffId)
+          .where('uid', isEqualTo: widget.staffId)
+          .limit(1)
           .get();
-      
-      if (staffDoc.exists) {
-        return staffDoc.data();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        return querySnapshot.docs.first.data();
+      } else {
+        return {'error': 'Staff member not found'};
       }
-      return null;
     } catch (e) {
       print('Error fetching staff data: $e');
-      return null;
+      return {'error': 'Error loading staff data'};
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchAssignedDevices() async {
+    try {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('devices')
+          .where('assigned_by', isEqualTo: widget.staffId)
+          .get();
+
+      return querySnapshot.docs
+          .map((doc) => {
+                ...doc.data(),
+                'docId': doc.id,
+              })
+          .toList();
+    } catch (e) {
+      print('Error fetching assigned devices: $e');
+      return [];
+    }
+  }
+
+  Icon _getDeviceIcon(String? type) {
+    if (type == 'PC') {
+      return const Icon(Icons.computer_outlined, color: Color(0xFFFFC727), size: 40);
+    } else if (type == 'Peripheral') {
+      return const Icon(Icons.devices_other_outlined, color: Color(0xFFFFC727), size: 40);
+    } else {
+      return const Icon(Icons.device_unknown_outlined, color: Color(0xFFFFC727), size: 40);
+    }
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'online':
+        return const Color(0xFF4CAF50);
+      case 'offline':
+        return const Color(0xFFF44336);
+      default:
+        return const Color(0xFF9E9E9E);
     }
   }
 
@@ -41,9 +95,9 @@ class DeviceStaffPage extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Color(0xFF212529)),
-        title: const Text(
-          'Staff Information',
-          style: TextStyle(
+        title: Text(
+          'Staff Details',
+          style: const TextStyle(
             fontFamily: 'SansRegular',
             color: Color(0xFF212529),
             fontWeight: FontWeight.w600,
@@ -51,184 +105,100 @@ class DeviceStaffPage extends StatelessWidget {
           ),
         ),
       ),
-      body: FutureBuilder<Map<String, dynamic>?>(
-        future: _fetchStaffData(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFFFFC727),
-              ),
-            );
-          }
-          
-          if (snapshot.hasError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: Colors.red.withOpacity(0.5),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Error loading staff information',
-                    style: TextStyle(
-                      fontFamily: 'SansRegular',
-                      fontSize: 16,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-          
-          final staffData = snapshot.data;
-          
-          if (staffData == null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          children: [
+            // Staff Information Card
+            FutureBuilder<Map<String, dynamic>>(
+              future: _staffDataFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Container(
+                    width: double.infinity,
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFC727).withOpacity(0.1),
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Icon(
-                      Icons.person_off_outlined,
-                      size: 64,
-                      color: Color(0xFFFFC727),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'No Staff Information',
-                    style: TextStyle(
-                      fontFamily: 'SansRegular',
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF212529),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Staff information not found',
-                    style: TextStyle(
-                      fontFamily: 'SansRegular',
-                      fontSize: 16,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-          
-          // Extract staff information
-          final fullName = staffData['fullname'] ?? staffName;
-          final telephone = staffData['telephone'] ?? 'Not provided';
-          final staffType = staffData['staffType'] ?? 'Not specified';
-          final profilePicture = staffData['profilePicture'] ?? '';
-          
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                // Profile Card
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(32),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 15,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      // Profile Picture
-                      Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: const Color(0xFFFFC727).withOpacity(0.1),
-                          border: Border.all(
-                            color: const Color(0xFFFFC727),
-                            width: 3,
-                          ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 15,
+                          offset: const Offset(0, 5),
                         ),
-                        child: profilePicture.isNotEmpty
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(60),
-                                child: Image.network(
-                                  profilePicture,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const Icon(
-                                      Icons.person,
-                                      size: 60,
-                                      color: Color(0xFFFFC727),
-                                    );
-                                  },
-                                ),
-                              )
-                            : const Icon(
-                                Icons.person,
-                                size: 60,
-                                color: Color(0xFFFFC727),
-                              ),
-                      ),
-                      const SizedBox(height: 24),
-                      
-                      // Staff Name
-                      Text(
-                        fullName,
-                        style: const TextStyle(
-                          fontFamily: 'SansRegular',
-                          fontSize: 24,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF212529),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-                      
-                      // Staff ID
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFC727).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          'ID: $staffId',
-                          style: const TextStyle(
-                            fontFamily: 'SansRegular',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF212529),
-                          ),
+                      ],
+                    ),
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Color(0xFFFFC727),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                
-                const SizedBox(height: 24),
-                
-                // Staff Information Card
-                Container(
+                    ),
+                  );
+                }
+
+                if (snapshot.hasError || !snapshot.hasData) {
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 15,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      'Error loading staff details',
+                      style: const TextStyle(
+                        fontFamily: 'SansRegular',
+                        fontSize: 16,
+                        color: Color(0xFFF44336),
+                      ),
+                    ),
+                  );
+                }
+
+                final staffData = snapshot.data!;
+
+                if (staffData.containsKey('error')) {
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 15,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      staffData['error'] ?? 'Unknown error',
+                      style: const TextStyle(
+                        fontFamily: 'SansRegular',
+                        fontSize: 16,
+                        color: Color(0xFFF44336),
+                      ),
+                    ),
+                  );
+                }
+
+                final fullName = staffData['fullname'] ?? 'Unknown';
+                final email = staffData['email'] ?? 'N/A';
+                final staffType = staffData['staffType'] ?? 'N/A';
+                final telephone = staffData['telephone'] ?? 'N/A';
+                final staffId = staffData['staffId'] ?? 'N/A';
+
+                return Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
@@ -245,92 +215,25 @@ class DeviceStaffPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Staff Details',
-                        style: TextStyle(
-                          fontFamily: 'SansRegular',
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF212529),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      
-                      // Telephone
-                      _buildInfoRow(
-                        Icons.phone_outlined,
-                        'Telephone',
-                        telephone,
-                      ),
-                      const SizedBox(height: 16),
-                      
-                      // Staff Type
-                      _buildInfoRow(
-                        Icons.badge_outlined,
-                        'Staff Type',
-                        staffType,
-                      ),
-                    ],
-                  ),
-                ),
-                
-                const SizedBox(height: 24),
-                
-                // Assigned Device Card
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 15,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Assigned Device',
-                        style: TextStyle(
-                          fontFamily: 'SansRegular',
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF212529),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      
+                      // Header with name and icon
                       Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFFC727).withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: const Color(0xFFFFC727).withOpacity(0.2),
-                            width: 1,
-                          ),
+                          color: const Color(0xFFFFC727).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                         child: Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.all(10),
+                              padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFFFC727).withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              child: Icon(
-                                device['type'] == 'PC'
-                                    ? Icons.computer_outlined
-                                    : device['type'] == 'Peripheral'
-                                        ? Icons.devices_other_outlined
-                                        : Icons.device_unknown_outlined,
-                                color: const Color(0xFFFFC727),
-                                size: 24,
+                              child: const Icon(
+                                Icons.person,
+                                color: Color(0xFFFFC727),
+                                size: 32,
                               ),
                             ),
                             const SizedBox(width: 16),
@@ -339,17 +242,17 @@ class DeviceStaffPage extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    device['name'] ?? 'Unknown Device',
+                                    fullName,
                                     style: const TextStyle(
                                       fontFamily: 'SansRegular',
-                                      fontSize: 16,
+                                      fontSize: 22,
                                       fontWeight: FontWeight.w600,
                                       color: Color(0xFF212529),
                                     ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    '${device['type'] ?? 'Unknown'} • ${device['location'] ?? 'No location'}',
+                                    staffType,
                                     style: const TextStyle(
                                       fontFamily: 'SansRegular',
                                       fontSize: 14,
@@ -362,17 +265,198 @@ class DeviceStaffPage extends StatelessWidget {
                           ],
                         ),
                       ),
+                      const SizedBox(height: 24),
+
+                      // Staff Information
+                      const Text(
+                        'Contact Information',
+                        style: TextStyle(
+                          fontFamily: 'SansRegular',
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF212529),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildInfoRow(Icons.email_outlined, 'Email', email),
+                      const SizedBox(height: 12),
+                      _buildInfoRow(Icons.phone_outlined, 'Telephone', telephone),
+                      const SizedBox(height: 12),
+                      _buildInfoRow(Icons.badge_outlined, 'Staff ID', staffId),
                     ],
                   ),
-                ),
-              ],
+                );
+              },
             ),
-          );
-        },
+
+            const SizedBox(height: 24),
+
+            // Assigned Devices Section
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Assigned Devices',
+                    style: TextStyle(
+                      fontFamily: 'SansRegular',
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF212529),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  FutureBuilder<List<Map<String, dynamic>>>(
+                    future: _assignedDevicesFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Color(0xFFFFC727),
+                            ),
+                          ),
+                        );
+                      }
+
+                      if (snapshot.hasError) {
+                        return Text(
+                          'Error loading devices',
+                          style: const TextStyle(
+                            fontFamily: 'SansRegular',
+                            fontSize: 14,
+                            color: Color(0xFFF44336),
+                          ),
+                        );
+                      }
+
+                      final devices = snapshot.data ?? [];
+
+                      if (devices.isEmpty) {
+                        return Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFC727).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: const Color(0xFFFFC727).withOpacity(0.3),
+                            ),
+                          ),
+                          child: const Center(
+                            child: Text(
+                              'No devices assigned',
+                              style: TextStyle(
+                                fontFamily: 'SansRegular',
+                                fontSize: 14,
+                                color: Color(0xFF6C757D),
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: devices.length,
+                        itemBuilder: (context, index) {
+                          final device = devices[index];
+                          final deviceName = device['name'] ?? 'Unknown Device';
+                          final deviceType = device['type'] ?? 'Unknown';
+                          final status = (device['status'] ?? 'N/A').toString();
+                          final location = device['location'] ?? 'N/A';
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8F9FA),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.grey.withOpacity(0.1),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                _getDeviceIcon(deviceType),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        deviceName,
+                                        style: const TextStyle(
+                                          fontFamily: 'SansRegular',
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF212529),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Type: $deviceType • Location: $location',
+                                        style: const TextStyle(
+                                          fontFamily: 'SansRegular',
+                                          fontSize: 12,
+                                          color: Color(0xFF6C757D),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _getStatusColor(status).withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: _getStatusColor(status),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    status.toUpperCase(),
+                                    style: TextStyle(
+                                      color: _getStatusColor(status),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      fontFamily: 'SansRegular',
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
-  
+
   Widget _buildInfoRow(IconData icon, String label, String value) {
     return Row(
       children: [
@@ -407,7 +491,7 @@ class DeviceStaffPage extends StatelessWidget {
                 value,
                 style: const TextStyle(
                   fontFamily: 'SansRegular',
-                  fontSize: 16,
+                  fontSize: 14,
                   color: Color(0xFF212529),
                   fontWeight: FontWeight.w500,
                 ),

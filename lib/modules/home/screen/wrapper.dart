@@ -119,7 +119,7 @@ class _WrapperState extends State<Wrapper> with WidgetsBindingObserver {
           
           if (firebaseUser != null && !firebaseUser.emailVerified) {
             // User is logged in but email is not verified
-            return const VerifyEmail();
+            return ScreenPage();
           } else {
             // User is logged in and email is verified
             return ScreenPage();
