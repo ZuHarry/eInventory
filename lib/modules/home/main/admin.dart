@@ -10,27 +10,28 @@ import 'package:einventorycomputer/modules/home/screen/user/account.dart';
 import 'package:einventorycomputer/modules/home/screen/devices/add_device.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:einventorycomputer/modules/home/screen/devices/device_details.dart';
-// import 'package:einventorycomputer/modules/home/screen/trivia/trivia.dart';
+import 'package:einventorycomputer/modules/home/screen/trivia/trivia.dart';  // ADD THIS
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
-class ScreenPage extends StatefulWidget {
+class AdminScreen extends StatefulWidget {
   @override
-  _ScreenPageState createState() => _ScreenPageState();
+  _AdminScreenState createState() => _AdminScreenState();
 }
 
-class _ScreenPageState extends State<ScreenPage> {
+class _AdminScreenState extends State<AdminScreen> {
   final AuthService _auth = AuthService();
   int _selectedIndex = 0;
   String? _username;
   String? _profileImageUrl;
+  String? _staffType;  // ADD THIS
 
   final List<String> _titles = [
     "Home",
     "Inventory", 
     "Add Device",
     "Scanner",
-    // "Trivia",
+    "Trivia",
     "Settings",
     "Account",
     "Location",
@@ -42,7 +43,7 @@ class _ScreenPageState extends State<ScreenPage> {
     });
   }
 
-  final List<int> _bottomNavIndexes = [0, 1, 3, 5, 6];
+  final List<int> _bottomNavIndexes = [0, 1, 3, 6, 7];
 
   @override
   void initState() {
@@ -51,22 +52,23 @@ class _ScreenPageState extends State<ScreenPage> {
   }
 
   Future<void> _loadUserData() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      try {
-        final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-        if (doc.exists && mounted) {
-          final data = doc.data();
-          setState(() {
-            _username = data?['username'] ?? 'User';
-            _profileImageUrl = data?['profileImageUrl'];
-          });
-        }
-      } catch (e) {
-        print('Error loading user data: $e');
+  final user = FirebaseAuth.instance.currentUser;
+  if (user != null) {
+    try {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      if (doc.exists && mounted) {
+        final data = doc.data();
+        setState(() {
+          _username = data?['username'] ?? 'User';
+          _profileImageUrl = data?['profileImageUrl'];
+          _staffType = data?['staffType'];  // ADD THIS
+        });
       }
+    } catch (e) {
+      print('Error loading user data: $e');
     }
   }
+}
 
   void _onSelect(int index) {
     if (_selectedIndex != index) {
@@ -119,13 +121,13 @@ class _ScreenPageState extends State<ScreenPage> {
       return AddDevicePage(onNavigateToInventory: _navigateToInventory);
     case 3:
       return QRScannerPage();
-    // case 4:
-    //   return TriviaPage();  // ADD THIS
     case 4:
-      return SettingsPage();
+      return TriviaPage();  // ADD THIS
     case 5:
-      return AccountPage();
+      return SettingsPage();
     case 6:
+      return AccountPage();
+    case 7:
       return LocationPage();  // Index changed from 6 to 7
     default:
       return HomePage();
@@ -160,7 +162,7 @@ class _ScreenPageState extends State<ScreenPage> {
         ),
       ),
       drawer: Drawer(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.black,
         width: 260,
         child: SafeArea(
           child: Column(
@@ -190,6 +192,15 @@ class _ScreenPageState extends State<ScreenPage> {
                       ),
                     ),
                     Text(
+                      _staffType ?? 'Staff',  // ADD THIS
+                      style: const TextStyle(
+                        fontFamily: 'SansRegular',
+                        fontSize: 12,
+                        color: Color(0xFFADB5BD),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Text(
                       FirebaseAuth.instance.currentUser?.email ?? '',
                       style: const TextStyle(
                         fontFamily: 'SansRegular',
@@ -214,10 +225,10 @@ class _ScreenPageState extends State<ScreenPage> {
                       _buildDrawerItem(Icons.inventory_2_outlined, Icons.inventory_2_rounded, "Inventory", 1),
                       _buildDrawerItem(Icons.add_box_outlined, Icons.add_box_rounded, "Add Device", 2),
                       _buildDrawerItem(Icons.qr_code_scanner_outlined, Icons.qr_code_scanner_rounded, "Scan", 3),
-                      // _buildDrawerItem(Icons.quiz_outlined, Icons.quiz_rounded, "Trivia", 4),
-                      _buildDrawerItem(Icons.settings_outlined, Icons.settings_rounded, "Settings", 4),
-                      _buildDrawerItem(Icons.person_outline_rounded, Icons.person_rounded, "Account", 5),
-                      _buildDrawerItem(Icons.location_city_outlined, Icons.location_city_rounded, "Location", 6), 
+                      _buildDrawerItem(Icons.quiz_outlined, Icons.quiz_rounded, "Trivia", 4),  // ADD THIS
+                      _buildDrawerItem(Icons.settings_outlined, Icons.settings_rounded, "Settings", 5),  // Index changed from 4 to 5
+                      _buildDrawerItem(Icons.person_outline_rounded, Icons.person_rounded, "Account", 6),  // Index changed from 5 to 6
+                      _buildDrawerItem(Icons.location_city_outlined, Icons.location_city_rounded, "Location", 7),  // Index changed from 6 to 7
                     ],
                   ),
                 ),
