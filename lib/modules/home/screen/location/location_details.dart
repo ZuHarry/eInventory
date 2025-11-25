@@ -20,6 +20,8 @@ class LocationDetailsPage extends StatefulWidget {
 class _LocationDetailsPageState extends State<LocationDetailsPage> {
   Map<String, dynamic>? locationData;
   String _selectedType = 'All';
+  int _totalDevicesCount = 0;
+  String _staffName = 'Unknown';
 
   @override
   void initState() {
@@ -36,6 +38,32 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
       setState(() {
         locationData = doc.data();
       });
+      await _fetchTotalDevicesCount();
+      await _fetchStaffName();
+    }
+  }
+
+  Future<void> _fetchTotalDevicesCount() async {
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('devices')
+        .where('location', isEqualTo: locationData!['name'])
+        .get();
+    setState(() {
+      _totalDevicesCount = querySnapshot.docs.length;
+    });
+  }
+
+  Future<void> _fetchStaffName() async {
+    if (locationData!['handledBy'] != null) {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(locationData!['handledBy'])
+          .get();
+      if (userDoc.exists) {
+        setState(() {
+          _staffName = userDoc['fullname'] ?? 'Unknown';
+        });
+      }
     }
   }
 
@@ -110,38 +138,37 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
   }
 
   Widget _buildLocationImage(String imageUrl) {
-  final screenHeight = MediaQuery.of(context).size.height;
-  final screenWidth = MediaQuery.of(context).size.width;
-  final imageHeight = screenHeight * 0.3; // 30% of screen height
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final imageHeight = screenHeight * 0.3;
 
-  if (imageUrl.endsWith('.svg')) {
-    return Container(
-      margin: const EdgeInsets.all(10),
-      height: imageHeight,
-      width: screenWidth,
-      child: SvgPicture.network(
-        imageUrl,
-        placeholderBuilder: (context) =>
-            const Center(child: CircularProgressIndicator()),
-        fit: BoxFit.contain,
-      ),
-    );
-  } else {
-    return Container(
-      margin: const EdgeInsets.all(10),
-      height: imageHeight,
-      width: screenWidth,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        image: DecorationImage(
-          image: NetworkImage(imageUrl),
-          fit: BoxFit.cover,
+    if (imageUrl.endsWith('.svg')) {
+      return Container(
+        margin: const EdgeInsets.all(10),
+        height: imageHeight,
+        width: screenWidth,
+        child: SvgPicture.network(
+          imageUrl,
+          placeholderBuilder: (context) =>
+              const Center(child: CircularProgressIndicator()),
+          fit: BoxFit.contain,
         ),
-      ),
-    );
+      );
+    } else {
+      return Container(
+        margin: const EdgeInsets.all(10),
+        height: imageHeight,
+        width: screenWidth,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          image: DecorationImage(
+            image: NetworkImage(imageUrl),
+            fit: BoxFit.cover,
+          ),
+        ),
+      );
+    }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -183,6 +210,8 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
                         _buildGridItem('Building', Icons.apartment, locationData!['building']),
                         _buildGridItem('Floor', Icons.stairs, locationData!['floor']),
                         _buildGridItem('Type', Icons.category, locationData!['type']),
+                        _buildGridItem('Total Devices', Icons.devices, _totalDevicesCount.toString()),
+                        _buildGridItem('Handled By', Icons.person, _staffName),
                       ],
                     ),
                   ),

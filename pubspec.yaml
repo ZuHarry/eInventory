@@ -55,7 +55,7 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/icons/eInventory.png"
+  image_path: "assets/icons/eInventory2.png"
   adaptive_icon_background: "#ffffff"
-  adaptive_icon_foreground: "assets/icons/eInventory.png"
+  adaptive_icon_foreground: "assets/icons/eInventory2.png"
 

@@ -160,7 +160,7 @@ class _SplashScreenPageState extends State<SplashScreenPage>
                                 ],
                               ),
                               child: Image.asset(
-                                'assets/icons/eInventory.png',
+                                'assets/icons/eInventory2.png',
                                 width: 250,
                                 height: 250,
                                 fit: BoxFit.contain,

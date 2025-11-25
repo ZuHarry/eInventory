@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AddLocationPage extends StatefulWidget {
   const AddLocationPage({super.key});
@@ -643,7 +644,7 @@ void _showCustomBuildingDialog() {
     }
   }
 
-  // 4. Modify _submitForm() to save custom building only when location is submitted
+// 2. Replace the _submitForm() method with this updated version
 void _submitForm() async {
   // Check if all required fields are filled
   List<String> emptyFields = [];
@@ -690,6 +691,10 @@ void _submitForm() async {
   }
 
   try {
+    // Get current user UID
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    String? userUid = currentUser?.uid;
+
     // SAVE CUSTOM BUILDING FIRST (if exists)
     if (_tempCustomBuilding != null && _tempCustomBuilding!.isNotEmpty) {
       await FirebaseFirestore.instance.collection('buildings').add({
@@ -703,7 +708,7 @@ void _submitForm() async {
       });
     }
 
-    // THEN SAVE THE LOCATION
+    // THEN SAVE THE LOCATION with handledBy field
     await FirebaseFirestore.instance.collection('locations').add({
       'name': locationName,
       'building': _building,
@@ -711,6 +716,7 @@ void _submitForm() async {
       'type': _locationType,
       'imageUrl': finalImageUrl,
       'hasCustomImage': _selectedImage != null,
+      'handledBy': userUid,  // Add this field
       'created_at': FieldValue.serverTimestamp(),
     });
 
