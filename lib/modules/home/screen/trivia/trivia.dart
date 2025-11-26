@@ -8,7 +8,16 @@ class TriviaPage extends StatefulWidget {
 
 class _TriviaPageState extends State<TriviaPage> {
   String _selectedCategory = 'All';
-  final List<String> _categories = ['All', 'Brand', 'Model', 'Type', 'Location', 'Status', 'Buildings'];
+  final List<String> _categories = [
+    'All',
+    'Brand',
+    'Model',
+    'Type',
+    'Location',
+    'Status',
+    'Buildings',
+    'Users'
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +36,7 @@ class _TriviaPageState extends State<TriviaPage> {
               itemBuilder: (context, index) {
                 final category = _categories[index];
                 final isSelected = _selectedCategory == category;
-                
+
                 return Container(
                   margin: const EdgeInsets.only(right: 8),
                   child: FilterChip(
@@ -36,8 +45,11 @@ class _TriviaPageState extends State<TriviaPage> {
                       style: TextStyle(
                         fontFamily: 'SansRegular',
                         fontSize: 13,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                        color: isSelected ? const Color(0xFF212529) : const Color(0xFF6C757D),
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.w400,
+                        color: isSelected
+                            ? const Color(0xFF212529)
+                            : const Color(0xFF6C757D),
                       ),
                     ),
                     selected: isSelected,
@@ -52,7 +64,9 @@ class _TriviaPageState extends State<TriviaPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                       side: BorderSide(
-                        color: isSelected ? const Color(0xFFFFC727) : const Color(0xFFDEE2E6),
+                        color: isSelected
+                            ? const Color(0xFFFFC727)
+                            : const Color(0xFFDEE2E6),
                         width: 1,
                       ),
                     ),
@@ -67,12 +81,15 @@ class _TriviaPageState extends State<TriviaPage> {
           // Trivia Content
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('devices').snapshots(),
+              stream: FirebaseFirestore.instance
+                  .collection('devices')
+                  .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
                     child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFC727)),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                          Color(0xFFFFC727)),
                     ),
                   );
                 }
@@ -116,11 +133,40 @@ class _TriviaPageState extends State<TriviaPage> {
                 }
 
                 final devices = snapshot.data!.docs;
-                final triviaData = _processTriviaData(devices);
 
-                return ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: _buildTriviaCards(triviaData),
+                return FutureBuilder<Map<String, Map<String, int>>>(
+                  future: _processTriviaData(devices),
+                  builder: (context, futureSnapshot) {
+                    if (futureSnapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              Color(0xFFFFC727)),
+                        ),
+                      );
+                    }
+
+                    if (futureSnapshot.hasError) {
+                      return Center(
+                        child: Text(
+                          'Error processing data',
+                          style: const TextStyle(
+                            fontFamily: 'SansRegular',
+                            color: Color(0xFF6C757D),
+                            fontSize: 14,
+                          ),
+                        ),
+                      );
+                    }
+
+                    final triviaData = futureSnapshot.data ?? {};
+
+                    return ListView(
+                      padding: const EdgeInsets.all(16),
+                      children: _buildTriviaCards(triviaData),
+                    );
+                  },
                 );
               },
             ),
@@ -130,7 +176,8 @@ class _TriviaPageState extends State<TriviaPage> {
     );
   }
 
-  Map<String, Map<String, int>> _processTriviaData(List<QueryDocumentSnapshot> devices) {
+  Future<Map<String, Map<String, int>>> _processTriviaData(
+      List<QueryDocumentSnapshot> devices) async {
     Map<String, Map<String, int>> data = {
       'Brand': {},
       'Model': {},
@@ -138,6 +185,7 @@ class _TriviaPageState extends State<TriviaPage> {
       'Location': {},
       'Status': {},
       'Buildings': {},
+      'Users': {},
     };
 
     for (var device in devices) {
@@ -173,10 +221,54 @@ class _TriviaPageState extends State<TriviaPage> {
         data['Status']![status] = (data['Status']![status] ?? 0) + 1;
       }
 
-      // Count buildings
-      if (deviceData['buildings'] != null) {
-        final building = deviceData['buildings'].toString();
-        data['Buildings']![building] = (data['Buildings']![building] ?? 0) + 1;
+      // Get building name from location reference
+      if (deviceData['location'] != null) {
+        try {
+          final locationId = deviceData['location'].toString();
+          final locationDoc = await FirebaseFirestore.instance
+              .collection('locations')
+              .doc(locationId)
+              .get();
+
+          if (locationDoc.exists) {
+            final buildingId = locationDoc['building'];
+            if (buildingId != null) {
+              final buildingDoc = await FirebaseFirestore.instance
+                  .collection('buildings')
+                  .doc(buildingId)
+                  .get();
+
+              if (buildingDoc.exists) {
+                final buildingName =
+                    buildingDoc['name'] ?? 'Unknown Building';
+                data['Buildings']![buildingName] =
+                    (data['Buildings']![buildingName] ?? 0) + 1;
+              }
+            }
+          }
+        } catch (e) {
+          print('Error fetching building: $e');
+        }
+      }
+
+      // Get user full name from handledBy UID
+      if (deviceData['handledBy'] != null) {
+        try {
+          final userId = deviceData['handledBy'].toString();
+          final userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(userId)
+              .get();
+
+          if (userDoc.exists) {
+            final fullName =
+                userDoc['fullname'] ?? userDoc['username'] ?? 'Unknown User';
+            data['Users']![fullName] =
+                (data['Users']![fullName] ?? 0) + 1;
+          }
+        } catch (e) {
+          print('Error fetching user: $e');
+        }
       }
     }
 
@@ -209,7 +301,8 @@ class _TriviaPageState extends State<TriviaPage> {
     final sortedItems = items.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    final totalCount = items.values.fold(0, (sum, count) => sum + count);
+    final totalCount =
+        items.values.fold(0, (sum, count) => sum + count);
 
     return Container(
       decoration: BoxDecoration(
@@ -259,7 +352,8 @@ class _TriviaPageState extends State<TriviaPage> {
                   ],
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFFC727),
                     borderRadius: BorderRadius.circular(12),
@@ -290,7 +384,8 @@ class _TriviaPageState extends State<TriviaPage> {
             ),
             itemBuilder: (context, index) {
               final entry = sortedItems[index];
-              final percentage = (entry.value / totalCount * 100).toStringAsFixed(1);
+              final percentage =
+                  (entry.value / totalCount * 100).toStringAsFixed(1);
 
               return InkWell(
                 onTap: () {
@@ -306,7 +401,7 @@ class _TriviaPageState extends State<TriviaPage> {
                         width: 28,
                         height: 28,
                         decoration: BoxDecoration(
-                          color: index < 3 
+                          color: index < 3
                               ? const Color(0xFFFFC727).withOpacity(0.2)
                               : const Color(0xFFF8F9FA),
                           borderRadius: BorderRadius.circular(6),
@@ -318,7 +413,7 @@ class _TriviaPageState extends State<TriviaPage> {
                               fontFamily: 'SansRegular',
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: index < 3 
+                              color: index < 3
                                   ? const Color(0xFF212529)
                                   : const Color(0xFF6C757D),
                             ),
@@ -406,14 +501,16 @@ class _TriviaPageState extends State<TriviaPage> {
         return Icons.info_rounded;
       case 'Buildings':
         return Icons.apartment_rounded;
+      case 'Users':
+        return Icons.people_rounded;
       default:
         return Icons.quiz_rounded;
     }
   }
 }
 
-// New page to show filtered devices
-class FilteredDevicesPage extends StatelessWidget {
+// Filtered Devices Page
+class FilteredDevicesPage extends StatefulWidget {
   final String category;
   final String value;
 
@@ -424,6 +521,47 @@ class FilteredDevicesPage extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<FilteredDevicesPage> createState() => _FilteredDevicesPageState();
+}
+
+class _FilteredDevicesPageState extends State<FilteredDevicesPage> {
+  late Future<Map<String, dynamic>> _filterDataFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _filterDataFuture = _getFilterCriteria();
+  }
+
+  Future<Map<String, dynamic>> _getFilterCriteria() async {
+    if (widget.category == 'Buildings') {
+      // Get location ID from building name
+      final buildingsQuery = await FirebaseFirestore.instance
+          .collection('buildings')
+          .where('name', isEqualTo: widget.value)
+          .get();
+
+      if (buildingsQuery.docs.isNotEmpty) {
+        final buildingId = buildingsQuery.docs.first.id;
+        return {'type': 'building', 'buildingId': buildingId};
+      }
+    } else if (widget.category == 'Users') {
+      // Get user ID from full name
+      final usersQuery = await FirebaseFirestore.instance
+          .collection('users')
+          .where('fullname', isEqualTo: widget.value)
+          .get();
+
+      if (usersQuery.docs.isNotEmpty) {
+        final userId = usersQuery.docs.first.id;
+        return {'type': 'user', 'userId': userId};
+      }
+    }
+
+    return {'type': widget.category.toLowerCase(), 'value': widget.value};
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
@@ -431,14 +569,15 @@ class FilteredDevicesPage extends StatelessWidget {
         backgroundColor: const Color(0xFF212529),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, color: Color(0xFFFFC727)),
+          icon: const Icon(Icons.arrow_back_ios_rounded,
+              color: Color(0xFFFFC727)),
           onPressed: () => Navigator.pop(context),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              value,
+              widget.value,
               style: const TextStyle(
                 fontFamily: 'SansRegular',
                 fontSize: 18,
@@ -447,7 +586,7 @@ class FilteredDevicesPage extends StatelessWidget {
               ),
             ),
             Text(
-              category,
+              widget.category,
               style: const TextStyle(
                 fontFamily: 'SansRegular',
                 fontSize: 12,
@@ -457,63 +596,79 @@ class FilteredDevicesPage extends StatelessWidget {
           ],
         ),
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: _getFilteredStream(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: _filterDataFuture,
+        builder: (context, filterSnapshot) {
+          if (filterSnapshot.connectionState == ConnectionState.waiting) {
             return const Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFC727)),
+                valueColor:
+                    AlwaysStoppedAnimation<Color>(Color(0xFFFFC727)),
               ),
             );
           }
 
-          if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                'Error loading devices',
-                style: const TextStyle(
-                  fontFamily: 'SansRegular',
-                  color: Color(0xFF6C757D),
-                  fontSize: 14,
-                ),
-              ),
-            );
-          }
-
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.devices_other_rounded,
-                    size: 64,
-                    color: const Color(0xFFDEE2E6),
+          return StreamBuilder<List<QueryDocumentSnapshot>>(
+            stream: _getFilteredStream(filterSnapshot.data ?? {}),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                        Color(0xFFFFC727)),
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No devices found',
+                );
+              }
+
+              if (snapshot.hasError) {
+                return Center(
+                  child: Text(
+                    'Error loading devices',
                     style: const TextStyle(
                       fontFamily: 'SansRegular',
                       color: Color(0xFF6C757D),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
                     ),
                   ),
-                ],
-              ),
-            );
-          }
+                );
+              }
 
-          final devices = snapshot.data!.docs;
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.devices_other_rounded,
+                        size: 64,
+                        color: const Color(0xFFDEE2E6),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No devices found',
+                        style: const TextStyle(
+                          fontFamily: 'SansRegular',
+                          color: Color(0xFF6C757D),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: devices.length,
-            itemBuilder: (context, index) {
-              final device = devices[index].data() as Map<String, dynamic>;
-              return _buildDeviceCard(device);
+              final devices = snapshot.data!;
+
+              return ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: devices.length,
+                itemBuilder: (context, index) {
+                  final device =
+                      devices[index].data() as Map<String, dynamic>;
+                  return _buildDeviceCard(device);
+                },
+              );
             },
           );
         },
@@ -521,12 +676,51 @@ class FilteredDevicesPage extends StatelessWidget {
     );
   }
 
-  Stream<QuerySnapshot> _getFilteredStream() {
-    final fieldName = category.toLowerCase();
-    return FirebaseFirestore.instance
-        .collection('devices')
-        .where(fieldName, isEqualTo: value)
-        .snapshots();
+  Stream<List<QueryDocumentSnapshot>> _getFilteredStream(Map<String, dynamic> filterData) {
+    final filterType = filterData['type'] ?? '';
+
+    if (filterType == 'building') {
+      // Query devices where location's building field matches
+      return FirebaseFirestore.instance
+          .collection('devices')
+          .snapshots()
+          .asyncMap((snapshot) async {
+        final buildingId = filterData['buildingId'];
+        final filtered = <QueryDocumentSnapshot>[];
+
+        for (var doc in snapshot.docs) {
+          final deviceData = doc.data() as Map<String, dynamic>;
+          if (deviceData['location'] != null) {
+            final locationDoc = await FirebaseFirestore.instance
+                .collection('locations')
+                .doc(deviceData['location'])
+                .get();
+
+            if (locationDoc.exists &&
+                locationDoc['building'] == buildingId) {
+              filtered.add(doc);
+            }
+          }
+        }
+
+        return filtered;
+      });
+    } else if (filterType == 'user') {
+      // Query devices where handledBy matches user ID
+      return FirebaseFirestore.instance
+          .collection('devices')
+          .where('handledBy', isEqualTo: filterData['userId'])
+          .snapshots()
+          .map((snapshot) => snapshot.docs);
+    } else {
+      // Default filtering for other categories
+      final fieldName = widget.category.toLowerCase();
+      return FirebaseFirestore.instance
+          .collection('devices')
+          .where(fieldName, isEqualTo: widget.value)
+          .snapshots()
+          .map((snapshot) => snapshot.docs);
+    }
   }
 
   Widget _buildDeviceCard(Map<String, dynamic> device) {
@@ -563,7 +757,8 @@ class FilteredDevicesPage extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: _getStatusColor(device['status']),
                     borderRadius: BorderRadius.circular(6),
@@ -581,22 +776,22 @@ class FilteredDevicesPage extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            
+
             // Device details
             if (device['name'] != null) ...[
-              _buildDetailRow(Icons.label_rounded, 'Name', device['name']),
+              _buildDetailRow(
+                  Icons.label_rounded, 'Name', device['name']),
               const SizedBox(height: 8),
             ],
-            _buildDetailRow(Icons.category_rounded, 'Type', device['type']),
+            _buildDetailRow(
+                Icons.category_rounded, 'Type', device['type']),
             const SizedBox(height: 8),
-            _buildDetailRow(Icons.location_on_rounded, 'Location', device['location']),
-            if (device['building'] != null) ...[
-              const SizedBox(height: 8),
-              _buildDetailRow(Icons.apartment_rounded, 'Building', device['building']),
-            ],
+            _buildDetailRow(Icons.location_on_rounded, 'Location',
+                device['location']),
             if (device['serialNumber'] != null) ...[
               const SizedBox(height: 8),
-              _buildDetailRow(Icons.tag_rounded, 'Serial', device['serialNumber']),
+              _buildDetailRow(Icons.tag_rounded, 'Serial',
+                  device['serialNumber']),
             ],
           ],
         ),

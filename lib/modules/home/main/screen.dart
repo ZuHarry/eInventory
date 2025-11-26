@@ -12,7 +12,6 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:einventorycomputer/modules/home/screen/devices/device_details.dart';
 // import 'package:einventorycomputer/modules/home/screen/trivia/trivia.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 
 class ScreenPage extends StatefulWidget {
   @override
