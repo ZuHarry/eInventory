@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'add_location.dart';
 import 'location_details.dart';
 import 'location_overview.dart';
+import 'package:rxdart/rxdart.dart';
 
 class LocationPage extends StatefulWidget {
   const LocationPage({super.key});
@@ -18,7 +19,7 @@ class _LocationPageState extends State<LocationPage> {
   String _selectedType = 'All';
   String _selectedSort = 'Total Devices (High-Low)';
 
-  List<String> _buildings = ['All']; // Will be populated from Firestore
+  List<String> _buildings = ['All'];
   final List<String> _floors = ['All', 'Ground Floor', '1st Floor', '2nd Floor', '3rd Floor'];
   final List<String> _types = ['All', 'Lecture Room', 'Lab', 'Lecturer Office', 'Other'];
   final List<String> _sortOptions = [
@@ -28,30 +29,64 @@ class _LocationPageState extends State<LocationPage> {
     'Name (A-Z)',
   ];
 
+  Map<String, String> _buildingNameToIdMap = {}; // Map building names to their IDs
+
   @override
   void initState() {
     super.initState();
     _fetchBuildingNames();
   }
 
+  Stream<List<QueryDocumentSnapshot>> _getAllLocationsStream() async* {
+    final db = FirebaseFirestore.instance;
+    
+    try {
+      final buildingsSnapshot = await db.collection('buildings').get();
+      
+      List<Stream<QuerySnapshot>> locationStreams = [];
+      
+      for (var buildingDoc in buildingsSnapshot.docs) {
+        locationStreams.add(
+          buildingDoc.reference.collection('locations').snapshots()
+        );
+      }
+      
+      if (locationStreams.isEmpty) {
+        yield [];
+        return;
+      }
+      
+      yield* CombineLatestStream.list(locationStreams)
+        .map((snapshots) => snapshots
+            .cast<QuerySnapshot>()
+            .expand((snapshot) => snapshot.docs)
+            .toList());
+    } catch (e) {
+      print('Error fetching locations: $e');
+      yield [];
+    }
+  }
+
   Future<void> _fetchBuildingNames() async {
     try {
       final snapshot = await FirebaseFirestore.instance.collection('buildings').get();
       final buildingNames = <String>['All'];
+      final nameToIdMap = <String, String>{};
       
       for (var doc in snapshot.docs) {
         final data = doc.data();
         final name = data['name'] as String?;
         if (name != null && name.isNotEmpty) {
           buildingNames.add(name);
+          nameToIdMap[name] = doc.id; // Store the mapping
         }
       }
       
       setState(() {
         _buildings = buildingNames;
+        _buildingNameToIdMap = nameToIdMap;
       });
     } catch (e) {
-      // Handle error - could show a snackbar or use default values
       print('Error fetching building names: $e');
     }
   }
@@ -336,11 +371,8 @@ class _LocationPageState extends State<LocationPage> {
       body: Column(
         children: [
           Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('locations')
-                  .orderBy('name')
-                  .snapshots(),
+            child: StreamBuilder<List<QueryDocumentSnapshot>>(
+              stream: _getAllLocationsStream(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return const Center(
@@ -362,7 +394,17 @@ class _LocationPageState extends State<LocationPage> {
                   );
                 }
 
-                final filteredDocs = snapshot.data!.docs.where((doc) {
+                final allDocs = snapshot.data ?? [];
+                
+                allDocs.sort((a, b) {
+                  final aData = a.data() as Map<String, dynamic>;
+                  final bData = b.data() as Map<String, dynamic>;
+                  final aName = (aData['name'] ?? '').toString().toLowerCase();
+                  final bName = (bData['name'] ?? '').toString().toLowerCase();
+                  return aName.compareTo(bName);
+                });
+
+                final filteredDocs = allDocs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
                   final name = data['name']?.toString().toLowerCase() ?? '';
                   final building = data['building'] ?? '';
@@ -442,6 +484,9 @@ class _LocationPageState extends State<LocationPage> {
                         final peripheralCount = deviceCounts[locationName]?['Peripheral'] ?? 0;
                         final totalDevices = pcCount + peripheralCount;
 
+                        // Get buildingId from the map
+                        final buildingId = _buildingNameToIdMap[building] ?? '';
+
                         return Container(
                           margin: const EdgeInsets.only(bottom: 8),
                           decoration: BoxDecoration(
@@ -464,6 +509,7 @@ class _LocationPageState extends State<LocationPage> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (_) => LocationDetailsPage(
+                                      buildingId: buildingId,
                                       locationId: sortedDocs[index].id,
                                       locationName: locationName,
                                     ),

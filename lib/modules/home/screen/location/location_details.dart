@@ -6,11 +6,13 @@ import 'modify_location.dart';
 class LocationDetailsPage extends StatefulWidget {
   final String locationId;
   final String locationName;
+  final String buildingId;
 
   const LocationDetailsPage({
     super.key,
     required this.locationId,
-    required this.locationName,
+    required this.locationName, 
+    required this.buildingId,
   });
 
   @override
@@ -22,26 +24,30 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
   String _selectedType = 'All';
   int _totalDevicesCount = 0;
   String _staffName = 'Unknown';
+  late String buildingId;
 
   @override
   void initState() {
     super.initState();
+    buildingId = widget.buildingId;
     _fetchLocationDetails();
   }
 
   Future<void> _fetchLocationDetails() async {
-    final doc = await FirebaseFirestore.instance
-        .collection('locations')
-        .doc(widget.locationId)
-        .get();
-    if (doc.exists) {
-      setState(() {
-        locationData = doc.data();
-      });
-      await _fetchTotalDevicesCount();
-      await _fetchStaffName();
-    }
+  final doc = await FirebaseFirestore.instance
+      .collection('buildings')
+      .doc(buildingId) // Use the stored buildingId
+      .collection('locations')
+      .doc(widget.locationId)
+      .get();
+  if (doc.exists) {
+    setState(() {
+      locationData = doc.data();
+    });
+    await _fetchTotalDevicesCount();
+    await _fetchStaffName();
   }
+}
 
   Future<void> _fetchTotalDevicesCount() async {
     final querySnapshot = await FirebaseFirestore.instance
@@ -68,19 +74,19 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
   }
 
   void _navigateToEdit() {
-    if (locationData != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ModifyLocationPage(
-            locationId: widget.locationId,
-            currentName: locationData!['name'],
-            locationData: locationData!,
-          ),
+  if (locationData != null) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ModifyLocationPage(
+          locationId: widget.locationId,
+          locationData: locationData!,
+          buildingId: buildingId, // Use the stored buildingId
         ),
-      ).then((_) => _fetchLocationDetails());
-    }
+      ),
+    ).then((_) => _fetchLocationDetails());
   }
+}
 
   Icon _getDeviceIcon(String? type) {
     if (type == 'PC') return const Icon(Icons.computer, color: Colors.black);

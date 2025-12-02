@@ -7,12 +7,14 @@ import 'package:image_picker/image_picker.dart';
 class ModifyLocationPage extends StatefulWidget {
   final String locationId;
   final Map<String, dynamic> locationData;
+  final String buildingId; // Add this
+
 
   const ModifyLocationPage({
     Key? key,
     required this.locationId,
     required this.locationData,
-    required currentName,
+    required this.buildingId, // Add this
   }) : super(key: key);
 
   @override
@@ -34,6 +36,7 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
   bool _isDeleting = false;
 
   late String oldLocationName;
+  late String buildingId;
 
   // Replace the existing buildingOptions list declaration with:
   List<String> buildingOptions = []; // Initialize as empty list
@@ -54,6 +57,7 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
     nameController.text = widget.locationData['name'] ?? '';
     oldLocationName = widget.locationData['name'] ?? '';
     currentImageUrl = widget.locationData['imageUrl'];
+    buildingId = widget.buildingId;
 
     // Load buildings first, then set selected values
     _loadBuildings().then((_) {
@@ -103,32 +107,31 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
 
   // Add this method to load buildings from Firestore:
   Future<void> _loadBuildings() async {
-    try {
-      final QuerySnapshot snapshot = await FirebaseFirestore.instance
-          .collection('buildings')
-          .get();
+  try {
+    final QuerySnapshot snapshot = await FirebaseFirestore.instance
+        .collection('buildings')
+        .orderBy('name') // Sort by building name
+        .get();
+    
+    setState(() {
+      buildingOptions = snapshot.docs
+          .map((doc) => doc.data() as Map<String, dynamic>)
+          .map((data) => data['name'] as String)
+          .toList();
       
-      setState(() {
-        buildingOptions = snapshot.docs
-            .map((doc) => doc.data() as Map<String, dynamic>)
-            .map((data) => data['name'] as String)
-            .toList();
-        
-        // Re-validate selectedBuilding after loading buildings
-        if (selectedBuilding != null && !buildingOptions.contains(selectedBuilding)) {
-          // If current building is not in the list, treat it as custom
-          buildingController.text = selectedBuilding!;
-          isCustomBuilding = true;
-          selectedBuilding = null;
-        }
-      });
-    } catch (e) {
-      print('Error loading buildings: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error loading buildings: $e")),
-      );
-    }
+      if (selectedBuilding != null && !buildingOptions.contains(selectedBuilding)) {
+        buildingController.text = selectedBuilding!;
+        isCustomBuilding = true;
+        selectedBuilding = null;
+      }
+    });
+  } catch (e) {
+    print('Error loading buildings: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Error loading buildings: $e")),
+    );
   }
+}
 
   Future<void> _takePhoto() async {
     try {
@@ -661,9 +664,11 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
       }
 
       await FirebaseFirestore.instance
-          .collection('locations')
-          .doc(widget.locationId)
-          .update(updateData);
+    .collection('buildings')
+    .doc(buildingId)
+    .collection('locations')
+    .doc(widget.locationId)
+    .update(updateData);
 
       // Update devices with the new location name if it changed
       if (newName != oldLocationName) {
@@ -703,8 +708,10 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
         await doc.reference.update({'location': ''});
       }
 
-      // Delete the location document
+
       await FirebaseFirestore.instance
+          .collection('buildings')
+          .doc(buildingId)
           .collection('locations')
           .doc(widget.locationId)
           .delete();

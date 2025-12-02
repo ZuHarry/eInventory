@@ -24,38 +24,54 @@ class _LocationsOverviewPageState extends State<LocationsOverviewPage> {
 
   Future<void> _fetchAnalyticsData() async {
     try {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('locations')
-          .get();
+      final firestore = FirebaseFirestore.instance;
+      final buildingsSnapshot = await firestore.collection('buildings').get();
 
       Map<String, int> buildings = {};
       Map<String, int> floors = {};
       Map<String, int> types = {};
+      int totalCount = 0;
 
-      for (var doc in snapshot.docs) {
-        final data = doc.data();
-        final building = data['building'] ?? 'Unknown';
-        final floor = data['floor'] ?? 'Unknown';
-        final type = data['type'] ?? 'Unknown';
+      // Iterate through each building
+      for (var buildingDoc in buildingsSnapshot.docs) {
+        final buildingName = buildingDoc.data()['name'] ?? 'Unknown';
+        final buildingUid = buildingDoc.id;
 
-        // Count buildings
-        buildings[building] = (buildings[building] ?? 0) + 1;
-        
-        // Count floors
-        floors[floor] = (floors[floor] ?? 0) + 1;
-        
-        // Count types
-        types[type] = (types[type] ?? 0) + 1;
+        // Fetch locations subcollection for this building
+        final locationsSnapshot = await firestore
+            .collection('buildings')
+            .doc(buildingUid)
+            .collection('locations')
+            .get();
+
+        // Count locations in this building
+        final locationCount = locationsSnapshot.docs.length;
+        buildings[buildingName] = (buildings[buildingName] ?? 0) + locationCount;
+        totalCount += locationCount;
+
+        // Process each location document
+        for (var locationDoc in locationsSnapshot.docs) {
+          final data = locationDoc.data();
+          final floor = data['floor'] ?? 'Unknown';
+          final type = data['type'] ?? 'Unknown';
+
+          // Count floors
+          floors[floor] = (floors[floor] ?? 0) + 1;
+
+          // Count types
+          types[type] = (types[type] ?? 0) + 1;
+        }
       }
 
       setState(() {
         buildingData = buildings;
         floorData = floors;
         typeData = types;
-        totalLocations = snapshot.docs.length;
+        totalLocations = totalCount;
         isLoading = false;
       });
     } catch (e) {
+      print('Error fetching analytics data: $e');
       setState(() {
         isLoading = false;
       });

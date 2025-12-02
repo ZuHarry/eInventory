@@ -511,23 +511,38 @@ void _showCustomBuildingDialog() {
   }
 
   Future<bool> _checkLocationNameExists(String locationName) async {
-    try {
-      // Query Firestore to check if location name already exists
-      // Using case-insensitive comparison
-      final QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-          .collection('locations')
-          .where('name', isEqualTo: locationName.trim())
-          .limit(1)
-          .get();
-
-      return querySnapshot.docs.isNotEmpty;
-    } catch (e) {
-      // If there's an error checking, we'll allow the submission to proceed
-      // and let the actual submission handle any errors
-      print('Error checking location name: $e');
+  try {
+    // Find the building document ID by name
+    final buildingsSnapshot = await FirebaseFirestore.instance
+        .collection('buildings')
+        .where('name', isEqualTo: _building)
+        .limit(1)
+        .get();
+    
+    if (buildingsSnapshot.docs.isEmpty) {
+      // Building not found, allow to proceed (will be caught in submitForm)
       return false;
     }
+    
+    String buildingDocId = buildingsSnapshot.docs.first.id;
+    
+    // Query Firestore to check if location name already exists in this building's locations
+    final QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection('buildings')
+        .doc(buildingDocId)
+        .collection('locations')
+        .where('name', isEqualTo: locationName.trim())
+        .limit(1)
+        .get();
+
+    return querySnapshot.docs.isNotEmpty;
+  } catch (e) {
+    // If there's an error checking, we'll allow the submission to proceed
+    // and let the actual submission handle any errors
+    print('Error checking location name: $e');
+    return false;
   }
+}
 
   Future<void> _pickImage() async {
     try {
@@ -644,7 +659,7 @@ void _showCustomBuildingDialog() {
     }
   }
 
-// 2. Replace the _submitForm() method with this updated version
+// UPDATED _submitForm() method
 void _submitForm() async {
   // Check if all required fields are filled
   List<String> emptyFields = [];
@@ -696,29 +711,53 @@ void _submitForm() async {
     String? userUid = currentUser?.uid;
 
     // SAVE CUSTOM BUILDING FIRST (if exists)
+    String buildingDocId;
+    
     if (_tempCustomBuilding != null && _tempCustomBuilding!.isNotEmpty) {
-      await FirebaseFirestore.instance.collection('buildings').add({
+      // New custom building - add to buildings collection
+      final docRef = await FirebaseFirestore.instance.collection('buildings').add({
         'name': _tempCustomBuilding!,
         'created_at': FieldValue.serverTimestamp(),
       });
+      buildingDocId = docRef.id;
       
       // Add to available buildings list for future use
       setState(() {
         _availableBuildings.insert(_availableBuildings.length - 1, _tempCustomBuilding!);
       });
+    } else {
+      // Existing building - find its document ID by name
+      final buildingsSnapshot = await FirebaseFirestore.instance
+          .collection('buildings')
+          .where('name', isEqualTo: _building)
+          .limit(1)
+          .get();
+      
+      if (buildingsSnapshot.docs.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Building not found")),
+        );
+        return;
+      }
+      
+      buildingDocId = buildingsSnapshot.docs.first.id;
     }
 
-    // THEN SAVE THE LOCATION with handledBy field
-    await FirebaseFirestore.instance.collection('locations').add({
-      'name': locationName,
-      'building': _building,
-      'floor': _floor,
-      'type': _locationType,
-      'imageUrl': finalImageUrl,
-      'hasCustomImage': _selectedImage != null,
-      'handledBy': userUid,  // Add this field
-      'created_at': FieldValue.serverTimestamp(),
-    });
+    // SAVE THE LOCATION under the building document's locations subcollection
+    await FirebaseFirestore.instance
+        .collection('buildings')
+        .doc(buildingDocId)
+        .collection('locations')
+        .add({
+          'name': locationName,
+          'building': _building,
+          'floor': _floor,
+          'type': _locationType,
+          'imageUrl': finalImageUrl,
+          'hasCustomImage': _selectedImage != null,
+          'handledBy': userUid,
+          'created_at': FieldValue.serverTimestamp(),
+        });
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Location added successfully")),
@@ -732,7 +771,7 @@ void _submitForm() async {
       _locationType = 'Lecture Room';
       _imageUrl = null;
       _selectedImage = null;
-      _tempCustomBuilding = null; // Clear temp custom building
+      _tempCustomBuilding = null;
     });
   } catch (e) {
     ScaffoldMessenger.of(context).showSnackBar(
