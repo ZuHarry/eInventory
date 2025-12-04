@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart'; // Add this import
 import 'package:flutter/material.dart';
 import '../location/choose_location.dart';
 import '../devices/choose_brand.dart';
+import '../devices/choose_model.dart';
 
 class AddDevicePage extends StatefulWidget {
   final VoidCallback? onNavigateToInventory;
@@ -28,6 +29,8 @@ class _AddDevicePageState extends State<AddDevicePage> {
   String _peripheralType = 'Monitor';
   String? _selectedLocationName;
   String? _selectedBrand;
+  String? _selectedBrandId;  // Add this line
+  String? _selectedModel;     // Add this line
 
   Future<List<String>> _checkDuplicates(String name) async {
     List<String> duplicateFields = [];
@@ -117,8 +120,8 @@ class _AddDevicePageState extends State<AddDevicePage> {
           if (_selectedBrand != null) {
             deviceData['brand'] = _selectedBrand;
           }
-          if (_modelController.text.trim().isNotEmpty) {
-            deviceData['model'] = _modelController.text.trim();
+          if (_selectedModel != null) {
+            deviceData['model'] = _selectedModel;
           }
         }
 
@@ -138,6 +141,8 @@ class _AddDevicePageState extends State<AddDevicePage> {
           _peripheralType = 'Monitor';
           _selectedLocationName = null;
           _selectedBrand = null;
+          _selectedBrandId = null;
+          _selectedModel = null;
         });
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -543,17 +548,27 @@ class _AddDevicePageState extends State<AddDevicePage> {
                       label: 'Peripheral Type',
                     ),
                     const SizedBox(height: 16),
+                    // Replace the existing brand GestureDetector with this
                     GestureDetector(
                       onTap: () async {
-                        final selected = await Navigator.push(
+                        final selectedBrand = await Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => const ChooseBrandPage(),
                           ),
                         );
-                        if (selected != null) {
+                        if (selectedBrand != null) {
+                          // Get the brand document ID
+                          final brandQuery = await FirebaseFirestore.instance
+                              .collection('brands')
+                              .where('name', isEqualTo: selectedBrand)
+                              .limit(1)
+                              .get();
+                          
                           setState(() {
-                            _selectedBrand = selected;
+                            _selectedBrand = selectedBrand;
+                            _selectedBrandId = brandQuery.docs.isNotEmpty ? brandQuery.docs.first.id : null;
+                            _selectedModel = null; // Reset model when brand changes
                           });
                         }
                       },
@@ -582,7 +597,52 @@ class _AddDevicePageState extends State<AddDevicePage> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    _buildTextField(_modelController, 'Model'),
+                    // Add this after the Brand GestureDetector and SizedBox
+                    if (_selectedBrand != null && _selectedBrandId != null) ...[
+                      GestureDetector(
+                        onTap: () async {
+                          final selected = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ChooseModelPage(
+                                brandId: _selectedBrandId!,
+                                brandName: _selectedBrand!,
+                              ),
+                            ),
+                          );
+                          if (selected != null) {
+                            setState(() {
+                              _selectedModel = selected;
+                            });
+                          }
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.black54),
+                            borderRadius: BorderRadius.circular(8),
+                            color: Colors.white,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                _selectedModel ?? 'Choose Model',
+                                style: TextStyle(
+                                  fontFamily: 'SansRegular',
+                                  color: _selectedModel != null ? Colors.black87 : Colors.black54,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.black54),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    // Remove the old _buildTextField(_modelController, 'Model') line
                     const SizedBox(height: 16),
                   ],
                   

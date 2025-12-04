@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -173,8 +175,36 @@ class _TriviaPageState extends State<TriviaPage> {
           ),
         ],
       ),
+
+          floatingActionButton: FloatingActionButton.extended(
+      onPressed: () {
+        _showAddDataDialog();
+      },
+      backgroundColor: const Color(0xFFFFC727),
+      icon: const Icon(
+        Icons.add_rounded,
+        color: Color(0xFF212529),
+      ),
+      label: const Text(
+        'Add Data',
+        style: TextStyle(
+          fontFamily: 'SansRegular',
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: Color(0xFF212529),
+        ),
+      ),
+    ),
+
     );
   }
+
+  void _showAddDataDialog() {
+  showDialog(
+    context: context,
+    builder: (context) => AddDataDialog(),
+  );
+}
 
   Future<Map<String, Map<String, int>>> _processTriviaData(
       List<QueryDocumentSnapshot> devices) async {
@@ -844,5 +874,234 @@ class _FilteredDevicesPageState extends State<FilteredDevicesPage> {
       default:
         return const Color(0xFF6C757D);
     }
+  }
+}
+
+class AddDataDialog extends StatefulWidget {
+  @override
+  State<AddDataDialog> createState() => _AddDataDialogState();
+}
+
+class _AddDataDialogState extends State<AddDataDialog> {
+  String _selectedType = 'Brand';
+  final _nameController = TextEditingController();
+  bool _isLoading = false;
+  String? _selectedBrandId; // ADD THIS
+  List<Map<String, dynamic>> _brands = []; // ADD THIS
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBrands(); // ADD THIS
+  }
+
+  Future<void> _loadBrands() async {
+    final brandsSnapshot = await FirebaseFirestore.instance
+        .collection('brands')
+        .orderBy('name')
+        .get();
+    
+    setState(() {
+      _brands = brandsSnapshot.docs
+          .map((doc) => {'id': doc.id, 'name': doc['name']})
+          .toList();
+    });
+  }
+
+  Future<void> _saveData() async {
+    if (_nameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a name'),
+          backgroundColor: Color(0xFFDC3545),
+        ),
+      );
+      return;
+    }
+
+    // ADD THIS VALIDATION
+    if (_selectedType == 'Model' && _selectedBrandId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a brand'),
+          backgroundColor: Color(0xFFDC3545),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      // REPLACE THE ENTIRE TRY BLOCK WITH THIS:
+      if (_selectedType == 'Brand') {
+        await FirebaseFirestore.instance.collection('brands').add({
+          'name': _nameController.text.trim(),
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      } else {
+        // Add model as subcollection under selected brand
+        await FirebaseFirestore.instance
+            .collection('brands')
+            .doc(_selectedBrandId)
+            .collection('models')
+            .add({
+          'name': _nameController.text.trim(),
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$_selectedType added successfully'),
+          backgroundColor: const Color(0xFF28A745),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: const Color(0xFFDC3545),
+        ),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Add New Data',
+              style: TextStyle(
+                fontFamily: 'SansRegular',
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF212529),
+              ),
+            ),
+            const SizedBox(height: 20),
+            DropdownButtonFormField<String>(
+              value: _selectedType,
+              decoration: InputDecoration(
+                labelText: 'Type',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
+              ),
+              items: ['Brand', 'Model'].map((type) {
+                return DropdownMenuItem(
+                  value: type,
+                  child: Text(type),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() => _selectedType = value!);
+              },
+            ),
+            const SizedBox(height: 16),
+             // ADD BRAND DROPDOWN FOR MODEL
+            if (_selectedType == 'Model') ...[
+              DropdownButtonFormField<String>(
+                value: _selectedBrandId,
+                decoration: InputDecoration(
+                  labelText: 'Brand',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
+                ),
+                items: _brands.map((brand) {
+                  return DropdownMenuItem<String>(
+                    value: brand['id'] as String,
+                    child: Text(brand['name'] as String),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() => _selectedBrandId = value);
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+            TextField(
+              controller: _nameController,
+              decoration: InputDecoration(
+                labelText: 'Name',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: _isLoading ? null : () => Navigator.pop(context),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(
+                      fontFamily: 'SansRegular',
+                      color: Color(0xFF6C757D),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _saveData,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFC727),
+                    foregroundColor: const Color(0xFF212529),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Color(0xFF212529),
+                            ),
+                          ),
+                        )
+                      : const Text(
+                          'Save',
+                          style: TextStyle(
+                            fontFamily: 'SansRegular',
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
