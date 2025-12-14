@@ -70,12 +70,17 @@ class ChooseBrandPage extends StatelessWidget {
             itemBuilder: (context, index) {
               final brandDoc = brands[index];
               final brandName = brandDoc['name'] as String;
+              final brandId = brandDoc.id;
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: InkWell(
                   onTap: () {
-                    Navigator.pop(context, brandName);
+                    // Return both brand name and brand ID as a Map
+                    Navigator.pop(context, {
+                      'name': brandName,
+                      'id': brandId,
+                    });
                   },
                   child: Container(
                     decoration: BoxDecoration(

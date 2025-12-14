@@ -59,14 +59,25 @@ class ChooseModelPage extends StatelessWidget {
           }
 
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(
-              child: Text(
-                'No models available for this brand',
-                style: TextStyle(
-                  fontFamily: 'SansRegular',
-                  fontSize: 16,
-                  color: Color(0xFF6C757D),
-                ),
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.inventory_2_outlined,
+                    size: 64,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No models available for $brandName',
+                    style: const TextStyle(
+                      fontFamily: 'SansRegular',
+                      fontSize: 16,
+                      color: Color(0xFF6C757D),
+                    ),
+                  ),
+                ],
               ),
             );
           }
@@ -113,8 +124,8 @@ class ChooseModelPage extends StatelessWidget {
                         ),
                       ),
                       trailing: const Icon(
-                        Icons.arrow_forward_ios,
-                        size: 16,
+                        Icons.check_circle_outline,
+                        size: 20,
                         color: Color(0xFF6C757D),
                       ),
                     ),

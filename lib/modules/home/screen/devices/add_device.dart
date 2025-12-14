@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Add this import
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../location/choose_location.dart';
 import '../devices/choose_brand.dart';
@@ -20,7 +20,6 @@ class _AddDevicePageState extends State<AddDevicePage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _ipController = TextEditingController();
   final TextEditingController _macController = TextEditingController();
-  final TextEditingController _modelController = TextEditingController();
   final TextEditingController _processorController = TextEditingController();
   final TextEditingController _storageController = TextEditingController();
 
@@ -28,9 +27,9 @@ class _AddDevicePageState extends State<AddDevicePage> {
   String _deviceStatus = 'Online';
   String _peripheralType = 'Monitor';
   String? _selectedLocationName;
-  String? _selectedBrand;
-  String? _selectedBrandId;  // Add this line
-  String? _selectedModel;     // Add this line
+  String? _selectedBrandId;
+  String? _selectedBrandName;
+  String? _selectedModel;
 
   Future<List<String>> _checkDuplicates(String name) async {
     List<String> duplicateFields = [];
@@ -77,7 +76,6 @@ class _AddDevicePageState extends State<AddDevicePage> {
       }
 
       try {
-        // Get current user UID
         final currentUser = FirebaseAuth.instance.currentUser;
         if (currentUser == null) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -91,7 +89,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
           'type': _deviceType,
           'status': _deviceStatus,
           'location': _selectedLocationName,
-          'assigned_by': currentUser.uid, // Add current user's UID
+          'assigned_by': currentUser.uid,
           'created_at': FieldValue.serverTimestamp(),
         };
 
@@ -103,11 +101,11 @@ class _AddDevicePageState extends State<AddDevicePage> {
         }
 
         if (_deviceType == 'PC') {
-          if (_selectedBrand != null) {
-            deviceData['brand'] = _selectedBrand;
+          if (_selectedBrandName != null) {
+            deviceData['brand'] = _selectedBrandName;
           }
-          if (_modelController.text.trim().isNotEmpty) {
-            deviceData['model'] = _modelController.text.trim();
+          if (_selectedModel != null) {
+            deviceData['model'] = _selectedModel;
           }
           if (_processorController.text.trim().isNotEmpty) {
             deviceData['processor'] = _processorController.text.trim();
@@ -117,8 +115,8 @@ class _AddDevicePageState extends State<AddDevicePage> {
           }
         } else if (_deviceType == 'Peripheral') {
           deviceData['peripheral_type'] = _peripheralType;
-          if (_selectedBrand != null) {
-            deviceData['brand'] = _selectedBrand;
+          if (_selectedBrandName != null) {
+            deviceData['brand'] = _selectedBrandName;
           }
           if (_selectedModel != null) {
             deviceData['model'] = _selectedModel;
@@ -132,7 +130,6 @@ class _AddDevicePageState extends State<AddDevicePage> {
         _nameController.clear();
         _ipController.clear();
         _macController.clear();
-        _modelController.clear();
         _processorController.clear();
         _storageController.clear();
         setState(() {
@@ -140,8 +137,8 @@ class _AddDevicePageState extends State<AddDevicePage> {
           _deviceStatus = 'Online';
           _peripheralType = 'Monitor';
           _selectedLocationName = null;
-          _selectedBrand = null;
           _selectedBrandId = null;
+          _selectedBrandName = null;
           _selectedModel = null;
         });
       } catch (e) {
@@ -454,7 +451,6 @@ class _AddDevicePageState extends State<AddDevicePage> {
     _nameController.dispose();
     _ipController.dispose();
     _macController.dispose();
-    _modelController.dispose();
     _processorController.dispose();
     _storageController.dispose();
     super.dispose();
@@ -503,71 +499,10 @@ class _AddDevicePageState extends State<AddDevicePage> {
                             builder: (context) => const ChooseBrandPage(),
                           ),
                         );
-                        if (selected != null) {
+                        if (selected != null && selected is Map) {
                           setState(() {
-                            _selectedBrand = selected;
-                          });
-                        }
-                      },
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black54),
-                          borderRadius: BorderRadius.circular(8),
-                          color: Colors.white,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              _selectedBrand ?? 'Choose Brand',
-                              style: TextStyle(
-                                fontFamily: 'SansRegular',
-                                color: _selectedBrand != null ? Colors.black87 : Colors.black54,
-                                fontSize: 16,
-                              ),
-                            ),
-                            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.black54),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildTextField(_modelController, 'Model'),
-                    const SizedBox(height: 16),
-                    _buildTextField(_processorController, 'Processor'),
-                    const SizedBox(height: 16),
-                    _buildTextField(_storageController, 'Storage (GB)', keyboardType: TextInputType.number),
-                    const SizedBox(height: 16),
-                  ] else if (_deviceType == 'Peripheral') ...[
-                    _buildDropdown(
-                      value: _peripheralType,
-                      items: ['Monitor', 'Printer', 'Tablet', 'Others'],
-                      onChanged: (val) => setState(() => _peripheralType = val!),
-                      label: 'Peripheral Type',
-                    ),
-                    const SizedBox(height: 16),
-                    // Replace the existing brand GestureDetector with this
-                    GestureDetector(
-                      onTap: () async {
-                        final selectedBrand = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ChooseBrandPage(),
-                          ),
-                        );
-                        if (selectedBrand != null) {
-                          // Get the brand document ID
-                          final brandQuery = await FirebaseFirestore.instance
-                              .collection('brands')
-                              .where('name', isEqualTo: selectedBrand)
-                              .limit(1)
-                              .get();
-                          
-                          setState(() {
-                            _selectedBrand = selectedBrand;
-                            _selectedBrandId = brandQuery.docs.isNotEmpty ? brandQuery.docs.first.id : null;
+                            _selectedBrandId = selected['id'];
+                            _selectedBrandName = selected['name'];
                             _selectedModel = null; // Reset model when brand changes
                           });
                         }
@@ -584,10 +519,10 @@ class _AddDevicePageState extends State<AddDevicePage> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              _selectedBrand ?? 'Choose Brand',
+                              _selectedBrandName ?? 'Choose Brand',
                               style: TextStyle(
                                 fontFamily: 'SansRegular',
-                                color: _selectedBrand != null ? Colors.black87 : Colors.black54,
+                                color: _selectedBrandName != null ? Colors.black87 : Colors.black54,
                                 fontSize: 16,
                               ),
                             ),
@@ -597,52 +532,166 @@ class _AddDevicePageState extends State<AddDevicePage> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    // Add this after the Brand GestureDetector and SizedBox
-                    if (_selectedBrand != null && _selectedBrandId != null) ...[
-                      GestureDetector(
-                        onTap: () async {
-                          final selected = await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ChooseModelPage(
-                                brandId: _selectedBrandId!,
-                                brandName: _selectedBrand!,
+                    GestureDetector(
+                      onTap: _selectedBrandId == null
+                          ? null
+                          : () async {
+                              final selected = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ChooseModelPage(
+                                    brandId: _selectedBrandId!,
+                                    brandName: _selectedBrandName!,
+                                  ),
+                                ),
+                              );
+                              if (selected != null && selected is String) {
+                                setState(() {
+                                  _selectedModel = selected;
+                                });
+                              }
+                            },
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: _selectedBrandId == null ? Colors.grey.shade300 : Colors.black54,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                          color: _selectedBrandId == null ? Colors.grey.shade100 : Colors.white,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              _selectedModel ?? 'Choose Model',
+                              style: TextStyle(
+                                fontFamily: 'SansRegular',
+                                color: _selectedBrandId == null
+                                    ? Colors.grey.shade400
+                                    : _selectedModel != null
+                                        ? Colors.black87
+                                        : Colors.black54,
+                                fontSize: 16,
                               ),
                             ),
-                          );
-                          if (selected != null) {
-                            setState(() {
-                              _selectedModel = selected;
-                            });
-                          }
-                        },
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.black54),
-                            borderRadius: BorderRadius.circular(8),
-                            color: Colors.white,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                _selectedModel ?? 'Choose Model',
-                                style: TextStyle(
-                                  fontFamily: 'SansRegular',
-                                  color: _selectedModel != null ? Colors.black87 : Colors.black54,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.black54),
-                            ],
-                          ),
+                            Icon(
+                              Icons.arrow_forward_ios,
+                              size: 16,
+                              color: _selectedBrandId == null ? Colors.grey.shade400 : Colors.black54,
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 16),
-                    ],
-                    // Remove the old _buildTextField(_modelController, 'Model') line
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(_processorController, 'Processor'),
+                    const SizedBox(height: 16),
+                    _buildTextField(_storageController, 'Storage (GB)', keyboardType: TextInputType.number),
+                    const SizedBox(height: 16),
+                  ] else if (_deviceType == 'Peripheral') ...[
+                    _buildDropdown(
+                      value: _peripheralType,
+                      items: ['Monitor', 'Printer', 'Tablet', 'Others'],
+                      onChanged: (val) => setState(() => _peripheralType = val!),
+                      label: 'Peripheral Type',
+                    ),
+                    const SizedBox(height: 16),
+                    GestureDetector(
+                      onTap: () async {
+                        final selected = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ChooseBrandPage(),
+                          ),
+                        );
+                        if (selected != null && selected is Map) {
+                          setState(() {
+                            _selectedBrandId = selected['id'];
+                            _selectedBrandName = selected['name'];
+                            _selectedModel = null; // Reset model when brand changes
+                          });
+                        }
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.black54),
+                          borderRadius: BorderRadius.circular(8),
+                          color: Colors.white,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              _selectedBrandName ?? 'Choose Brand',
+                              style: TextStyle(
+                                fontFamily: 'SansRegular',
+                                color: _selectedBrandName != null ? Colors.black87 : Colors.black54,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.black54),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    GestureDetector(
+                      onTap: _selectedBrandId == null
+                          ? null
+                          : () async {
+                              final selected = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ChooseModelPage(
+                                    brandId: _selectedBrandId!,
+                                    brandName: _selectedBrandName!,
+                                  ),
+                                ),
+                              );
+                              if (selected != null && selected is String) {
+                                setState(() {
+                                  _selectedModel = selected;
+                                });
+                              }
+                            },
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: _selectedBrandId == null ? Colors.grey.shade300 : Colors.black54,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                          color: _selectedBrandId == null ? Colors.grey.shade100 : Colors.white,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              _selectedModel ?? 'Choose Model',
+                              style: TextStyle(
+                                fontFamily: 'SansRegular',
+                                color: _selectedBrandId == null
+                                    ? Colors.grey.shade400
+                                    : _selectedModel != null
+                                        ? Colors.black87
+                                        : Colors.black54,
+                                fontSize: 16,
+                              ),
+                            ),
+                            Icon(
+                              Icons.arrow_forward_ios,
+                              size: 16,
+                              color: _selectedBrandId == null ? Colors.grey.shade400 : Colors.black54,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 16),
                   ],
                   
