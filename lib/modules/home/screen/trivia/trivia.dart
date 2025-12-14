@@ -1,5 +1,6 @@
 import 'dart:developer';
-
+import 'add_brand_page.dart';
+import 'add_model_page.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -202,7 +203,72 @@ class _TriviaPageState extends State<TriviaPage> {
   void _showAddDataDialog() {
   showDialog(
     context: context,
-    builder: (context) => AddDataDialog(),
+    builder: (context) => Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Add New Data',
+              style: TextStyle(
+                fontFamily: 'SansRegular',
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF212529),
+              ),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddBrandPage(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.business_rounded),
+              label: const Text('Add Brand'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFFC727),
+                foregroundColor: const Color(0xFF212529),
+                minimumSize: const Size(double.infinity, 48),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddModelPage(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.devices_rounded),
+              label: const Text('Add Model'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFFC727),
+                foregroundColor: const Color(0xFF212529),
+                minimumSize: const Size(double.infinity, 48),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
   );
 }
 
