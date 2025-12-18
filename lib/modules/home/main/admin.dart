@@ -10,7 +10,7 @@ import 'package:einventorycomputer/modules/home/screen/user/account.dart';
 import 'package:einventorycomputer/modules/home/screen/devices/add_device.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:einventorycomputer/modules/home/screen/devices/device_details.dart';
-import 'package:einventorycomputer/modules/home/screen/trivia/trivia.dart';  // ADD THIS
+import 'package:einventorycomputer/modules/home/screen/trivia/trivia.dart';
 import 'package:image_picker/image_picker.dart';
 
 class AdminScreen extends StatefulWidget {

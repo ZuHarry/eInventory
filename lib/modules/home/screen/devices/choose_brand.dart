@@ -29,7 +29,7 @@ class ChooseBrandPage extends StatelessWidget {
             .orderBy('name')
             .snapshots(),
         builder: (context, snapshot) {
-          if (snapshot.hasError) { 
+          if (snapshot.hasError) {
             return Center(
               child: Text(
                 'Error: ${snapshot.error}',
@@ -64,56 +64,109 @@ class ChooseBrandPage extends StatelessWidget {
 
           final brands = snapshot.data!.docs;
 
-          return ListView.builder(
+          return GridView.builder(
             padding: const EdgeInsets.all(16),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 0.85,
+            ),
             itemCount: brands.length,
             itemBuilder: (context, index) {
               final brandDoc = brands[index];
               final brandName = brandDoc['name'] as String;
               final brandId = brandDoc.id;
+              final brandData = brandDoc.data() as Map<String, dynamic>;
+              final imageUrl = brandData['imageUrl'] as String?;
 
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: InkWell(
-                  onTap: () {
-                    // Return both brand name and brand ID as a Map
-                    Navigator.pop(context, {
-                      'name': brandName,
-                      'id': brandId,
-                    });
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 8,
+              return InkWell(
+                onTap: () {
+                  Navigator.pop(context, {
+                    'name': brandName,
+                    'id': brandId,
+                  });
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
-                      title: Text(
-                        brandName,
-                        style: const TextStyle(
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF212529).withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: imageUrl != null && imageUrl.isNotEmpty
+                              ? Image.network(
+                                  imageUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Icon(
+                                      Icons.image_rounded,
+                                      color: Color(0xFF212529),
+                                      size: 40,
+                                    );
+                                  },
+                                  loadingBuilder:
+                                      (context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    return const Center(
+                                      child: CircularProgressIndicator(
+                                        color: Color(0xFF212529),
+                                        strokeWidth: 2,
+                                      ),
+                                    );
+                                  },
+                                )
+                              : const Icon(
+                                  Icons.image_rounded,
+                                  color: Color(0xFF212529),
+                                  size: 40,
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(
+                          brandName,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontFamily: 'SansRegular',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF212529),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Tap to select',
+                        style: TextStyle(
                           fontFamily: 'SansRegular',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF212529),
+                          fontSize: 11,
+                          color: const Color(0xFF6C757D).withOpacity(0.8),
                         ),
                       ),
-                      trailing: const Icon(
-                        Icons.arrow_forward_ios,
-                        size: 16,
-                        color: Color(0xFF6C757D),
-                      ),
-                    ),
+                    ],
                   ),
                 ),
               );

@@ -3,6 +3,7 @@ import 'add_brand_page.dart';
 import 'add_model_page.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../discover/discover_page.dart';
 
 class TriviaPage extends StatefulWidget {
   @override
@@ -12,6 +13,7 @@ class TriviaPage extends StatefulWidget {
 class _TriviaPageState extends State<TriviaPage> {
   String _selectedCategory = 'All';
   final List<String> _categories = [
+    'Discover',
     'All',
     'Brand',
     'Model',
@@ -58,7 +60,17 @@ class _TriviaPageState extends State<TriviaPage> {
                     selected: isSelected,
                     onSelected: (selected) {
                       setState(() {
-                        _selectedCategory = category;
+                        if (category == 'Discover') {
+                          // Navigate to Discover page instead of filtering
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DiscoverPage(),
+                            ),
+                          );
+                        } else {
+                          _selectedCategory = category;
+                        }
                       });
                     },
                     backgroundColor: Colors.white,

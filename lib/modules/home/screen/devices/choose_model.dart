@@ -89,7 +89,9 @@ class ChooseModelPage extends StatelessWidget {
             itemCount: models.length,
             itemBuilder: (context, index) {
               final modelDoc = models[index];
-              final modelName = modelDoc['name'] as String;
+              final modelData = modelDoc.data() as Map<String, dynamic>;
+              final modelName = modelData['name'] as String;
+              final imageUrl = modelData['imageUrl'] as String?;
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
@@ -109,24 +111,71 @@ class ChooseModelPage extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 8,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
                       ),
-                      title: Text(
-                        modelName,
-                        style: const TextStyle(
-                          fontFamily: 'SansRegular',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF212529),
-                        ),
-                      ),
-                      trailing: const Icon(
-                        Icons.check_circle_outline,
-                        size: 20,
-                        color: Color(0xFF6C757D),
+                      child: Row(
+                        children: [
+                          // Model Image
+                          Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF212529).withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: imageUrl != null && imageUrl.isNotEmpty
+                                  ? Image.network(
+                                      imageUrl,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return const Icon(
+                                          Icons.phone_android_rounded,
+                                          color: Color(0xFF6C757D),
+                                          size: 28,
+                                        );
+                                      },
+                                      loadingBuilder: (context, child, loadingProgress) {
+                                        if (loadingProgress == null) return child;
+                                        return const Center(
+                                          child: CircularProgressIndicator(
+                                            color: Color(0xFF212529),
+                                            strokeWidth: 2,
+                                          ),
+                                        );
+                                      },
+                                    )
+                                  : const Icon(
+                                      Icons.phone_android_rounded,
+                                      color: Color(0xFF6C757D),
+                                      size: 28,
+                                    ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          // Model Name
+                          Expanded(
+                            child: Text(
+                              modelName,
+                              style: const TextStyle(
+                                fontFamily: 'SansRegular',
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF212529),
+                              ),
+                            ),
+                          ),
+                          // Check Icon
+                          const Icon(
+                            Icons.check_circle_outline,
+                            size: 20,
+                            color: Color(0xFF6C757D),
+                          ),
+                        ],
                       ),
                     ),
                   ),
