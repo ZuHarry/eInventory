@@ -4,6 +4,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'add_location_map.dart';
 
 class AddLocationPage extends StatefulWidget {
   const AddLocationPage({super.key});
@@ -25,6 +26,8 @@ class _AddLocationPageState extends State<AddLocationPage> {
   File? _selectedImage; // For user-uploaded image
   bool _isUploading = false;
   bool _isCustomBuilding = false; // Track if user selected custom building option
+  double? _latitude;
+  double? _longitude;
 
   // 1. Add new state variable to track temporary custom building
   String? _tempCustomBuilding; // Add this line near other state variables
@@ -227,6 +230,188 @@ void _showCustomBuildingDialog() {
             ),
             child: const Text(
               'Add Building',
+              style: TextStyle(
+                fontFamily: 'SansRegular',
+                color: Colors.black,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+
+void _showManualCoordinateDialog() {
+  final latController = TextEditingController(
+    text: _latitude?.toString() ?? ''
+  );
+  final lngController = TextEditingController(
+    text: _longitude?.toString() ?? ''
+  );
+  
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        backgroundColor: const Color(0xFF212529),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFC727).withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.pin_drop,
+                color: Color(0xFFFFC727),
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Enter Coordinates',
+              style: TextStyle(
+                fontFamily: 'SansRegular',
+                fontWeight: FontWeight.w600,
+                fontSize: 18,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: latController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+              style: const TextStyle(
+                fontFamily: 'SansRegular',
+                fontSize: 16,
+                color: Colors.white,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Latitude',
+                hintText: 'e.g., 2.7253',
+                labelStyle: TextStyle(
+                  color: Colors.white70,
+                  fontFamily: 'SansRegular',
+                ),
+                hintStyle: TextStyle(color: Colors.white38),
+                border: OutlineInputBorder(),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Color(0xFFFFC727), width: 2),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white70),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: lngController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+              style: const TextStyle(
+                fontFamily: 'SansRegular',
+                fontSize: 16,
+                color: Colors.white,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Longitude',
+                hintText: 'e.g., 101.9379',
+                labelStyle: TextStyle(
+                  color: Colors.white70,
+                  fontFamily: 'SansRegular',
+                ),
+                hintStyle: TextStyle(color: Colors.white38),
+                border: OutlineInputBorder(),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Color(0xFFFFC727), width: 2),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white70),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text(
+              'Cancel',
+              style: TextStyle(
+                fontFamily: 'SansRegular',
+                color: Colors.white70,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final lat = double.tryParse(latController.text.trim());
+              final lng = double.tryParse(lngController.text.trim());
+              
+              if (lat == null || lng == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please enter valid coordinates'),
+                  ),
+                );
+                return;
+              }
+              
+              if (lat < -90 || lat > 90) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Latitude must be between -90 and 90'),
+                  ),
+                );
+                return;
+              }
+              
+              if (lng < -180 || lng > 180) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Longitude must be between -180 and 180'),
+                  ),
+                );
+                return;
+              }
+              
+              setState(() {
+                _latitude = lat;
+                _longitude = lng;
+              });
+              
+              Navigator.of(context).pop();
+              
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Coordinates set: ${lat.toStringAsFixed(6)}, ${lng.toStringAsFixed(6)}'
+                  ),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFFC727),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Set Coordinates',
               style: TextStyle(
                 fontFamily: 'SansRegular',
                 color: Colors.black,
@@ -659,6 +844,34 @@ void _showCustomBuildingDialog() {
     }
   }
 
+Future<void> _selectLocationOnMap() async {
+  final result = await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => AddLocationMapPage(
+        initialLatitude: _latitude,
+        initialLongitude: _longitude,
+      ),
+    ),
+  );
+  
+  if (result != null && result is Map<String, double>) {
+    setState(() {
+      _latitude = result['latitude'];
+      _longitude = result['longitude'];
+    });
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Location set: ${_latitude!.toStringAsFixed(6)}, ${_longitude!.toStringAsFixed(6)}'
+        ),
+      ),
+    );
+  }
+}
+
+
 // UPDATED _submitForm() method
 void _submitForm() async {
   // Check if all required fields are filled
@@ -756,6 +969,8 @@ void _submitForm() async {
           'imageUrl': finalImageUrl,
           'hasCustomImage': _selectedImage != null,
           'handledBy': userUid,
+          'latitude': _latitude,  // ADD THIS
+          'longitude': _longitude,  // ADD THIS
           'created_at': FieldValue.serverTimestamp(),
         });
 
@@ -772,6 +987,8 @@ void _submitForm() async {
       _imageUrl = null;
       _selectedImage = null;
       _tempCustomBuilding = null;
+      _latitude = null;  // ADD THIS
+      _longitude = null;  // ADD THIS
     });
   } catch (e) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -871,6 +1088,8 @@ void _submitForm() async {
                     },
                   ),
                   const SizedBox(height: 16),
+                  _buildLocationCoordinateSection(),
+                  const SizedBox(height: 16),
                   _buildImageSection(),
                   const SizedBox(height: 28),
                   SizedBox(
@@ -905,6 +1124,146 @@ void _submitForm() async {
       ),
     );
   }
+
+  Widget _buildLocationCoordinateSection() {
+  return Container(
+    width: double.infinity,
+    decoration: BoxDecoration(
+      border: Border.all(color: Colors.white),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Location Coordinates',
+            style: TextStyle(
+              color: Colors.white,
+              fontFamily: 'SansRegular',
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (_latitude != null && _longitude != null) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFC727).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: const Color(0xFFFFC727).withOpacity(0.3),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on,
+                        color: Color(0xFFFFC727),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Coordinates Set',
+                        style: TextStyle(
+                          color: Color(0xFFFFC727),
+                          fontFamily: 'SansRegular',
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Lat: ${_latitude!.toStringAsFixed(6)}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontFamily: 'SansRegular',
+                    ),
+                  ),
+                  Text(
+                    'Lng: ${_longitude!.toStringAsFixed(6)}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontFamily: 'SansRegular',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+          ] else ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[800],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: Colors.white70,
+                    size: 20,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'No coordinates set',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontFamily: 'SansRegular',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _selectLocationOnMap,
+                  icon: const Icon(Icons.map, size: 18),
+                  label: const Text('Select on Map'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFC727),
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _showManualCoordinateDialog,
+                  icon: const Icon(Icons.edit_location, size: 18),
+                  label: const Text('Manual Entry'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.white),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+}
 
   Widget _buildImageSection() {
     return Container(

@@ -23,6 +23,10 @@ dependencies:
   mobile_scanner: ^3.5.6  # Well-maintained alternative
   http: ^1.1.0
   rxdart: ^0.27.7
+  flutter_map: ^6.1.0
+  latlong2: ^0.9.0
+  geolocator: ^10.1.0
+  google_maps_flutter: ^2.5.0
 
   # PDF generation dependencies
   pdf: ^3.10.7

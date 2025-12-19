@@ -12,6 +12,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:einventorycomputer/modules/home/screen/devices/device_details.dart';
 import 'package:einventorycomputer/modules/home/screen/trivia/trivia.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:einventorycomputer/modules/home/screen/map/map.dart';
 
 class AdminScreen extends StatefulWidget {
   @override
@@ -31,6 +32,7 @@ class _AdminScreenState extends State<AdminScreen> {
     "Add Device",
     "Scanner",
     "Trivia",
+    "Map",
     "Settings",
     "Account",
     "Location",
@@ -42,7 +44,7 @@ class _AdminScreenState extends State<AdminScreen> {
     });
   }
 
-  final List<int> _bottomNavIndexes = [0, 1, 3, 6, 7];
+  final List<int> _bottomNavIndexes = [0, 1, 3, 5, 7, 8];
 
   @override
   void initState() {
@@ -121,12 +123,14 @@ class _AdminScreenState extends State<AdminScreen> {
     case 3:
       return QRScannerPage();
     case 4:
-      return TriviaPage();  // ADD THIS
+      return TriviaPage();
     case 5:
-      return SettingsPage();
+      return MapPage();
     case 6:
-      return AccountPage();
+      return SettingsPage();
     case 7:
+      return AccountPage();
+    case 8:
       return LocationPage();  // Index changed from 6 to 7
     default:
       return HomePage();
@@ -225,9 +229,10 @@ class _AdminScreenState extends State<AdminScreen> {
                       _buildDrawerItem(Icons.add_box_outlined, Icons.add_box_rounded, "Add Device", 2),
                       _buildDrawerItem(Icons.qr_code_scanner_outlined, Icons.qr_code_scanner_rounded, "Scan", 3),
                       _buildDrawerItem(Icons.quiz_outlined, Icons.quiz_rounded, "Trivia", 4),  // ADD THIS
-                      _buildDrawerItem(Icons.settings_outlined, Icons.settings_rounded, "Settings", 5),  // Index changed from 4 to 5
-                      _buildDrawerItem(Icons.person_outline_rounded, Icons.person_rounded, "Account", 6),  // Index changed from 5 to 6
-                      _buildDrawerItem(Icons.location_city_outlined, Icons.location_city_rounded, "Location", 7),  // Index changed from 6 to 7
+                      _buildDrawerItem(Icons.map_outlined, Icons.map_rounded, "Map", 5),
+                      _buildDrawerItem(Icons.settings_outlined, Icons.settings_rounded, "Settings", 6),  // Index changed from 4 to 5
+                      _buildDrawerItem(Icons.person_outline_rounded, Icons.person_rounded, "Account", 7),  // Index changed from 5 to 6
+                      _buildDrawerItem(Icons.location_city_outlined, Icons.location_city_rounded, "Location", 8),  // Index changed from 6 to 7
                     ],
                   ),
                 ),
@@ -337,13 +342,18 @@ class _AdminScreenState extends State<AdminScreen> {
                       label: "Scan",
                     ),
                     BottomNavigationBarItem(
-                      icon: _buildBottomNavIcon(Icons.person_outline_rounded, 3, safeCurrentIndex),
-                      activeIcon: _buildBottomNavIcon(Icons.person_rounded, 3, safeCurrentIndex),
+                      icon: _buildBottomNavIcon(Icons.map_outlined, 3, safeCurrentIndex),
+                      activeIcon: _buildBottomNavIcon(Icons.map_rounded, 3, safeCurrentIndex),
+                      label: "Map",
+                    ),
+                    BottomNavigationBarItem(
+                      icon: _buildBottomNavIcon(Icons.person_outline_rounded, 4, safeCurrentIndex),
+                      activeIcon: _buildBottomNavIcon(Icons.person_rounded, 4, safeCurrentIndex),
                       label: "Account",
                     ),
                     BottomNavigationBarItem(
-                      icon: _buildBottomNavIcon(Icons.location_city_outlined, 4, safeCurrentIndex),
-                      activeIcon: _buildBottomNavIcon(Icons.location_city_rounded, 4, safeCurrentIndex),
+                      icon: _buildBottomNavIcon(Icons.location_city_outlined, 5, safeCurrentIndex),
+                      activeIcon: _buildBottomNavIcon(Icons.location_city_rounded, 5, safeCurrentIndex),
                       label: "Location",
                     ),
                   ],
