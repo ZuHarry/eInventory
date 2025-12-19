@@ -17,7 +17,7 @@ class _MapPageState extends State<MapPage> {
   String? _selectedLocation;
   LatLng? _currentLocation;
   bool _isTrackingLocation = false;
-  Map<String, LatLng> _locationCoordinates = {}; // ADD THIS LINE
+  Map<String, LatLng> _locationCoordinates = {};
   
   // Default center (Seremban, Malaysia)
   final LatLng _defaultCenter = LatLng(2.7297, 101.9381);
@@ -34,14 +34,12 @@ class _MapPageState extends State<MapPage> {
     bool serviceEnabled;
     LocationPermission permission;
 
-    // Check if location services are enabled
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       _showLocationServiceDialog();
       return;
     }
 
-    // Check location permission
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
@@ -56,7 +54,6 @@ class _MapPageState extends State<MapPage> {
       return;
     }
 
-    // Permission granted, get current location
     _getCurrentLocation();
   }
 
@@ -75,31 +72,34 @@ class _MapPageState extends State<MapPage> {
         _isTrackingLocation = false;
       });
 
-      // Move map to current location
       _mapController.move(_currentLocation!, 15.0);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Location found!'),
-          backgroundColor: const Color(0xFF28A745),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Location found!'),
+            backgroundColor: const Color(0xFF28A745),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     } catch (e) {
       setState(() {
         _isTrackingLocation = false;
       });
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error getting location: $e'),
-          backgroundColor: const Color(0xFFDC3545),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error getting location: $e'),
+            backgroundColor: const Color(0xFFDC3545),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        );
+      }
     }
   }
 
@@ -290,124 +290,198 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<void> _loadDevicesWithLocation() async {
-  setState(() {
-    _isLoading = true;
-  });
+    if (!mounted) return;
+    
+    setState(() {
+      _isLoading = true;
+    });
 
-  try {
-    // Load all locations with coordinates from buildings collection
-    final buildingsSnapshot = await FirebaseFirestore.instance
-        .collection('buildings')
-        .get();
-
-    Map<String, LatLng> locationCoordinates = {};
-
-    for (var buildingDoc in buildingsSnapshot.docs) {
-      final locationsSnapshot = await FirebaseFirestore.instance
+    try {
+      final buildingsSnapshot = await FirebaseFirestore.instance
           .collection('buildings')
-          .doc(buildingDoc.id)
-          .collection('locations')
           .get();
 
-      for (var locationDoc in locationsSnapshot.docs) {
-        final data = locationDoc.data();
-        final latitude = data['latitude'] as double?;
-        final longitude = data['longitude'] as double?;
-        final locationName = data['name'] as String?;
+      Map<String, LatLng> locationCoordinates = {};
+      Map<String, String> locationToBuilding = {};
 
-        if (latitude != null && longitude != null && locationName != null) {
-          // Create a full location string (Building - Location)
-          final fullLocation = '${buildingDoc.data()['name']} - $locationName';
-          locationCoordinates[fullLocation] = LatLng(latitude, longitude);
-          
-          // Also store just the location name for flexibility
-          locationCoordinates[locationName] = LatLng(latitude, longitude);
+      for (var buildingDoc in buildingsSnapshot.docs) {
+        final buildingName = buildingDoc.data()['name'] as String?;
+        
+        final locationsSnapshot = await FirebaseFirestore.instance
+            .collection('buildings')
+            .doc(buildingDoc.id)
+            .collection('locations')
+            .get();
+
+        for (var locationDoc in locationsSnapshot.docs) {
+          final data = locationDoc.data();
+
+          print('=== Processing location document ===');
+          print('Raw data: $data');
+
+          final latitudeRaw = data['latitude'];
+          final longitudeRaw = data['longitude'];
+
+          print('Latitude raw: $latitudeRaw (type: ${latitudeRaw.runtimeType})');
+          print('Longitude raw: $longitudeRaw (type: ${longitudeRaw.runtimeType})');
+
+          final latitude = latitudeRaw is double 
+              ? latitudeRaw 
+              : (latitudeRaw is String ? double.tryParse(latitudeRaw) : null);
+              
+          final longitude = longitudeRaw is double 
+              ? longitudeRaw 
+              : (longitudeRaw is String ? double.tryParse(longitudeRaw) : null);
+
+          print('Latitude parsed: $latitude');
+          print('Longitude parsed: $longitude');
+
+          final locationName = data['name'] as String?;
+
+          print('Location name: $locationName');
+
+          if (latitude != null && longitude != null && locationName != null) {
+            final coords = LatLng(latitude, longitude);
+            
+            // Store with exact name
+            locationCoordinates[locationName] = coords;
+            print('✓ Successfully added location: $locationName at ($latitude, $longitude)');
+            
+            // Store with building prefix
+            if (buildingName != null) {
+              final fullLocation = '$buildingName - $locationName';
+              locationCoordinates[fullLocation] = coords;
+              locationToBuilding[locationName] = buildingName;
+            }
+            
+            // Store lowercase versions for flexible matching
+            locationCoordinates[locationName.toLowerCase()] = coords;
+            if (buildingName != null) {
+              final fullLocation = '$buildingName - $locationName';
+              locationCoordinates[fullLocation.toLowerCase()] = coords;
+            }
+          }
         }
       }
-    }
 
-    // Load devices
-    final querySnapshot = await FirebaseFirestore.instance
-        .collection('devices')
-        .get();
+      print('Total locations loaded: ${locationCoordinates.length}');
 
-    List<Map<String, dynamic>> devicesWithLoc = [];
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('devices')
+          .get();
 
-    for (var doc in querySnapshot.docs) {
-      final data = doc.data();
-      final location = data['location'] as String?;
-      
-      // Only include devices that have a location set and coordinates available
-      if (location != null && location.isNotEmpty && location != 'Not specified') {
-        devicesWithLoc.add({
-          'id': doc.id,
-          'name': data['name'] ?? 'Unknown',
-          'location': location,
-          'category': data['category'] ?? 'Other',
-          'status': data['status'] ?? 'Unknown',
-          'model': data['model'] ?? '',
-          'serialNumber': data['serialNumber'] ?? '',
-          'coordinates': locationCoordinates[location], // Add coordinates
-          ...data,
-        });
+      List<Map<String, dynamic>> devicesWithLoc = [];
+
+      for (var doc in querySnapshot.docs) {
+        final data = doc.data();
+        final location = data['location'] as String?;
+        
+        if (location != null && location.isNotEmpty && location != 'Not specified') {
+          LatLng? coords;
+          
+          // Try exact match
+          coords = locationCoordinates[location];
+          
+          // Try lowercase match
+          if (coords == null) {
+            coords = locationCoordinates[location.toLowerCase()];
+          }
+          
+          // Try with building prefix
+          if (coords == null && locationToBuilding.containsKey(location)) {
+            final buildingName = locationToBuilding[location];
+            coords = locationCoordinates['$buildingName - $location'];
+          }
+          
+          // Try splitting if it contains ' - '
+          if (coords == null && location.contains(' - ')) {
+            final parts = location.split(' - ');
+            if (parts.length == 2) {
+              coords = locationCoordinates[parts[1].trim()];
+            }
+          }
+          
+          if (coords != null) {
+            devicesWithLoc.add({
+              'id': doc.id,
+              'name': data['name'] ?? 'Unknown',
+              'location': location,
+              'category': data['category'] ?? 'Other',
+              'status': data['status'] ?? 'Unknown',
+              'model': data['model'] ?? '',
+              'serialNumber': data['serialNumber'] ?? '',
+              'coordinates': coords,
+              ...data,
+            });
+            print('✓ Device "${data['name']}" added with location: $location at ${coords.latitude}, ${coords.longitude}');
+          } else {
+            print('⚠ Warning: No coordinates found for device "${data['name']}" at location: $location');
+          }
+        }
       }
-    }
 
-    setState(() {
-      _devicesWithLocation = devicesWithLoc;
-      _locationCoordinates = locationCoordinates;
-      _isLoading = false;
-    });
-  } catch (e) {
-    print('Error loading devices: $e');
-    setState(() {
-      _isLoading = false;
-    });
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Error loading devices: $e'),
-        backgroundColor: const Color(0xFFDC3545),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    );
+      print('\n=== FINAL SUMMARY ===');
+      print('Total locations loaded: ${locationCoordinates.length}');
+      print('Total devices with valid locations: ${devicesWithLoc.length}');
+      print('\nAll location coordinates:');
+      locationCoordinates.forEach((name, coords) {
+        print('  $name: ${coords.latitude}, ${coords.longitude}');
+      });
+      print('\nAll devices with locations:');
+      for (var device in devicesWithLoc) {
+        final coords = device['coordinates'] as LatLng;
+        print('  Device: ${device['name']} | Location: ${device['location']} | Coords: ${coords.latitude}, ${coords.longitude}');
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        _devicesWithLocation = devicesWithLoc;
+        _locationCoordinates = locationCoordinates;
+        _isLoading = false;
+      });
+
+      // Force map to update by moving to first device location after a delay
+      if (devicesWithLoc.isNotEmpty) {
+        await Future.delayed(const Duration(milliseconds: 300));
+        if (mounted) {
+          final firstDevice = devicesWithLoc.first;
+          final coords = firstDevice['coordinates'] as LatLng;
+          _mapController.move(coords, _defaultZoom);
+        }
+      }
+      
+    } catch (e) {
+      print('Error loading devices: $e');
+      print('Stack trace: ${StackTrace.current}');
+      
+      if (!mounted) return;
+      
+      setState(() {
+        _isLoading = false;
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error loading devices: $e'),
+          backgroundColor: const Color(0xFFDC3545),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
+    }
   }
-}
 
   List<Marker> _buildMarkers() {
     List<Marker> markers = [];
+    
+    print('\n=== BUILDING MARKERS ===');
+    print('Current location: $_currentLocation');
+    print('Devices with location: ${_devicesWithLocation.length}');
 
-    // Add current location marker
+    // Add current location marker (with higher priority by adding it last)
     if (_currentLocation != null) {
-      markers.add(
-        Marker(
-          point: _currentLocation!,
-          width: 60,
-          height: 60,
-          child: Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF007BFF),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 3),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: const Center(
-              child: Icon(
-                Icons.my_location,
-                color: Colors.white,
-                size: 28,
-              ),
-            ),
-          ),
-        ),
-      );
+      print('✓ Will add current location marker at: ${_currentLocation!.latitude}, ${_currentLocation!.longitude}');
     }
 
     // Group devices by location
@@ -421,12 +495,19 @@ class _MapPageState extends State<MapPage> {
       groupedDevices[location]!.add(device);
     }
 
-    // Create markers for each location
-    int locationIndex = 0;
+    print('Grouped into ${groupedDevices.length} locations');
 
+    // Create markers for each location
     groupedDevices.forEach((location, devices) {
-      final LatLng position = devices.first['coordinates'] ?? _getLocationCoordinates(location, locationIndex);
-      locationIndex++;
+      final coords = devices.first['coordinates'];
+      
+      if (coords == null) {
+        print('⚠ Skipping location "$location" - no coordinates');
+        return;
+      }
+
+      final LatLng position = coords as LatLng;
+      print('✓ Creating marker for "$location" at ${position.latitude}, ${position.longitude} (${devices.length} devices)');
 
       markers.add(
         Marker(
@@ -435,7 +516,7 @@ class _MapPageState extends State<MapPage> {
           height: 50,
           child: GestureDetector(
             onTap: () => _showLocationDevices(location, devices, position),
-            child: Container(
+            child: Container( 
               decoration: BoxDecoration(
                 color: _selectedLocation == location 
                     ? const Color(0xFFFFC727) 
@@ -445,7 +526,7 @@ class _MapPageState extends State<MapPage> {
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.3),
-                    blurRadius: 4,
+                    blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),
                 ],
@@ -457,12 +538,12 @@ class _MapPageState extends State<MapPage> {
                     const Icon(
                       Icons.location_on,
                       color: Colors.white,
-                      size: 28,
+                      size: 30,
                     ),
                     if (devices.length > 1)
                       Positioned(
-                        top: 2,
-                        right: 2,
+                        top: 0,
+                        right: 0,
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: const BoxDecoration(
@@ -470,15 +551,15 @@ class _MapPageState extends State<MapPage> {
                             shape: BoxShape.circle,
                           ),
                           constraints: const BoxConstraints(
-                            minWidth: 16,
-                            minHeight: 16,
+                            minWidth: 18,
+                            minHeight: 18,
                           ),
                           child: Text(
                             '${devices.length}',
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 8,
+                              fontSize: 9,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -493,25 +574,42 @@ class _MapPageState extends State<MapPage> {
       );
     });
 
+    // Add current location marker LAST (so it appears on top)
+    if (_currentLocation != null) {
+      markers.add(
+        Marker(
+          point: _currentLocation!,
+          width: 60,
+          height: 60,
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF007BFF),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 4),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.4),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: const Center(
+              child: Icon(
+                Icons.my_location,
+                color: Colors.white,
+                size: 30,
+              ),
+            ),
+          ),
+        ),
+      );
+      print('✓ Added current location marker');
+    }
+
+    print('Total markers created: ${markers.length}');
     return markers;
   }
-
-  // Helper method to generate coordinates (replace with actual location coordinates)
-  LatLng _getLocationCoordinates(String location, int index) {
-  // Try to get actual coordinates from the map
-  if (_locationCoordinates.containsKey(location)) {
-    return _locationCoordinates[location]!;
-  }
-  
-  // Fallback: distribute markers around the default center if coordinates not found
-  final double offsetLat = (index % 3 - 1) * 0.01;
-  final double offsetLng = ((index ~/ 3) % 3 - 1) * 0.01;
-  
-  return LatLng(
-    _defaultCenter.latitude + offsetLat,
-    _defaultCenter.longitude + offsetLng,
-  );
-}
 
   void _showLocationDevices(String location, List<Map<String, dynamic>> devices, LatLng position) {
     setState(() {
@@ -751,10 +849,15 @@ class _MapPageState extends State<MapPage> {
                 FlutterMap(
                   mapController: _mapController,
                   options: MapOptions(
-                    center: _currentLocation ?? _defaultCenter,
-                    zoom: _defaultZoom,
+                    initialCenter: _currentLocation ?? _defaultCenter,
+                    initialZoom: _defaultZoom,
                     minZoom: 10.0,
                     maxZoom: 18.0,
+                    // Force rebuild when markers change
+                    onMapReady: () {
+                      print('Map is ready!');
+                      setState(() {});
+                    },
                   ),
                   children: [
                     TileLayer(
@@ -767,7 +870,6 @@ class _MapPageState extends State<MapPage> {
                   ],
                 ),
                 
-                // Top Info Card
                 Positioned(
                   top: 16,
                   left: 16,
@@ -819,7 +921,6 @@ class _MapPageState extends State<MapPage> {
                   ),
                 ),
 
-                // Current Location Button
                 Positioned(
                   bottom: 80,
                   right: 16,
@@ -841,56 +942,6 @@ class _MapPageState extends State<MapPage> {
                           ),
                   ),
                 ),
-
-                // Empty State
-                if (_devicesWithLocation.isEmpty)
-                  Center(
-                    child: Container(
-                      margin: const EdgeInsets.all(32),
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.location_off,
-                            size: 48,
-                            color: Color(0xFF6C757D),
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            'No devices with locations',
-                            style: TextStyle(
-                              fontFamily: 'SansRegular',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF212529),
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Add locations to your devices to see them on the map',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontFamily: 'SansRegular',
-                              fontSize: 14,
-                              color: Color(0xFF6C757D),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
               ],
             ),
     );
