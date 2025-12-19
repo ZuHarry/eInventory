@@ -464,18 +464,18 @@ class _AddDevicePageState extends State<AddDevicePage> {
         padding: const EdgeInsets.all(16),
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF212529),
-            borderRadius: BorderRadius.circular(20),
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(32),
             child: Form(
               key: _formKey,
               child: Column(
@@ -509,11 +509,10 @@ class _AddDevicePageState extends State<AddDevicePage> {
                       },
                       child: Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                         decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black54),
-                          borderRadius: BorderRadius.circular(8),
-                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          color: const Color(0xFFF8F9FA),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -616,11 +615,10 @@ class _AddDevicePageState extends State<AddDevicePage> {
                       },
                       child: Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                         decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black54),
-                          borderRadius: BorderRadius.circular(8),
-                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          color: const Color(0xFFF8F9FA),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -662,11 +660,8 @@ class _AddDevicePageState extends State<AddDevicePage> {
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
                         decoration: BoxDecoration(
-                          border: Border.all(
-                            color: _selectedBrandId == null ? Colors.grey.shade300 : Colors.black54,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                          color: _selectedBrandId == null ? Colors.grey.shade100 : Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          color: _selectedBrandId == null ? Colors.grey.shade200 : const Color(0xFFF8F9FA),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -722,11 +717,10 @@ class _AddDevicePageState extends State<AddDevicePage> {
                     },
                     child: Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.black54),
-                        borderRadius: BorderRadius.circular(8),
-                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        color: const Color(0xFFF8F9FA),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -751,10 +745,11 @@ class _AddDevicePageState extends State<AddDevicePage> {
                       onPressed: _submitForm,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFFFC727),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        padding: const EdgeInsets.symmetric(vertical: 18),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16),
                         ),
+                        elevation: 0,
                       ),
                       child: const Text(
                         'Submit',
@@ -782,17 +777,23 @@ class _AddDevicePageState extends State<AddDevicePage> {
       keyboardType: keyboardType,
       style: const TextStyle(fontFamily: 'SansRegular', fontSize: 16, color: Colors.black),
       decoration: InputDecoration(
-        fillColor: Colors.white,
+        fillColor: const Color(0xFFF8F9FA),
         filled: true,
         labelText: isRequired ? '$label *' : label,
         labelStyle: const TextStyle(
-          color: Colors.black,
+          color: Color(0xFF6C757D),
           fontFamily: 'SansRegular',
+          fontSize: 14,
         ),
-        border: const OutlineInputBorder(),
-        focusedBorder: const OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.black, width: 2),
+        border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
         ),
+        focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF212529), width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
       validator: isRequired ? (value) =>
           value == null || value.trim().isEmpty ? 'Enter $label' : null : null,
@@ -818,18 +819,24 @@ class _AddDevicePageState extends State<AddDevicePage> {
               ))
           .toList(),
       decoration: InputDecoration(
-        fillColor: Colors.white,
+        fillColor: const Color(0xFFF8F9FA),
         filled: true,
         labelText: label,
         labelStyle: const TextStyle(
-          color: Colors.black,
+          color: Color(0xFF6C757D),
           fontFamily: 'SansRegular',
+          fontSize: 14,
         ),
-        border: const OutlineInputBorder(),
-        focusedBorder: const OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.black, width: 2),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
         ),
-      ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF212529), width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            ),
       style: const TextStyle(fontFamily: 'SansRegular', color: Colors.black),
     );
   }
