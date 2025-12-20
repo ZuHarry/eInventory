@@ -30,6 +30,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
   String? _selectedBrandId;
   String? _selectedBrandName;
   String? _selectedModel;
+  final TextEditingController _modelController = TextEditingController();
 
   Future<List<String>> _checkDuplicates(String name) async {
     List<String> duplicateFields = [];
@@ -118,8 +119,8 @@ class _AddDevicePageState extends State<AddDevicePage> {
           if (_selectedBrandName != null) {
             deviceData['brand'] = _selectedBrandName;
           }
-          if (_selectedModel != null) {
-            deviceData['model'] = _selectedModel;
+          if (_modelController.text.trim().isNotEmpty) { // Changed from _selectedModel
+            deviceData['model'] = _modelController.text.trim();
           }
         }
 
@@ -132,6 +133,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
         _macController.clear();
         _processorController.clear();
         _storageController.clear();
+        _modelController.clear();
         setState(() {
           _deviceType = 'PC';
           _deviceStatus = 'Online';
@@ -453,6 +455,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
     _macController.dispose();
     _processorController.dispose();
     _storageController.dispose();
+    _modelController.dispose();
     super.dispose();
   }
 
@@ -485,7 +488,16 @@ class _AddDevicePageState extends State<AddDevicePage> {
                   _buildDropdown(
                     value: _deviceType,
                     items: ['PC', 'Peripheral'],
-                    onChanged: (val) => setState(() => _deviceType = val!),
+                    onChanged: (val) {
+                      setState(() {
+                        _deviceType = val!;
+                        // Clear model-related fields when switching device type
+                        _selectedModel = null;
+                        _modelController.clear();
+                        _selectedBrandId = null;
+                        _selectedBrandName = null;
+                      });
+                    },
                     label: 'Device Type',
                   ),
                   const SizedBox(height: 16),
@@ -636,6 +648,8 @@ class _AddDevicePageState extends State<AddDevicePage> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 16),
+                    _buildTextField(_modelController, 'Model (Optional)'), // Changed to manual text input
                     const SizedBox(height: 16),
                     GestureDetector(
                       onTap: _selectedBrandId == null

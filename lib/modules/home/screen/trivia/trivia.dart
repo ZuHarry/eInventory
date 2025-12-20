@@ -360,19 +360,21 @@ class _TriviaPageState extends State<TriviaPage> {
       }
 
       // Get user full name from handledBy UID
-      if (deviceData['handledBy'] != null) {
+      if (deviceData['assigned_by'] != null) {
         try {
-          final userId = deviceData['handledBy'].toString();
+          final userId = deviceData['assigned_by'].toString();
           final userDoc = await FirebaseFirestore.instance
               .collection('users')
               .doc(userId)
               .get();
 
           if (userDoc.exists) {
-            final fullName =
-                userDoc['fullname'] ?? userDoc['username'] ?? 'Unknown User';
-            data['Users']![fullName] =
-                (data['Users']![fullName] ?? 0) + 1;
+            final fullName = userDoc['fullname'] ?? 'Unknown User';
+            final staffType = userDoc['staffType'] ?? 'Unknown';
+            final displayName = '$fullName ($staffType)';  // Add staff type
+
+            data['Users']![displayName] =
+                (data['Users']![displayName] ?? 0) + 1;
           }
         } catch (e) {
           print('Error fetching user: $e');
@@ -703,17 +705,28 @@ class _FilteredDevicesPageState extends State<FilteredDevicesPage> {
         return {'type': 'building', 'buildingId': buildingId};
       }
     } else if (widget.category == 'Users') {
-      // Get user ID from full name
-      final usersQuery = await FirebaseFirestore.instance
-          .collection('users')
-          .where('fullname', isEqualTo: widget.value)
-          .get();
+        print('Looking for user with display name: ${widget.value}');
+        // Extract fullname from "Name (StaffType)" format
+        final fullName = widget.value.split(' (')[0];
+        
+        // Get user ID from full name
+        final usersQuery = await FirebaseFirestore.instance
+            .collection('users')
+            .where('fullname', isEqualTo: fullName)
+            .get();
 
-      if (usersQuery.docs.isNotEmpty) {
-        final userId = usersQuery.docs.first.id;
-        return {'type': 'user', 'userId': userId};
+        print('Found ${usersQuery.docs.length} users');
+
+        // Then find matching user
+        if (usersQuery.docs.isNotEmpty) {
+          final userId = usersQuery.docs.first.id;
+          print('User ID: $userId');
+          return {'type': 'user', 'userId': userId};
+        }
+        
+        print('No user found with that fullname');
+        return {'type': 'user', 'userId': null};
       }
-    }
 
     return {'type': widget.category.toLowerCase(), 'value': widget.value};
   }
@@ -866,7 +879,7 @@ class _FilteredDevicesPageState extends State<FilteredDevicesPage> {
       // Query devices where handledBy matches user ID
       return FirebaseFirestore.instance
           .collection('devices')
-          .where('handledBy', isEqualTo: filterData['userId'])
+          .where('assigned_by', isEqualTo: filterData['userId'])  // CHANGED FROM 'handledBy'
           .snapshots()
           .map((snapshot) => snapshot.docs);
     } else {
