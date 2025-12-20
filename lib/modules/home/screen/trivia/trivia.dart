@@ -459,22 +459,71 @@ class _TriviaPageState extends State<TriviaPage> {
                     ),
                   ],
                 ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFC727),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '$totalCount',
-                    style: const TextStyle(
-                      fontFamily: 'SansRegular',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF212529),
+                Row(
+                  children: [
+                    // ADD VIEW ALL BUTTON FOR USERS CATEGORY
+                    if (category == 'Users')
+                      GestureDetector(
+                        // onTap: () {
+                        //   Navigator.push(
+                        //     context,
+                        //     MaterialPageRoute(
+                        //       builder: (context) => AllUsersPage(),
+                        //     ),
+                        //   );
+                        // },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          margin: const EdgeInsets.only(right: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFC727).withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: const Color(0xFFFFC727),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(
+                                Icons.people_rounded,
+                                size: 14,
+                                color: Color(0xFFFFC727),
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                'View All',
+                                style: TextStyle(
+                                  fontFamily: 'SansRegular',
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFFFFC727),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFC727),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '$totalCount',
+                        style: const TextStyle(
+                          fontFamily: 'SansRegular',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF212529),
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ],
             ),

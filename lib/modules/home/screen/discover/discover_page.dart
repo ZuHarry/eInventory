@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'view_brand.dart'; // Import the view_brand.dart file
+import 'user_list.dart';
 
 class DiscoverPage extends StatelessWidget {
   @override
@@ -77,14 +78,13 @@ class DiscoverPage extends StatelessWidget {
               icon: Icons.people_rounded,
               color: const Color(0xFF007BFF),
               onTap: () {
-                // TODO: Navigate to All Users page
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('View All Users - Coming Soon'),
-                    backgroundColor: Color(0xFF6C757D),
-                  ),
-                );
-              },
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AllUsersPage(),
+                ),
+              );
+            },
             ),
             const SizedBox(height: 12),
             
