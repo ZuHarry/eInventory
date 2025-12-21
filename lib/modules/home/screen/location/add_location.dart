@@ -120,12 +120,12 @@ void _showCustomBuildingDialog() {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFC727).withOpacity(0.2),
+                color: const Color(0xFF81D4FA).withOpacity(0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
                 Icons.business,
-                color: Color(0xFFFFC727),
+                color: Color(0xFF81D4FA),
                 size: 20,
               ),
             ),
@@ -168,7 +168,7 @@ void _showCustomBuildingDialog() {
                 ),
                 border: OutlineInputBorder(),
                 focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Color(0xFFFFC727), width: 2),
+                  borderSide: BorderSide(color: Color(0xFF81D4FA), width: 2),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderSide: BorderSide(color: Colors.white70),
@@ -223,7 +223,7 @@ void _showCustomBuildingDialog() {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFFC727),
+              backgroundColor: const Color(0xFF81D4FA),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -266,12 +266,12 @@ void _showManualCoordinateDialog() {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFC727).withOpacity(0.2),
+                color: const Color(0xFF81D4FA).withOpacity(0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
                 Icons.pin_drop,
-                color: Color(0xFFFFC727),
+                color: Color(0xFF81D4FA),
                 size: 20,
               ),
             ),
@@ -308,7 +308,7 @@ void _showManualCoordinateDialog() {
                 hintStyle: TextStyle(color: Colors.white38),
                 border: OutlineInputBorder(),
                 focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Color(0xFFFFC727), width: 2),
+                  borderSide: BorderSide(color: Color(0xFF81D4FA), width: 2),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderSide: BorderSide(color: Colors.white70),
@@ -334,7 +334,7 @@ void _showManualCoordinateDialog() {
                 hintStyle: TextStyle(color: Colors.white38),
                 border: OutlineInputBorder(),
                 focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Color(0xFFFFC727), width: 2),
+                  borderSide: BorderSide(color: Color(0xFF81D4FA), width: 2),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderSide: BorderSide(color: Colors.white70),
@@ -405,7 +405,7 @@ void _showManualCoordinateDialog() {
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFFC727),
+              backgroundColor: const Color(0xFF81D4FA),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -615,12 +615,12 @@ void _showManualCoordinateDialog() {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFC727).withOpacity(0.2),
+                color: const Color(0xFF81D4FA).withOpacity(0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
                 Icons.add_location,
-                color: Color(0xFFFFC727),
+                color: Color(0xFF81D4FA),
                 size: 20,
               ),
             ),
@@ -674,7 +674,7 @@ void _showManualCoordinateDialog() {
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFFC727),
+              backgroundColor: const Color(0xFF81D4FA),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -1097,7 +1097,7 @@ void _submitForm() async {
                     child: ElevatedButton(
                       onPressed: _isUploading ? null : _submitForm,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _isUploading ? Colors.grey : const Color(0xFFFFC727),
+                        backgroundColor: _isUploading ? Colors.grey : const Color(0xFF81D4FA),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -1151,10 +1151,10 @@ void _submitForm() async {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFC727).withOpacity(0.1),
+                color: const Color(0xFF81D4FA).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: const Color(0xFFFFC727).withOpacity(0.3),
+                  color: const Color(0xFF81D4FA).withOpacity(0.3),
                 ),
               ),
               child: Column(
@@ -1164,14 +1164,14 @@ void _submitForm() async {
                     children: [
                       const Icon(
                         Icons.location_on,
-                        color: Color(0xFFFFC727),
+                        color: Color(0xFF81D4FA),
                         size: 20,
                       ),
                       const SizedBox(width: 8),
                       const Text(
                         'Coordinates Set',
                         style: TextStyle(
-                          color: Color(0xFFFFC727),
+                          color: Color(0xFF81D4FA),
                           fontFamily: 'SansRegular',
                           fontWeight: FontWeight.bold,
                         ),
@@ -1232,7 +1232,7 @@ void _submitForm() async {
                   icon: const Icon(Icons.map, size: 18),
                   label: const Text('Select on Map'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFC727),
+                    backgroundColor: const Color(0xFF81D4FA),
                     foregroundColor: Colors.black,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
@@ -1308,7 +1308,7 @@ void _submitForm() async {
                     icon: const Icon(Icons.edit, size: 16),
                     label: const Text('Change'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFFC727),
+                      backgroundColor: const Color(0xFF81D4FA),
                       foregroundColor: Colors.black,
                     ),
                   ),
@@ -1414,7 +1414,7 @@ void _submitForm() async {
                   style: TextStyle(
                     fontFamily: 'SansRegular', 
                     color: item == 'Add Custom Building...' 
-                        ? const Color(0xFFFFC727)
+                        ? const Color(0xFF81D4FA)
                         : Colors.white,
                     fontWeight: item == 'Add Custom Building...' 
                         ? FontWeight.bold 

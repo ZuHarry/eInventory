@@ -236,7 +236,7 @@ class _AddBrandPageState extends State<AddBrandPage> {
                   icon: const Icon(Icons.edit, size: 16),
                   label: const Text('Change'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFC727),
+                    backgroundColor: const Color(0xFF81D4FA),
                     foregroundColor: const Color(0xFF212529),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -315,7 +315,7 @@ class _AddBrandPageState extends State<AddBrandPage> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded,
-              color: Color(0xFFFFC727)),
+              color: Color(0xFF81D4FA)),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -324,7 +324,7 @@ class _AddBrandPageState extends State<AddBrandPage> {
             fontFamily: 'SansRegular',
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: Color(0xFFFFC727),
+            color: Color(0xFF81D4FA),
           ),
         ),
       ),
@@ -373,7 +373,7 @@ class _AddBrandPageState extends State<AddBrandPage> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: Color(0xFFFFC727)),
+                        borderSide: const BorderSide(color: Color(0xFF81D4FA)),
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -396,7 +396,7 @@ class _AddBrandPageState extends State<AddBrandPage> {
             ElevatedButton(
               onPressed: _isLoading ? null : _saveBrand,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFFC727),
+                backgroundColor: const Color(0xFF81D4FA),
                 foregroundColor: const Color(0xFF212529),
                 minimumSize: const Size(double.infinity, 48),
                 shape: RoundedRectangleBorder(

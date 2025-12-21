@@ -13,7 +13,7 @@ class DiscoverPage extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(
             Icons.arrow_back_ios_rounded,
-            color: Color(0xFFFFC727),
+            color: Color(0xFF81D4FA),
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -23,7 +23,7 @@ class DiscoverPage extends StatelessWidget {
             fontFamily: 'SansRegular',
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: Color(0xFFFFC727),
+            color: Color(0xFF81D4FA),
           ),
         ),
       ),
@@ -58,7 +58,7 @@ class DiscoverPage extends StatelessWidget {
               title: 'View All Brands',
               subtitle: 'Browse all device brands',
               icon: Icons.business_rounded,
-              color: const Color(0xFFFFC727),
+              color: const Color(0xFF81D4FA),
               onTap: () {
                 Navigator.push(
                   context,

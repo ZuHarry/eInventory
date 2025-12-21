@@ -74,13 +74,13 @@ class _TriviaPageState extends State<TriviaPage> {
                       });
                     },
                     backgroundColor: Colors.white,
-                    selectedColor: const Color(0xFFFFC727),
+                    selectedColor: const Color(0xFF81D4FA),
                     checkmarkColor: const Color(0xFF212529),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                       side: BorderSide(
                         color: isSelected
-                            ? const Color(0xFFFFC727)
+                            ? const Color(0xFF81D4FA)
                             : const Color(0xFFDEE2E6),
                         width: 1,
                       ),
@@ -104,7 +104,7 @@ class _TriviaPageState extends State<TriviaPage> {
                   return const Center(
                     child: CircularProgressIndicator(
                       valueColor: AlwaysStoppedAnimation<Color>(
-                          Color(0xFFFFC727)),
+                          Color(0xFF81D4FA)),
                     ),
                   );
                 }
@@ -157,7 +157,7 @@ class _TriviaPageState extends State<TriviaPage> {
                       return const Center(
                         child: CircularProgressIndicator(
                           valueColor: AlwaysStoppedAnimation<Color>(
-                              Color(0xFFFFC727)),
+                              Color(0xFF81D4FA)),
                         ),
                       );
                     }
@@ -193,7 +193,7 @@ class _TriviaPageState extends State<TriviaPage> {
       onPressed: () {
         _showAddDataDialog();
       },
-      backgroundColor: const Color(0xFFFFC727),
+      backgroundColor: const Color(0xFF81D4FA),
       icon: const Icon(
         Icons.add_rounded,
         color: Color(0xFF212529),
@@ -247,7 +247,7 @@ class _TriviaPageState extends State<TriviaPage> {
               icon: const Icon(Icons.business_rounded),
               label: const Text('Add Brand'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFFC727),
+                backgroundColor: const Color(0xFF81D4FA),
                 foregroundColor: const Color(0xFF212529),
                 minimumSize: const Size(double.infinity, 48),
                 shape: RoundedRectangleBorder(
@@ -269,7 +269,7 @@ class _TriviaPageState extends State<TriviaPage> {
               icon: const Icon(Icons.devices_rounded),
               label: const Text('Add Model'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFFC727),
+                backgroundColor: const Color(0xFF81D4FA),
                 foregroundColor: const Color(0xFF212529),
                 minimumSize: const Size(double.infinity, 48),
                 shape: RoundedRectangleBorder(
@@ -446,7 +446,7 @@ class _TriviaPageState extends State<TriviaPage> {
                   children: [
                     Icon(
                       _getCategoryIcon(category),
-                      color: const Color(0xFFFFC727),
+                      color: const Color(0xFF81D4FA),
                       size: 20,
                     ),
                     const SizedBox(width: 8),
@@ -456,7 +456,7 @@ class _TriviaPageState extends State<TriviaPage> {
                         fontFamily: 'SansRegular',
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFFFFC727),
+                        color: Color(0xFF81D4FA),
                       ),
                     ),
                   ],
@@ -479,10 +479,10 @@ class _TriviaPageState extends State<TriviaPage> {
                               horizontal: 10, vertical: 4),
                           margin: const EdgeInsets.only(right: 8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFFC727).withOpacity(0.2),
+                            color: const Color(0xFF81D4FA).withOpacity(0.2),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: const Color(0xFFFFC727),
+                              color: const Color(0xFF81D4FA),
                               width: 1,
                             ),
                           ),
@@ -492,7 +492,7 @@ class _TriviaPageState extends State<TriviaPage> {
                               Icon(
                                 Icons.people_rounded,
                                 size: 14,
-                                color: Color(0xFFFFC727),
+                                color: Color(0xFF81D4FA),
                               ),
                               SizedBox(width: 4),
                               Text(
@@ -501,7 +501,7 @@ class _TriviaPageState extends State<TriviaPage> {
                                   fontFamily: 'SansRegular',
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
-                                  color: Color(0xFFFFC727),
+                                  color: Color(0xFF81D4FA),
                                 ),
                               ),
                             ],
@@ -512,7 +512,7 @@ class _TriviaPageState extends State<TriviaPage> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFC727),
+                        color: const Color(0xFF81D4FA),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -561,7 +561,7 @@ class _TriviaPageState extends State<TriviaPage> {
                         height: 28,
                         decoration: BoxDecoration(
                           color: index < 3
-                              ? const Color(0xFFFFC727).withOpacity(0.2)
+                              ? const Color(0xFF81D4FA).withOpacity(0.2)
                               : const Color(0xFFF8F9FA),
                           borderRadius: BorderRadius.circular(6),
                         ),
@@ -740,7 +740,7 @@ class _FilteredDevicesPageState extends State<FilteredDevicesPage> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded,
-              color: Color(0xFFFFC727)),
+              color: Color(0xFF81D4FA)),
           onPressed: () => Navigator.pop(context),
         ),
         title: Column(
@@ -752,7 +752,7 @@ class _FilteredDevicesPageState extends State<FilteredDevicesPage> {
                 fontFamily: 'SansRegular',
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFFFFC727),
+                color: Color(0xFF81D4FA),
               ),
             ),
             Text(
@@ -773,7 +773,7 @@ class _FilteredDevicesPageState extends State<FilteredDevicesPage> {
             return const Center(
               child: CircularProgressIndicator(
                 valueColor:
-                    AlwaysStoppedAnimation<Color>(Color(0xFFFFC727)),
+                    AlwaysStoppedAnimation<Color>(Color(0xFF81D4FA)),
               ),
             );
           }
@@ -785,7 +785,7 @@ class _FilteredDevicesPageState extends State<FilteredDevicesPage> {
                 return const Center(
                   child: CircularProgressIndicator(
                     valueColor: AlwaysStoppedAnimation<Color>(
-                        Color(0xFFFFC727)),
+                        Color(0xFF81D4FA)),
                   ),
                 );
               }
@@ -1212,7 +1212,7 @@ class _AddDataDialogState extends State<AddDataDialog> {
                 ElevatedButton(
                   onPressed: _isLoading ? null : _saveData,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFC727),
+                    backgroundColor: const Color(0xFF81D4FA),
                     foregroundColor: const Color(0xFF212529),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),

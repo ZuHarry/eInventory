@@ -92,7 +92,7 @@ class SettingsPage extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           onTap: onTap,
           child: ListTile(
-            leading: Icon(icon, color: const Color(0xFFFFC727)), // Yellow icon color
+            leading: Icon(icon, color: const Color(0xFF81D4FA)), // Yellow icon color
             title: Text(
               label,
               style: const TextStyle(
@@ -125,12 +125,12 @@ class SettingsPage extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFC727).withOpacity(0.2),
+                  color: const Color(0xFF81D4FA).withOpacity(0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
                   Icons.info_outline,
-                  color: Color(0xFFFFC727),
+                  color: Color(0xFF81D4FA),
                   size: 20,
                 ),
               ),
@@ -160,7 +160,7 @@ class SettingsPage extends StatelessWidget {
                 'OK',
                 style: TextStyle(
                   fontFamily: 'SansRegular',
-                  color: Color(0xFFFFC727),
+                  color: Color(0xFF81D4FA),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -184,12 +184,12 @@ class SettingsPage extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFC727).withOpacity(0.2),
+                  color: const Color(0xFF81D4FA).withOpacity(0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
                   Icons.inventory_2_rounded,
-                  color: Color(0xFFFFC727),
+                  color: Color(0xFF81D4FA),
                   size: 20,
                 ),
               ),
@@ -244,7 +244,7 @@ class SettingsPage extends StatelessWidget {
                 'Close',
                 style: TextStyle(
                   fontFamily: 'SansRegular',
-                  color: Color(0xFFFFC727),
+                  color: Color(0xFF81D4FA),
                   fontWeight: FontWeight.w600,
                 ),
               ),

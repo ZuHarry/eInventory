@@ -151,7 +151,7 @@ class _ChooseLocationPageState extends State<ChooseLocationPage> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
                     child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFC727)),
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF81D4FA)),
                     ),
                   );
                 }
@@ -231,7 +231,7 @@ class _ChooseLocationPageState extends State<ChooseLocationPage> {
                                 Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFFFC727).withOpacity(0.1),
+                                    color: const Color(0xFF81D4FA).withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: _getLocationTypeIcon(type),
@@ -247,7 +247,7 @@ class _ChooseLocationPageState extends State<ChooseLocationPage> {
                                           fontFamily: 'SansRegular',
                                           fontSize: 15,
                                           fontWeight: FontWeight.w600,
-                                          color: Color(0xFFFFC727),
+                                          color: Color(0xFF81D4FA),
                                         ),
                                       ),
                                       const SizedBox(height: 6),
@@ -265,7 +265,7 @@ class _ChooseLocationPageState extends State<ChooseLocationPage> {
                                 ),
                                 const Icon(
                                   Icons.arrow_forward_ios,
-                                  color: Color(0xFFFFC727),
+                                  color: Color(0xFF81D4FA),
                                   size: 16,
                                 ),
                               ],
@@ -454,14 +454,14 @@ class _ChooseLocationPageState extends State<ChooseLocationPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFC727).withOpacity(0.15),
+        color: const Color(0xFF81D4FA).withOpacity(0.15),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
         text,
         style: const TextStyle(
           fontFamily: 'SansRegular',
-          color: Color(0xFFFFC727),
+          color: Color(0xFF81D4FA),
           fontSize: 10,
           fontWeight: FontWeight.w500,
         ),
@@ -472,13 +472,13 @@ class _ChooseLocationPageState extends State<ChooseLocationPage> {
   Icon _getLocationTypeIcon(String type) {
     switch (type) {
       case 'Lecture Room':
-        return const Icon(Icons.school_outlined, color: Color(0xFFFFC727), size: 20);
+        return const Icon(Icons.school_outlined, color: Color(0xFF81D4FA), size: 20);
       case 'Lab':
-        return const Icon(Icons.science_outlined, color: Color(0xFFFFC727), size: 20);
+        return const Icon(Icons.science_outlined, color: Color(0xFF81D4FA), size: 20);
       case 'Lecturer Office':
-        return const Icon(Icons.person_outline, color: Color(0xFFFFC727), size: 20);
+        return const Icon(Icons.person_outline, color: Color(0xFF81D4FA), size: 20);
       default:
-        return const Icon(Icons.room_outlined, color: Color(0xFFFFC727), size: 20);
+        return const Icon(Icons.room_outlined, color: Color(0xFF81D4FA), size: 20);
     }
   }
 }

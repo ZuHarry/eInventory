@@ -293,16 +293,16 @@ Your App Team
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: (color ?? const Color(0xFFFFC727)).withOpacity(0.1),
+              color: (color ?? const Color(0xFF81D4FA)).withOpacity(0.1),
               borderRadius: BorderRadius.circular(15),
               border: Border.all(
-                color: color ?? const Color(0xFFFFC727),
+                color: color ?? const Color(0xFF81D4FA),
                 width: 2,
               ),
             ),
             child: Icon(
               icon,
-              color: color ?? const Color(0xFFFFC727),
+              color: color ?? const Color(0xFF81D4FA),
               size: 28,
             ),
           ),
@@ -556,7 +556,7 @@ Your App Team
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(
-              color: const Color(0xFFFFC727),
+              color: const Color(0xFF81D4FA),
               width: 4,
             ),
             boxShadow: [
@@ -593,7 +593,7 @@ Your App Team
                             child: const Icon(
                               Icons.person,
                               size: 60,
-                              color: Color(0xFFFFC727),
+                              color: Color(0xFF81D4FA),
                             ),
                           );
                         },
@@ -603,7 +603,7 @@ Your App Team
                         child: const Icon(
                           Icons.person,
                           size: 60,
-                          color: Color(0xFFFFC727),
+                          color: Color(0xFF81D4FA),
                         ),
                       ),
           ),
@@ -617,7 +617,7 @@ Your App Team
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: const Color(0xFFFFC727),
+                color: const Color(0xFF81D4FA),
                 shape: BoxShape.circle,
                 border: Border.all(
                   color: Colors.white,
@@ -887,7 +887,7 @@ Your App Team
                         child: ElevatedButton(
                           onPressed: _isUploadingPhoto ? null : _updateAccount,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: _isUploadingPhoto ? Colors.grey : const Color(0xFFFFC727),
+                            backgroundColor: _isUploadingPhoto ? Colors.grey : const Color(0xFF81D4FA),
                             elevation: 2,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -942,7 +942,7 @@ Your App Team
           margin: const EdgeInsets.all(8),
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFFFFC727),
+            color: const Color(0xFF81D4FA),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: Colors.black, size: 20),
@@ -954,7 +954,7 @@ Your App Team
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFFFC727), width: 2),
+          borderSide: const BorderSide(color: Color(0xFF81D4FA), width: 2),
         ),
         filled: true,
         fillColor: Colors.grey[50],
@@ -975,7 +975,7 @@ Your App Team
           margin: const EdgeInsets.all(8),
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFFFFC727),
+            color: const Color(0xFF81D4FA),
             borderRadius: BorderRadius.circular(8),
           ),
           child: const Icon(Icons.work, color: Colors.black, size: 20),
@@ -986,7 +986,7 @@ Your App Team
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFFFC727), width: 2),
+          borderSide: const BorderSide(color: Color(0xFF81D4FA), width: 2),
         ),
         filled: true,
         fillColor: Colors.grey[50],

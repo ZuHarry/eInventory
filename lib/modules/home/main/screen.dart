@@ -11,6 +11,7 @@ import 'package:einventorycomputer/modules/home/screen/devices/add_device.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:einventorycomputer/modules/home/screen/devices/device_details.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;  // ADD THIS LINE
 
 class ScreenPage extends StatefulWidget {
   @override
@@ -83,7 +84,7 @@ class _ScreenPageState extends State<ScreenPage> {
       height: 50,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        color: const Color(0xFFFFC727),
+        color: const Color(0xFF81D4FA),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
@@ -183,7 +184,7 @@ class _ScreenPageState extends State<ScreenPage> {
                         fontFamily: 'SansRegular',
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
-                        color: Color(0xFFFFC727),
+                        color: Color(0xFF81D4FA),
                       ),
                     ),
                     Text(
@@ -243,7 +244,7 @@ class _ScreenPageState extends State<ScreenPage> {
                           children: [
                             const Icon(
                               Icons.logout_rounded,
-                              color: Color(0xFFFFC727),
+                              color: Color(0xFF81D4FA),
                               size: 18,
                             ),
                             const SizedBox(width: 8),
@@ -252,7 +253,7 @@ class _ScreenPageState extends State<ScreenPage> {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFFFFC727),
+                                color: Color(0xFF81D4FA),
                                 fontFamily: 'SansRegular',
                               ),
                             ),
@@ -287,7 +288,7 @@ class _ScreenPageState extends State<ScreenPage> {
                 borderRadius: BorderRadius.circular(16),
                 child: BottomNavigationBar(
                   currentIndex: safeCurrentIndex,
-                  selectedItemColor: const Color(0xFFFFC727),
+                  selectedItemColor: const Color(0xFF81D4FA),
                   unselectedItemColor: const Color(0xFF6C757D),
                   backgroundColor: const Color(0xFF212529),
                   type: BottomNavigationBarType.fixed,
@@ -347,7 +348,7 @@ class _ScreenPageState extends State<ScreenPage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 4),
       decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFFFFC727).withOpacity(0.1) : Colors.transparent,
+        color: isSelected ? const Color(0xFF81D4FA).withOpacity(0.1) : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Material(
@@ -361,7 +362,7 @@ class _ScreenPageState extends State<ScreenPage> {
               children: [
                 Icon(
                   isSelected ? activeIcon : icon,
-                  color: isSelected ? const Color(0xFFFFC727) : const Color(0xFF6C757D),
+                  color: isSelected ? const Color(0xFF81D4FA) : const Color(0xFF6C757D),
                   size: 18,
                 ),
                 const SizedBox(width: 12),
@@ -392,7 +393,7 @@ class _ScreenPageState extends State<ScreenPage> {
       icon,
       size: isQRScanner ? 22 : 20,
       color: isSelected 
-          ? (isQRScanner ? const Color(0xFF007BFF) : const Color(0xFFFFC727))
+          ? (isQRScanner ? const Color(0xFF007BFF) : const Color(0xFF81D4FA))
           : const Color(0xFF6C757D),
     );
   }
@@ -451,7 +452,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
         builder: (BuildContext context) {
           return const Center(
             child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFC727)),
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF81D4FA)),
             ),
           );
         },
@@ -564,7 +565,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
                 _pickImageFromGallery();
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFFC727),
+                backgroundColor: const Color(0xFF81D4FA),
                 foregroundColor: const Color(0xFF212529),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 elevation: 0,
@@ -638,7 +639,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
                 _processDeviceData(data);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFFC727),
+                backgroundColor: const Color(0xFF81D4FA),
                 foregroundColor: const Color(0xFF212529),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 elevation: 0,
@@ -667,7 +668,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
         builder: (BuildContext context) {
           return const Center(
             child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFC727)),
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF81D4FA)),
             ),
           );
         },
@@ -770,7 +771,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
                 Navigator.of(context).pop();
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFFC727),
+                backgroundColor: const Color(0xFF81D4FA),
                 foregroundColor: const Color(0xFF212529),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 elevation: 0,
@@ -805,7 +806,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
           Container(
             decoration: ShapeDecoration(
               shape: QRScannerOverlayShape(
-                borderColor: const Color(0xFFFFC727),
+                borderColor: const Color(0xFF81D4FA),
                 borderRadius: 12,
                 borderLength: 24,
                 borderWidth: 3,

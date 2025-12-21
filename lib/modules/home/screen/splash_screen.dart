@@ -185,8 +185,8 @@ class _SplashScreenPageState extends State<SplashScreenPage>
                           child: ShaderMask(
                             shaderCallback: (bounds) => const LinearGradient(
                               colors: [
-                                Color(0xFFFFC727),
-                                Color(0xFFFFC727),
+                                Color(0xFF81D4FA),
+                                Color(0xFF81D4FA),
                               ],
                             ).createShader(bounds),
                             child: const Text(
@@ -195,7 +195,7 @@ class _SplashScreenPageState extends State<SplashScreenPage>
                                 fontSize: 42,
                                 fontWeight: FontWeight.bold,
                                 fontFamily: 'SansRegular',
-                                color: Color(0xFFFFC727),
+                                color: Color(0xFF81D4FA),
                                 letterSpacing: 1.2,
                               ),
                             ),

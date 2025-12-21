@@ -11,7 +11,7 @@ class AllUsersPage extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded,
-              color: Color(0xFFFFC727)),
+              color: Color(0xFF81D4FA)),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -20,7 +20,7 @@ class AllUsersPage extends StatelessWidget {
             fontFamily: 'SansRegular',
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: Color(0xFFFFC727),
+            color: Color(0xFF81D4FA),
           ),
         ),
       ),
@@ -33,7 +33,7 @@ class AllUsersPage extends StatelessWidget {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFC727)),
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF81D4FA)),
               ),
             );
           }
@@ -118,7 +118,7 @@ class AllUsersPage extends StatelessWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFC727).withOpacity(0.2),
+                    color: const Color(0xFF81D4FA).withOpacity(0.2),
                     shape: BoxShape.circle,
                   ),
                   child: Center(

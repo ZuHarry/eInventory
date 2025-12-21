@@ -68,11 +68,11 @@ class _DeviceStaffPageState extends State<DeviceStaffPage> {
 
   Icon _getDeviceIcon(String? type) {
     if (type == 'PC') {
-      return const Icon(Icons.computer_outlined, color: Color(0xFFFFC727), size: 40);
+      return const Icon(Icons.computer_outlined, color: Color(0xFF81D4FA), size: 40);
     } else if (type == 'Peripheral') {
-      return const Icon(Icons.devices_other_outlined, color: Color(0xFFFFC727), size: 40);
+      return const Icon(Icons.devices_other_outlined, color: Color(0xFF81D4FA), size: 40);
     } else {
-      return const Icon(Icons.device_unknown_outlined, color: Color(0xFFFFC727), size: 40);
+      return const Icon(Icons.device_unknown_outlined, color: Color(0xFF81D4FA), size: 40);
     }
   }
 
@@ -131,7 +131,7 @@ class _DeviceStaffPageState extends State<DeviceStaffPage> {
                     child: const Center(
                       child: CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          Color(0xFFFFC727),
+                          Color(0xFF81D4FA),
                         ),
                       ),
                     ),
@@ -219,7 +219,7 @@ class _DeviceStaffPageState extends State<DeviceStaffPage> {
                       Container(
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFFC727).withOpacity(0.1),
+                          color: const Color(0xFF81D4FA).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Row(
@@ -227,12 +227,12 @@ class _DeviceStaffPageState extends State<DeviceStaffPage> {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFFC727).withOpacity(0.2),
+                                color: const Color(0xFF81D4FA).withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Icon(
                                 Icons.person,
-                                color: Color(0xFFFFC727),
+                                color: Color(0xFF81D4FA),
                                 size: 32,
                               ),
                             ),
@@ -326,7 +326,7 @@ class _DeviceStaffPageState extends State<DeviceStaffPage> {
                         return const Center(
                           child: CircularProgressIndicator(
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              Color(0xFFFFC727),
+                              Color(0xFF81D4FA),
                             ),
                           ),
                         );
@@ -349,10 +349,10 @@ class _DeviceStaffPageState extends State<DeviceStaffPage> {
                         return Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFFC727).withOpacity(0.1),
+                            color: const Color(0xFF81D4FA).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: const Color(0xFFFFC727).withOpacity(0.3),
+                              color: const Color(0xFF81D4FA).withOpacity(0.3),
                             ),
                           ),
                           child: const Center(
@@ -463,13 +463,13 @@ class _DeviceStaffPageState extends State<DeviceStaffPage> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFFFFC727).withOpacity(0.1),
+            color: const Color(0xFF81D4FA).withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
             icon,
             size: 18,
-            color: const Color(0xFFFFC727),
+            color: const Color(0xFF81D4FA),
           ),
         ),
         const SizedBox(width: 12),

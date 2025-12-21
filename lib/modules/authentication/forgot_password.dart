@@ -69,7 +69,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
     return loading
         ? Loading()
         : Scaffold(
-            backgroundColor: const Color(0xFFFFC727),
+            backgroundColor: const Color(0xFF81D4FA),
             body: SafeArea(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -138,7 +138,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                                   const Icon(
                                     Icons.lock_reset,
                                     size: 80,
-                                    color: Color(0xFFFFC727),
+                                    color: Color(0xFF81D4FA),
                                   ),
                                   const SizedBox(height: 30),
                                   const Text(

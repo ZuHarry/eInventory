@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:einventorycomputer/services/auth.dart';
 import 'package:einventorycomputer/shared/loading.dart';
 import 'package:flutter/material.dart';
@@ -31,8 +32,45 @@ class _SignUpState extends State<SignUp> {
   String? _selectedStaffType;
   final List<String> _staffTypes = ['Staff', 'Lecturer', 'Technician'];
   
+  // Department dropdown
+  String? _selectedDepartment;
+  List<String> _departments = [];
+  bool _loadingDepartments = true;
+  
   // Referral code constant
   static const String _validReferralCode = "ABC123";
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDepartments();
+  }
+
+  Future<void> _loadDepartments() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('buildings')
+          .get();
+      
+      final departments = snapshot.docs
+          .map((doc) => doc.data()['name'] as String?)
+          .where((name) => name != null)
+          .cast<String>()
+          .toList();
+      
+      departments.sort(); // Sort alphabetically
+      
+      setState(() {
+        _departments = departments;
+        _loadingDepartments = false;
+      });
+    } catch (e) {
+      print('Error loading departments: $e');
+      setState(() {
+        _loadingDepartments = false;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -48,93 +86,94 @@ class _SignUpState extends State<SignUp> {
   }
 
   void _register() async {
-  if (_formKey.currentState!.validate()) {
-    // Check referral code first
-    if (_referralCodeController.text.trim() != _validReferralCode) {
-      setState(() {
-        error = 'Invalid referral code. Please contact your administrator.';
-      });
-      return;
-    }
-
-    setState(() => loading = true);
-
-    try {
-      dynamic result = await _auth.registerWithEmailAndPassword(
-        _fullnameController.text.trim(),
-        _usernameController.text.trim(),
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
-        _telephoneController.text.trim(),
-        _selectedStaffType!,
-        _staffIdController.text.trim(),
-      );
-
-      if (!mounted) return;
-
-      if (result == null) {
+    if (_formKey.currentState!.validate()) {
+      // Check referral code first
+      if (_referralCodeController.text.trim() != _validReferralCode) {
         setState(() {
-          error = 'Please supply a valid email';
-          loading = false;
+          error = 'Invalid referral code. Please contact your administrator.';
         });
         return;
       }
 
-      // Send verification email
+      setState(() => loading = true);
+
       try {
-        await _auth.sendEmailVerification();
-        
+        dynamic result = await _auth.registerWithEmailAndPassword(
+          _fullnameController.text.trim(),
+          _usernameController.text.trim(),
+          _emailController.text.trim(),
+          _passwordController.text.trim(),
+          _telephoneController.text.trim(),
+          _selectedStaffType!,
+          _staffIdController.text.trim(),
+          _selectedDepartment!, // Pass department to auth service
+        );
+
         if (!mounted) return;
 
-        setState(() => loading = false);
-        
-        // Clear error if successful
-        setState(() => error = '');
-        
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Registration successful! Check your email to verify your account.'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 5),
-          ),
-        );
-        
-        // Switch to sign in page after delay
-        Future.delayed(const Duration(milliseconds: 2000), () {
-          if (mounted) {
-            widget.toggleView();
-          }
-        });
-      } catch (emailError) {
-        print('Email verification error: $emailError');
+        if (result == null) {
+          setState(() {
+            error = 'Please supply a valid email';
+            loading = false;
+          });
+          return;
+        }
+
+        // Send verification email
+        try {
+          await _auth.sendEmailVerification();
+          
+          if (!mounted) return;
+
+          setState(() => loading = false);
+          
+          // Clear error if successful
+          setState(() => error = '');
+          
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Registration successful! Check your email to verify your account.'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 5),
+            ),
+          );
+          
+          // Switch to sign in page after delay
+          Future.delayed(const Duration(milliseconds: 2000), () {
+            if (mounted) {
+              widget.toggleView();
+            }
+          });
+        } catch (emailError) {
+          print('Email verification error: $emailError');
+          
+          if (!mounted) return;
+          
+          setState(() {
+            error = 'Account created, but failed to send verification email. Please check your email settings.';
+            loading = false;
+          });
+        }
+      } catch (e) {
+        print('Registration error: $e');
         
         if (!mounted) return;
         
         setState(() {
-          error = 'Account created, but failed to send verification email. Please check your email settings.';
+          error = 'Registration failed: ${e.toString()}';
           loading = false;
         });
       }
-    } catch (e) {
-      print('Registration error: $e');
-      
-      if (!mounted) return;
-      
-      setState(() {
-        error = 'Registration failed: ${e.toString()}';
-        loading = false;
-      });
     }
   }
-}
 
   @override
   Widget build(BuildContext context) {
     return loading
         ? Loading()
         : Scaffold(
-            backgroundColor: const Color(0xFFFFC727),
+            backgroundColor: const Color(0xFF81D4FA),
             body: SafeArea(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -242,6 +281,8 @@ class _SignUpState extends State<SignUp> {
                               ),
                               const SizedBox(height: 16),
                               _buildStaffTypeDropdown(),
+                              const SizedBox(height: 16),
+                              _buildDepartmentDropdown(),
                               const SizedBox(height: 16),
                               _buildPasswordField(
                                 label: 'Your Password',
@@ -363,6 +404,70 @@ class _SignUpState extends State<SignUp> {
           },
           validator: (value) => value == null ? 'Please select a staff type' : null,
         ),
+      ],
+    );
+  }
+
+  Widget _buildDepartmentDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Department',
+          style: TextStyle(
+            fontFamily: 'SansRegular',
+            fontSize: 16,
+          ),
+        ),
+        const SizedBox(height: 8),
+        _loadingDepartments
+            ? Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
+                child: const Row(
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    SizedBox(width: 12),
+                    Text(
+                      'Loading departments...',
+                      style: TextStyle(fontFamily: 'SansRegular'),
+                    ),
+                  ],
+                ),
+              )
+            : DropdownButtonFormField<String>(
+                value: _selectedDepartment,
+                decoration: InputDecoration(
+                  labelText: 'Select Department',
+                  labelStyle: const TextStyle(fontFamily: 'SansRegular'),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                  prefixIcon: const Icon(Icons.business),
+                ),
+                items: _departments.map((String department) {
+                  return DropdownMenuItem<String>(
+                    value: department,
+                    child: Text(
+                      department,
+                      style: const TextStyle(fontFamily: 'SansRegular'),
+                    ),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _selectedDepartment = newValue;
+                  });
+                },
+                validator: (value) => value == null ? 'Please select a department' : null,
+              ),
       ],
     );
   }

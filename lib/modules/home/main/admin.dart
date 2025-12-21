@@ -13,6 +13,7 @@ import 'package:einventorycomputer/modules/home/screen/devices/device_details.da
 import 'package:einventorycomputer/modules/home/screen/trivia/trivia.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:einventorycomputer/modules/home/screen/map/map.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;  // ADD THIS LINE
 
 class AdminScreen extends StatefulWidget {
   @override
@@ -89,7 +90,7 @@ class _AdminScreenState extends State<AdminScreen> {
       height: 50,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        color: const Color(0xFFFFC727),
+        color: const Color(0xFF81D4FA),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
@@ -191,7 +192,7 @@ class _AdminScreenState extends State<AdminScreen> {
                         fontFamily: 'SansRegular',
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
-                        color: Color(0xFFFFC727),
+                        color: Color(0xFF81D4FA),
                       ),
                     ),
                     Text(
@@ -261,7 +262,7 @@ class _AdminScreenState extends State<AdminScreen> {
                           children: [
                             const Icon(
                               Icons.logout_rounded,
-                              color: Color(0xFFFFC727),
+                              color: Color(0xFF81D4FA),
                               size: 18,
                             ),
                             const SizedBox(width: 8),
@@ -270,7 +271,7 @@ class _AdminScreenState extends State<AdminScreen> {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFFFFC727),
+                                color: Color(0xFF81D4FA),
                                 fontFamily: 'SansRegular',
                               ),
                             ),
@@ -305,7 +306,7 @@ class _AdminScreenState extends State<AdminScreen> {
                 borderRadius: BorderRadius.circular(16),
                 child: BottomNavigationBar(
                   currentIndex: safeCurrentIndex,
-                  selectedItemColor: const Color(0xFFFFC727),
+                  selectedItemColor: const Color(0xFF81D4FA),
                   unselectedItemColor: const Color(0xFF6C757D),
                   backgroundColor: const Color(0xFF212529),
                   type: BottomNavigationBarType.fixed,
@@ -370,7 +371,7 @@ class _AdminScreenState extends State<AdminScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 4),
       decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFFFFC727).withOpacity(0.1) : Colors.transparent,
+        color: isSelected ? const Color(0xFF81D4FA).withOpacity(0.1) : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Material(
@@ -384,7 +385,7 @@ class _AdminScreenState extends State<AdminScreen> {
               children: [
                 Icon(
                   isSelected ? activeIcon : icon,
-                  color: isSelected ? const Color(0xFFFFC727) : const Color(0xFF6C757D),
+                  color: isSelected ? const Color(0xFF81D4FA) : const Color(0xFF6C757D),
                   size: 18,
                 ),
                 const SizedBox(width: 12),
@@ -415,7 +416,7 @@ class _AdminScreenState extends State<AdminScreen> {
       icon,
       size: isQRScanner ? 22 : 20,
       color: isSelected 
-          ? (isQRScanner ? const Color(0xFF007BFF) : const Color(0xFFFFC727))
+          ? (isQRScanner ? const Color(0xFF007BFF) : const Color(0xFF81D4FA))
           : const Color(0xFF6C757D),
     );
   }
@@ -428,14 +429,23 @@ class QRScannerPage extends StatefulWidget {
 }
 
 class _QRScannerPageState extends State<QRScannerPage> {
-  MobileScannerController cameraController = MobileScannerController();
+  MobileScannerController? cameraController;  // Changed to nullable
   final ImagePicker _imagePicker = ImagePicker();
   bool isScanning = true;
   String? scannedData;
 
   @override
+  void initState() {
+    super.initState();
+    // Only initialize camera controller on mobile platforms
+    if (!kIsWeb) {
+      cameraController = MobileScannerController();
+    }
+  }
+
+  @override
   void dispose() {
-    cameraController.dispose();
+    cameraController?.dispose();  // Added ? for null safety
     super.dispose();
   }
 
@@ -456,90 +466,90 @@ class _QRScannerPageState extends State<QRScannerPage> {
   }
 
   Future<void> _pickImageFromGallery() async {
-  try {
-    final XFile? image = await _imagePicker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 100,
-    );
-    
-    if (image != null) {
-      setState(() {
-        isScanning = false;
-      });
-      
-      // Show loading dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return const Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFC727)),
-            ),
-          );
-        },
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 100,
       );
+      
+      if (image != null) {
+        setState(() {
+          isScanning = false;
+        });
+        
+        // Show loading dialog
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF81D4FA)),
+              ),
+            );
+          },
+        );
 
-      // Create a temporary controller for image analysis
-      final MobileScannerController tempController = MobileScannerController();
-      
-      // Set up a listener for barcode detection
-      bool barcodeFound = false;
-      String? detectedCode;
-      
-      // Listen for barcode detection
-      final subscription = tempController.barcodes.listen((BarcodeCapture capture) {
-        if (!barcodeFound && capture.barcodes.isNotEmpty) {
-          barcodeFound = true;
-          detectedCode = capture.barcodes.first.rawValue;
-        }
-      });
-      
-      try {
-        // Analyze the image
-        await tempController.analyzeImage(image.path);
+        // Create a temporary controller for image analysis
+        final MobileScannerController tempController = MobileScannerController();
         
-        // Wait a bit for the detection to process
-        await Future.delayed(const Duration(milliseconds: 500));
+        // Set up a listener for barcode detection
+        bool barcodeFound = false;
+        String? detectedCode;
         
-        // Clean up
-        await subscription.cancel();
-        tempController.dispose();
+        // Listen for barcode detection
+        final subscription = tempController.barcodes.listen((BarcodeCapture capture) {
+          if (!barcodeFound && capture.barcodes.isNotEmpty) {
+            barcodeFound = true;
+            detectedCode = capture.barcodes.first.rawValue;
+          }
+        });
         
-        Navigator.of(context).pop(); // Close loading dialog
-        
-        if (barcodeFound && detectedCode != null) {
-          _showScannedDataDialog(detectedCode!);
-        } else {
+        try {
+          // Analyze the image
+          await tempController.analyzeImage(image.path);
+          
+          // Wait a bit for the detection to process
+          await Future.delayed(const Duration(milliseconds: 500));
+          
+          // Clean up
+          await subscription.cancel();
+          tempController.dispose();
+          
+          Navigator.of(context).pop(); // Close loading dialog
+          
+          if (barcodeFound && detectedCode != null) {
+            _showScannedDataDialog(detectedCode!);
+          } else {
+            _showNoQRCodeFoundDialog();
+          }
+          
+        } catch (e) {
+          await subscription.cancel();
+          tempController.dispose();
+          Navigator.of(context).pop(); // Close loading dialog
           _showNoQRCodeFoundDialog();
         }
-        
-      } catch (e) {
-        await subscription.cancel();
-        tempController.dispose();
-        Navigator.of(context).pop(); // Close loading dialog
-        _showNoQRCodeFoundDialog();
       }
+    } catch (e) {
+      if (Navigator.canPop(context)) {
+        Navigator.of(context).pop(); // Close loading dialog if open
+      }
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error reading image: $e'),
+          backgroundColor: const Color(0xFFDC3545),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
+      
+      setState(() {
+        isScanning = true;
+      });
     }
-  } catch (e) {
-    if (Navigator.canPop(context)) {
-      Navigator.of(context).pop(); // Close loading dialog if open
-    }
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Error reading image: $e'),
-        backgroundColor: const Color(0xFFDC3545),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    );
-    
-    setState(() {
-      isScanning = true;
-    });
   }
-}
 
   void _showNoQRCodeFoundDialog() {
     showDialog(
@@ -587,7 +597,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
                 _pickImageFromGallery();
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFFC727),
+                backgroundColor: const Color(0xFF81D4FA),
                 foregroundColor: const Color(0xFF212529),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 elevation: 0,
@@ -661,7 +671,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
                 _processDeviceData(data);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFFC727),
+                backgroundColor: const Color(0xFF81D4FA),
                 foregroundColor: const Color(0xFF212529),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 elevation: 0,
@@ -690,7 +700,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
         builder: (BuildContext context) {
           return const Center(
             child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFC727)),
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF81D4FA)),
             ),
           );
         },
@@ -793,7 +803,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
                 Navigator.of(context).pop();
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFFC727),
+                backgroundColor: const Color(0xFF81D4FA),
                 foregroundColor: const Color(0xFF212529),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 elevation: 0,
@@ -816,19 +826,105 @@ class _QRScannerPageState extends State<QRScannerPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Web platform - show message instead of scanner
+    if (kIsWeb) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8F9FA),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.qr_code_scanner_rounded,
+                  size: 80,
+                  color: Color(0xFFADB5BD),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'QR Scanner Not Available',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF212529),
+                  fontFamily: 'SansRegular',
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Camera scanning is not supported on web browsers',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF6C757D),
+                  fontFamily: 'SansRegular',
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: _pickImageFromGallery,
+                icon: const Icon(Icons.photo_library_rounded, size: 20),
+                label: const Text(
+                  'Upload QR Image',
+                  style: TextStyle(
+                    fontFamily: 'SansRegular',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF81D4FA),
+                  foregroundColor: const Color(0xFF212529),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Please use the mobile app for camera scanning',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFFADB5BD),
+                  fontFamily: 'SansRegular',
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Mobile platform - show camera scanner
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         children: [
           MobileScanner(
-            controller: cameraController,
+            controller: cameraController!,  // Added ! because we know it's not null on mobile
             onDetect: _onDetect,
           ),
           
           Container(
             decoration: ShapeDecoration(
               shape: QRScannerOverlayShape(
-                borderColor: const Color(0xFFFFC727),
+                borderColor: const Color(0xFF81D4FA),
                 borderRadius: 12,
                 borderLength: 24,
                 borderWidth: 3,
@@ -873,7 +969,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: IconButton(
-                    onPressed: () => cameraController.toggleTorch(),
+                    onPressed: () => cameraController?.toggleTorch(),  // Added ?
                     icon: const Icon(Icons.flash_on, color: Colors.white, size: 24),
                   ),
                 ),
@@ -893,7 +989,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: IconButton(
-                    onPressed: () => cameraController.switchCamera(),
+                    onPressed: () => cameraController?.switchCamera(),  // Added ?
                     icon: const Icon(Icons.flip_camera_ios, color: Colors.white, size: 24),
                   ),
                 ),

@@ -138,7 +138,7 @@ class _AddModelPageState extends State<AddModelPage> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded,
-              color: Color(0xFFFFC727)),
+              color: Color(0xFF81D4FA)),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -147,7 +147,7 @@ class _AddModelPageState extends State<AddModelPage> {
             fontFamily: 'SansRegular',
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: Color(0xFFFFC727),
+            color: Color(0xFF81D4FA),
           ),
         ),
       ),
@@ -275,7 +275,7 @@ class _AddModelPageState extends State<AddModelPage> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: Color(0xFFFFC727)),
+                        borderSide: const BorderSide(color: Color(0xFF81D4FA)),
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -330,7 +330,7 @@ class _AddModelPageState extends State<AddModelPage> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: Color(0xFFFFC727)),
+                        borderSide: const BorderSide(color: Color(0xFF81D4FA)),
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -351,7 +351,7 @@ class _AddModelPageState extends State<AddModelPage> {
             ElevatedButton(
               onPressed: _isLoading ? null : _saveModel,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFFC727),
+                backgroundColor: const Color(0xFF81D4FA),
                 foregroundColor: const Color(0xFF212529),
                 minimumSize: const Size(double.infinity, 48),
                 shape: RoundedRectangleBorder(

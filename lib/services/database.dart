@@ -19,22 +19,24 @@ class DatabaseService {
     });
   }
 
-  Future registerUserData(String fullname, String username, String email, String password, String telephone, String staffType, String staffId) async {
+  // ✅ Added 'department' parameter
+  Future registerUserData(String fullname, String username, String email, String password, String telephone, String staffType, String staffId, String department) async {
     return await accountCollection.doc(uid).set({
       'uid' : uid,
       'fullname' : fullname,
       'username' : username,
       'email': email,
-      'password' : password,
+      'password' : password, // ⚠️ Security risk - consider removing
       'telephone': telephone,
       'staffType': staffType,
       'staffId': staffId,
+      'department': department, // ✅ Added department field
       'createdAt': FieldValue.serverTimestamp(),
     });
   }
 
-  // Update user account data
-  Future updateAccountData(String fullname, String username, String email, String telephone, String staffType, String staffId, {String? password}) async {
+  // ✅ Update user account data - also added department
+  Future updateAccountData(String fullname, String username, String email, String telephone, String staffType, String staffId, String department, {String? password}) async {
     Map<String, dynamic> updateData = {
       'fullname': fullname,
       'username': username,
@@ -42,6 +44,7 @@ class DatabaseService {
       'telephone': telephone,
       'staffType': staffType,
       'staffId': staffId,
+      'department': department, // ✅ Added department field
       'updatedAt': FieldValue.serverTimestamp(),
     };
 
@@ -79,8 +82,4 @@ class DatabaseService {
   Stream<QuerySnapshot?> get brews {
     return brewCollection.snapshots();
   }
-
-  // Stream<QuerySnapshot<Object?>> get brews {
-  //   return FirebaseFirestore.instance.collection('brews').snapshots();
-  // }
 }

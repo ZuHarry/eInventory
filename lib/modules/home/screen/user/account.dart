@@ -117,7 +117,7 @@ class _AccountPageState extends State<AccountPage> {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: const Color(0xFFFFC727),
+                          color: const Color(0xFF81D4FA),
                           width: 3,
                         ),
                       ),
@@ -131,7 +131,7 @@ class _AccountPageState extends State<AccountPage> {
                             ? const Icon(
                                 Icons.person,
                                 size: 80,
-                                color: Color(0xFFFFC727),
+                                color: Color(0xFF81D4FA),
                               )
                             : null,
                         onBackgroundImageError: profileImageUrl != null && profileImageUrl.isNotEmpty
@@ -183,6 +183,9 @@ class _AccountPageState extends State<AccountPage> {
                     _buildInfoTile(Icons.badge, 'Staff ID', data['staffId'] ?? 'No Staff ID'),
                     const SizedBox(height: 16),
                     _buildInfoTile(Icons.work, 'Staff Type', data['staffType'] ?? 'No Staff Type'),
+                    const SizedBox(height: 16),
+                    // ✅ Added Department field
+                    _buildInfoTile(Icons.business, 'Department', data['department'] ?? 'No Department'),
                     
                     const SizedBox(height: 32),
                     
@@ -203,7 +206,7 @@ class _AccountPageState extends State<AccountPage> {
                           ),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFFC727),
+                          backgroundColor: const Color(0xFF81D4FA),
                           elevation: 2,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -248,7 +251,7 @@ class _AccountPageState extends State<AccountPage> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFC727),
+              color: const Color(0xFF81D4FA),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: Colors.black, size: 20),

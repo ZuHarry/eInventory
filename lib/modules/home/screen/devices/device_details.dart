@@ -15,11 +15,76 @@ class DeviceDetailsPage extends StatefulWidget {
 class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
   String? assignedByFullName;
   bool isLoadingStaffName = true;
+  
+  // New variables for location data
+  String? buildingName;
+  String? floorName;
+  bool isLoadingLocationData = true;
 
   @override
   void initState() {
     super.initState();
     _fetchAssignedByFullName();
+    _fetchLocationData();
+  }
+
+  Future<void> _fetchLocationData() async {
+    final locationName = widget.device['location'];
+    
+    if (locationName == null || locationName.toString().isEmpty) {
+      setState(() {
+        buildingName = 'Unknown';
+        floorName = 'Unknown';
+        isLoadingLocationData = false;
+      });
+      return;
+    }
+
+    try {
+      // Query all buildings to find the location
+      final buildingsSnapshot = await FirebaseFirestore.instance
+          .collection('buildings')
+          .get();
+
+      bool found = false;
+      
+      for (var buildingDoc in buildingsSnapshot.docs) {
+        // Query locations subcollection for matching location name
+        final locationsSnapshot = await buildingDoc.reference
+            .collection('locations')
+            .where('name', isEqualTo: locationName)
+            .limit(1)
+            .get();
+
+        if (locationsSnapshot.docs.isNotEmpty) {
+          final locationData = locationsSnapshot.docs.first.data();
+          final buildingData = buildingDoc.data();
+          
+          setState(() {
+            buildingName = buildingData['name'] ?? 'Unknown';
+            floorName = locationData['floor'] ?? 'Unknown';
+            isLoadingLocationData = false;
+          });
+          found = true;
+          break;
+        }
+      }
+
+      if (!found) {
+        setState(() {
+          buildingName = 'Unknown';
+          floorName = 'Unknown';
+          isLoadingLocationData = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching location data: $e');
+      setState(() {
+        buildingName = 'Error loading';
+        floorName = 'Error loading';
+        isLoadingLocationData = false;
+      });
+    }
   }
 
   Future<void> _fetchAssignedByFullName() async {
@@ -65,11 +130,11 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
 
   Icon _getDeviceIcon(String? type) {
     if (type == 'PC') {
-      return const Icon(Icons.computer_outlined, color: Color(0xFFFFC727), size: 80);
+      return const Icon(Icons.computer_outlined, color: Color(0xFF81D4FA), size: 80);
     } else if (type == 'Peripheral') {
-      return const Icon(Icons.devices_other_outlined, color: Color(0xFFFFC727), size: 80);
+      return const Icon(Icons.devices_other_outlined, color: Color(0xFF81D4FA), size: 80);
     } else {
-      return const Icon(Icons.device_unknown_outlined, color: Color(0xFFFFC727), size: 80);
+      return const Icon(Icons.device_unknown_outlined, color: Color(0xFF81D4FA), size: 80);
     }
   }
 
@@ -102,12 +167,12 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFC727).withOpacity(0.1),
+                    color: const Color(0xFF81D4FA).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
                     Icons.info_outline,
-                    color: Color(0xFFFFC727),
+                    color: Color(0xFF81D4FA),
                     size: 24,
                   ),
                 ),
@@ -175,8 +240,6 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
     final mac = widget.device['mac'] ?? 'N/A';
     final status = (widget.device['status'] ?? 'N/A').toString();
     final location = widget.device['location'] ?? 'N/A';
-    final floor = widget.device['floor'] ?? 'Unknown';
-    final building = widget.device['building'] ?? 'Unknown';
     final deviceId = widget.device['id']?.toString() ?? '';
 
     // PC-specific fields
@@ -228,7 +291,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFC727).withOpacity(0.1),
+                      color: const Color(0xFF81D4FA).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: _getDeviceIcon(type),
@@ -346,9 +409,15 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                   const SizedBox(height: 16),
                   _buildDetailRow(Icons.location_on_outlined, 'Location', location),
                   const SizedBox(height: 16),
-                  _buildDetailRow(Icons.layers_outlined, 'Floor', floor),
+                  // Floor with loading state
+                  isLoadingLocationData
+                      ? _buildLoadingRow(Icons.layers_outlined, 'Floor')
+                      : _buildDetailRow(Icons.layers_outlined, 'Floor', floorName ?? 'Unknown'),
                   const SizedBox(height: 16),
-                  _buildDetailRow(Icons.business_outlined, 'Building', building),
+                  // Building with loading state
+                  isLoadingLocationData
+                      ? _buildLoadingRow(Icons.business_outlined, 'Building')
+                      : _buildDetailRow(Icons.business_outlined, 'Building', buildingName ?? 'Unknown'),
                   
                   // Clickable Assigned By Information
                   const SizedBox(height: 16),
@@ -362,13 +431,13 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFFC727).withOpacity(0.1),
+                              color: const Color(0xFF81D4FA).withOpacity(0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Icon(
                               Icons.person_outline,
                               size: 18,
-                              color: Color(0xFFFFC727),
+                              color: Color(0xFF81D4FA),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -396,7 +465,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                                               child: CircularProgressIndicator(
                                                 strokeWidth: 2,
                                                 valueColor: AlwaysStoppedAnimation<Color>(
-                                                  Color(0xFFFFC727),
+                                                  Color(0xFF81D4FA),
                                                 ),
                                               ),
                                             )
@@ -445,6 +514,15 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
+                  // Create a clean copy of device data with non-null values
+                  Map<String, dynamic> cleanDeviceData = Map.from(widget.device);
+                  
+                  // Ensure brand and model are strings (not null)
+                  cleanDeviceData['brand'] = cleanDeviceData['brand']?.toString() ?? '';
+                  cleanDeviceData['model'] = cleanDeviceData['model']?.toString() ?? '';
+                  cleanDeviceData['processor'] = cleanDeviceData['processor']?.toString() ?? '';
+                  cleanDeviceData['storage'] = cleanDeviceData['storage']?.toString() ?? '';
+                  cleanDeviceData['peripheral_type'] = cleanDeviceData['peripheral_type']?.toString() ?? 'Monitor';
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -467,7 +545,7 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                   'Modify Device',
                   style: TextStyle(
                     fontFamily: 'SansRegular',
-                    color: Color(0xFFFFC727),
+                    color: Color(0xFF81D4FA),
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -486,13 +564,13 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFFFFC727).withOpacity(0.1),
+            color: const Color(0xFF81D4FA).withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
             icon,
             size: 18,
-            color: const Color(0xFFFFC727),
+            color: const Color(0xFF81D4FA),
           ),
         ),
         const SizedBox(width: 12),
@@ -517,6 +595,53 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
                   fontSize: 16,
                   color: Color(0xFF212529),
                   fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoadingRow(IconData icon, String label) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF81D4FA).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            icon,
+            size: 18,
+            color: const Color(0xFF81D4FA),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontFamily: 'SansRegular',
+                  fontSize: 12,
+                  color: Color(0xFF6C757D),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 2),
+              const SizedBox(
+                height: 16,
+                width: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Color(0xFF81D4FA),
+                  ),
                 ),
               ),
             ],

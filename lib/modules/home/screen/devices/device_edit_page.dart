@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../location/choose_location.dart'; // your custom location selector
 import '../../main/screen.dart'; // your home screen
+import '../devices/choose_brand.dart';
+import '../devices/choose_model.dart';
 
 class DeviceEditPage extends StatefulWidget {
   final String deviceId;
@@ -23,6 +25,9 @@ class _DeviceEditPageState extends State<DeviceEditPage> {
   late TextEditingController ipController;
   late TextEditingController macController;
   String? selectedLocation;
+  String? _selectedBrandId;
+  String? _selectedBrandName;
+  String? _selectedModel;
   String status = 'Online';
   String type = 'PC';
   String peripheralType = 'Monitor'; // Add peripheral type
@@ -40,6 +45,10 @@ class _DeviceEditPageState extends State<DeviceEditPage> {
     type = widget.deviceData['type'] ?? 'PC';
     peripheralType = widget.deviceData['peripheral_type'] ?? 'Monitor'; // Initialize peripheral type
 
+    // Initialize brand and model from existing data
+    _selectedBrandName = widget.deviceData['brand'];
+    _selectedModel = widget.deviceData['model'];
+
     brandController = TextEditingController(text: widget.deviceData['brand'] ?? '');
     modelController = TextEditingController(text: widget.deviceData['model'] ?? '');
     processorController = TextEditingController(text: widget.deviceData['processor'] ?? '');
@@ -49,9 +58,9 @@ class _DeviceEditPageState extends State<DeviceEditPage> {
 
   @override
   void dispose() {
-    // ... existing dispose calls ...
-    
-    // Dispose PC-specific controllers
+    nameController.dispose();
+    ipController.dispose();
+    macController.dispose();
     brandController.dispose();
     modelController.dispose();
     processorController.dispose();
@@ -259,65 +268,72 @@ class _DeviceEditPageState extends State<DeviceEditPage> {
   }
 
   Future<List<String>> _checkForDuplicates() async {
-    List<String> duplicates = [];
-    
-    try {
-      final devicesRef = FirebaseFirestore.instance.collection('devices');
-      
-      // Check for duplicate device name (excluding current device)
-      final nameQuery = await devicesRef
-          .where('name', isEqualTo: nameController.text.trim())
-          .get();
-      
-      bool nameExists = nameQuery.docs.any((doc) => doc.id != widget.deviceId);
-      if (nameExists) {
-        duplicates.add('Device Name "${nameController.text.trim()}" already exists');
-      }
-      
-      // Check for duplicate IP address (excluding current device)
-      final ipQuery = await devicesRef
-          .where('ip', isEqualTo: ipController.text.trim())
-          .get();
-      
-      bool ipExists = ipQuery.docs.any((doc) => doc.id != widget.deviceId);
-      if (ipExists) {
-        duplicates.add('IP Address "${ipController.text.trim()}" already exists');
-      }
-      
-    } catch (e) {
-      print('Error checking for duplicates: $e');
-    }
-    
+  List<String> duplicates = [];
+  
+  // CRITICAL: Check if deviceId is valid before querying
+  if (widget.deviceId.isEmpty) {
+    print('ERROR: deviceId is empty in _checkForDuplicates');
     return duplicates;
   }
+  
+  try {
+    final devicesRef = FirebaseFirestore.instance.collection('devices');
+    
+    // Check for duplicate device name (excluding current device)
+    final nameQuery = await devicesRef
+        .where('name', isEqualTo: nameController.text.trim())
+        .get();
+    
+    bool nameExists = nameQuery.docs.any((doc) => doc.id != widget.deviceId);
+    if (nameExists) {
+      duplicates.add('Device Name "${nameController.text.trim()}" already exists');
+    }
+    
+    // Check for duplicate IP address (excluding current device)
+    final ipQuery = await devicesRef
+        .where('ip', isEqualTo: ipController.text.trim())
+        .get();
+    
+    bool ipExists = ipQuery.docs.any((doc) => doc.id != widget.deviceId);
+    if (ipExists) {
+      duplicates.add('IP Address "${ipController.text.trim()}" already exists');
+    }
+    
+  } catch (e) {
+    print('Error checking for duplicates: $e');
+  }
+  
+  return duplicates;
+}
 
   Future<void> updateDevice() async {
-    // Check if all required fields are filled
-    List<String> emptyFields = [];
-    
-    if (nameController.text.trim().isEmpty) {
-      emptyFields.add('Device Name');
-    }
-    if (ipController.text.trim().isEmpty) {
-      emptyFields.add('IP Address');
-    }
-    if (macController.text.trim().isEmpty) {
-      emptyFields.add('MAC Address');
-    }
-    if (selectedLocation == null || selectedLocation!.trim().isEmpty) {
-      emptyFields.add('Location');
-    }
+  // Check if all required fields are filled
+  List<String> emptyFields = [];
+  
+  if (nameController.text.trim().isEmpty) {
+    emptyFields.add('Device Name');
+  }
+  if (ipController.text.trim().isEmpty) {
+    emptyFields.add('IP Address');
+  }
+  if (macController.text.trim().isEmpty) {
+    emptyFields.add('MAC Address');
+  }
+  if (selectedLocation == null || selectedLocation!.trim().isEmpty) {
+    emptyFields.add('Location');
+  }
 
-    // Brand and Model are required for both PC and Peripheral
+  // Brand is required for both PC and Peripheral
   if (brandController.text.trim().isEmpty) {
     emptyFields.add('Brand');
-  }
-  if (modelController.text.trim().isEmpty) {
-    emptyFields.add('Model');
   }
 
   // PC-specific field validation
   if (type == 'PC') {
+    // Model is required for PC
+    if (modelController.text.trim().isEmpty) {
+      emptyFields.add('Model');
+    }
     if (processorController.text.trim().isEmpty) {
       emptyFields.add('Processor');
     }
@@ -326,180 +342,225 @@ class _DeviceEditPageState extends State<DeviceEditPage> {
     }
   }
 
+  // If there are empty fields, show error dialog
+  if (emptyFields.isNotEmpty) {
+    _showErrorDialog(emptyFields);
+    return;
+  }
 
-    // If there are empty fields, show error dialog
-    if (emptyFields.isNotEmpty) {
-      _showErrorDialog(emptyFields);
-      return;
-    }
+  // CRITICAL: Check if deviceId is valid
+  if (widget.deviceId.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Error: Invalid device ID'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
 
-    // Show loading state
+  // Show loading state
+  setState(() {
+    _isUpdating = true;
+  });
+
+  // Check for duplicates
+  final duplicates = await _checkForDuplicates();
+  
+  if (duplicates.isNotEmpty) {
     setState(() {
-      _isUpdating = true;
+      _isUpdating = false;
     });
+    _showDuplicateDialog(duplicates);
+    return;
+  }
 
-    // Check for duplicates
-    final duplicates = await _checkForDuplicates();
-    
-    if (duplicates.isNotEmpty) {
-      setState(() {
-        _isUpdating = false;
-      });
-      _showDuplicateDialog(duplicates);
-      return;
-    }
-
-    final confirm = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFC727).withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.edit,
-                color: Color(0xFFFFC727),
-                size: 20,
-              ),
+  final confirm = await showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder: (ctx) => AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      title: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF81D4FA).withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
             ),
-            const SizedBox(width: 12),
-            const Text(
-              'Confirm Update',
-              style: TextStyle(
-                fontFamily: 'SansRegular',
-                fontWeight: FontWeight.w600,
-                fontSize: 20,
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Are you sure you want to update this device?',
-              style: TextStyle(
-                fontFamily: 'SansRegular',
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF212529),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '"${nameController.text}" will be updated with the new information.',
-              style: const TextStyle(
-                fontFamily: 'SansRegular',
-                fontSize: 14,
-                color: Color(0xFF6C757D),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
-                fontFamily: 'SansRegular',
-                color: Color(0xFF6C757D),
-                fontWeight: FontWeight.w600,
-              ),
+            child: const Icon(
+              Icons.edit,
+              color: Color(0xFF81D4FA),
+              size: 20,
             ),
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFFC727),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text(
-              'Update',
-              style: TextStyle(
-                fontFamily: 'SansRegular',
-                color: Color(0xFF212529),
-                fontWeight: FontWeight.w600,
-              ),
+          const SizedBox(width: 12),
+          const Text(
+            'Confirm Update',
+            style: TextStyle(
+              fontFamily: 'SansRegular',
+              fontWeight: FontWeight.w600,
+              fontSize: 20,
             ),
           ),
         ],
       ),
-    );
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Are you sure you want to update this device?',
+            style: TextStyle(
+              fontFamily: 'SansRegular',
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF212529),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '"${nameController.text}" will be updated with the new information.',
+            style: const TextStyle(
+              fontFamily: 'SansRegular',
+              fontSize: 14,
+              color: Color(0xFF6C757D),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: const Text(
+            'Cancel',
+            style: TextStyle(
+              fontFamily: 'SansRegular',
+              color: Color(0xFF6C757D),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF81D4FA),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          child: const Text(
+            'Update',
+            style: TextStyle(
+              fontFamily: 'SansRegular',
+              color: Color(0xFF212529),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 
-    if (confirm != true) {
+  if (confirm != true) {
+    setState(() {
+      _isUpdating = false;
+    });
+    return;
+  }
+
+  try {
+    // Debug print
+    print('Updating device with ID: ${widget.deviceId}');
+    print('Type: $type');
+    print('Brand: ${brandController.text.trim()}');
+    print('Model: ${modelController.text.trim()}');
+    
+    // Prepare update data - START WITH BASIC REQUIRED FIELDS ONLY
+    Map<String, dynamic> updateData = {
+      'name': nameController.text.trim(),
+      'ip': ipController.text.trim(),
+      'mac': macController.text.trim(),
+      'location': selectedLocation!,
+      'status': status,
+      'type': type,
+      'brand': brandController.text.trim(),
+    };
+
+    // Handle type-specific fields
+    if (type == 'PC') {
+      // For PC: add all PC fields
+      updateData['model'] = modelController.text.trim();
+      updateData['processor'] = processorController.text.trim();
+      updateData['storage'] = storageController.text.trim();
+      updateData['peripheral_type'] = FieldValue.delete();
+      
+      print('PC Update Data: $updateData');
+    } else if (type == 'Peripheral') {
+      // For Peripheral: add peripheral type
+      updateData['peripheral_type'] = peripheralType;
+      updateData['processor'] = FieldValue.delete();
+      updateData['storage'] = FieldValue.delete();
+      
+      // Only add model if it has content
+      final modelText = modelController.text.trim();
+      if (modelText.isNotEmpty) {
+        updateData['model'] = modelText;
+      } else {
+        updateData['model'] = FieldValue.delete();
+      }
+      
+      print('Peripheral Update Data: $updateData');
+    }
+
+    // Perform the update
+    print('About to update Firestore...');
+    await FirebaseFirestore.instance
+        .collection('devices')
+        .doc(widget.deviceId)
+        .update(updateData);
+    
+    print('Update successful!');
+
+    if (!mounted) return;
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Device updated successfully'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ),
+    );
+    
+    // Navigate back
+    Navigator.pushReplacement(
+      context, 
+      MaterialPageRoute(builder: (context) => ScreenPage())
+    );
+    
+  } catch (e) {
+    print('ERROR UPDATING DEVICE: $e');
+    print('Stack trace: ${StackTrace.current}');
+    
+    if (!mounted) return;
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error updating device: $e'),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  } finally {
+    if (mounted) {
       setState(() {
         _isUpdating = false;
       });
-      return;
-    }
-
-    try {
-      // Prepare update data
-      Map<String, dynamic> updateData = {
-        'name': nameController.text.trim(),
-        'ip': ipController.text.trim(),
-        'mac': macController.text.trim(),
-        'location': selectedLocation,
-        'status': status,
-        'type': type,
-        'brand': brandController.text.trim(),  // Always include brand
-        'model': modelController.text.trim(),  // Always include model
-      };
-
-       // Add type-specific fields
-    if (type == 'Peripheral') {
-      updateData['peripheral_type'] = peripheralType;
-      // Remove PC-specific fields if switching from PC to Peripheral
-      updateData['processor'] = FieldValue.delete();
-      updateData['storage'] = FieldValue.delete();
-    } else if (type == 'PC') {
-      updateData['processor'] = processorController.text.trim();
-      updateData['storage'] = storageController.text.trim();
-      // Remove peripheral-specific field if switching from Peripheral to PC
-      updateData['peripheral_type'] = FieldValue.delete();
-    }
-
-      await FirebaseFirestore.instance.collection('devices').doc(widget.deviceId).update(updateData);
-
-      if (!mounted) return;
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Device updated successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
-      
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ScreenPage()));
-    } catch (e) {
-      if (!mounted) return;
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error updating device: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isUpdating = false;
-        });
-      }
     }
   }
+}
 
   Future<void> _showDeleteConfirmationDialog() async {
     final confirm = await showDialog<bool>(
@@ -690,19 +751,138 @@ class _DeviceEditPageState extends State<DeviceEditPage> {
                   ),
                   const SizedBox(height: 16),
                   
-                  // Common fields for both PC and Peripheral
-                  _buildTextField(brandController, 'Brand'),
-                  const SizedBox(height: 16),
-                  _buildTextField(modelController, 'Model'),
+                  // Brand selection (common for both PC and Peripheral)
+                  GestureDetector(
+                    onTap: isProcessing ? null : () async {
+                      final selected = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ChooseBrandPage(),
+                        ),
+                      );
+                      if (selected != null && selected is Map) {
+                        setState(() {
+                          _selectedBrandId = selected['id'];
+                          _selectedBrandName = selected['name'];
+                          brandController.text = selected['name'];
+                          _selectedModel = null; // Reset model when brand changes
+                          modelController.clear();
+                        });
+                      }
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: isProcessing ? Colors.grey[200] : const Color(0xFFF8F9FA),
+                        border: Border.all(
+                          color: isProcessing ? Colors.grey.shade300 : Colors.black54,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            (_selectedBrandName ?? brandController.text).isNotEmpty
+                                ? brandController.text 
+                                : 'Choose Brand',
+                            style: TextStyle(
+                              fontFamily: 'SansRegular',
+                              color: isProcessing 
+                                  ? Colors.grey 
+                                  : (_selectedBrandName != null || brandController.text.isNotEmpty)
+                                      ? Colors.black87 
+                                      : Colors.black54,
+                              fontSize: 16,
+                            ),
+                          ),
+                          Icon(
+                            Icons.arrow_forward_ios, 
+                            size: 16, 
+                            color: isProcessing ? Colors.grey : Colors.black54,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   
                   // Conditional fields based on device type
+                  // Conditional fields based on device type
                   if (type == 'PC') ...[
+                    // Model selection for PC
+                    GestureDetector(
+                      onTap: isProcessing || _selectedBrandId == null && brandController.text.isEmpty
+                          ? null
+                          : () async {
+                              final selected = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ChooseModelPage(
+                                    brandId: _selectedBrandId ?? '',
+                                    brandName: _selectedBrandName ?? brandController.text,
+                                  ),
+                                ),
+                              );
+                              if (selected != null && selected is String) {
+                                setState(() {
+                                  _selectedModel = selected;
+                                  modelController.text = selected;
+                                });
+                              }
+                            },
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: isProcessing || (_selectedBrandId == null && brandController.text.isEmpty)
+                                ? Colors.grey.shade300 
+                                : Colors.black54,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                          color: isProcessing || (_selectedBrandId == null && brandController.text.isEmpty)
+                              ? Colors.grey.shade100 
+                              : Colors.white,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              (_selectedModel ?? modelController.text).isNotEmpty 
+                                ? (_selectedModel ?? modelController.text)
+                                : 'Choose Model',
+                              style: TextStyle(
+                                fontFamily: 'SansRegular',
+                                color: isProcessing || (_selectedBrandId == null && brandController.text.isEmpty)
+                                    ? Colors.grey.shade400
+                                    : (_selectedModel != null || modelController.text.isNotEmpty)
+                                        ? Colors.black87
+                                        : Colors.black54,
+                                fontSize: 16,
+                              ),
+                            ),
+                            Icon(
+                              Icons.arrow_forward_ios,
+                              size: 16,
+                              color: isProcessing || (_selectedBrandId == null && brandController.text.isEmpty)
+                                  ? Colors.grey.shade400 
+                                  : Colors.black54,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     _buildTextField(processorController, 'Processor'),
                     const SizedBox(height: 16),
                     _buildTextField(storageController, 'Storage'),
                     const SizedBox(height: 16),
                   ] else if (type == 'Peripheral') ...[
+                    // Manual model input for Peripheral
+                    _buildTextField(modelController, 'Model (Optional)'),
+                    const SizedBox(height: 16),
                     _buildDropdown(
                       value: peripheralType,
                       items: ['Monitor', 'Printer', 'Tablet', 'Others'],
@@ -780,7 +960,7 @@ class _DeviceEditPageState extends State<DeviceEditPage> {
                           child: const Text(
                             'Cancel',
                             style: TextStyle(
-                              color: Color(0xFFFFC727), 
+                              color: Color(0xFF81D4FA), 
                               fontFamily: 'SansRegular', 
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -793,7 +973,7 @@ class _DeviceEditPageState extends State<DeviceEditPage> {
                         child: ElevatedButton(
                           onPressed: isProcessing ? null : updateDevice,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: isProcessing ? Colors.grey : const Color(0xFFFFC727),
+                            backgroundColor: isProcessing ? Colors.grey : const Color(0xFF81D4FA),
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),

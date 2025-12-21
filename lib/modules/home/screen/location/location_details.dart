@@ -117,7 +117,7 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 40, color: const Color(0xFFFFC727)),
+          Icon(icon, size: 40, color: const Color(0xFF81D4FA)),
           const SizedBox(height: 8),
           Text(
             label,
@@ -131,7 +131,7 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
           Text(
             value,
             style: const TextStyle(
-              color: Color(0xFFFFC727),
+              color: Color(0xFF81D4FA),
               fontSize: 16,
               fontWeight: FontWeight.bold,
               fontFamily: 'SansRegular',
@@ -352,7 +352,7 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
                         child: const Text(
                           'Edit Location',
                           style: TextStyle(
-                            color: Color(0xFFFFC727),
+                            color: Color(0xFF81D4FA),
                             fontSize: 16,
                             fontFamily: 'SansRegular',
                           ),

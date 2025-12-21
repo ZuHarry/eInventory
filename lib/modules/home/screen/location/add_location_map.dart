@@ -319,7 +319,7 @@ class _AddLocationMapPageState extends State<AddLocationMapPage> {
                       child: const Icon(
                         Icons.location_pin,
                         size: 50,
-                        color: Color(0xFFFFC727),
+                        color: Color(0xFF81D4FA),
                       ),
                     ),
                   ],
@@ -346,7 +346,7 @@ class _AddLocationMapPageState extends State<AddLocationMapPage> {
                       children: [
                         Icon(
                           Icons.info_outline,
-                          color: Color(0xFFFFC727),
+                          color: Color(0xFF81D4FA),
                           size: 20,
                         ),
                         SizedBox(width: 8),
@@ -428,7 +428,7 @@ class _AddLocationMapPageState extends State<AddLocationMapPage> {
               onPressed: _confirmLocation,
               style: ElevatedButton.styleFrom(
                 backgroundColor: _selectedLocation != null
-                    ? const Color(0xFFFFC727)
+                    ? const Color(0xFF81D4FA)
                     : Colors.grey,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(

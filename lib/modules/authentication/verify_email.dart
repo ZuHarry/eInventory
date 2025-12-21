@@ -81,7 +81,7 @@
 //   Widget build(BuildContext context) => isEmailVerified
 //       ? const Center(child: Text('Email verified! Redirecting...'))
 //       : Scaffold(
-//           backgroundColor: const Color(0xFFFFC727),
+//           backgroundColor: const Color(0xFF81D4FA),
 //           body: SafeArea(
 //             child: Column(
 //               crossAxisAlignment: CrossAxisAlignment.start,
@@ -140,7 +140,7 @@
 //                           const Icon(
 //                             Icons.email,
 //                             size: 100,
-//                             color: Color(0xFFFFC727),
+//                             color: Color(0xFF81D4FA),
 //                           ),
 //                           const SizedBox(height: 24),
 //                           Text(

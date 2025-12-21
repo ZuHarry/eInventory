@@ -52,9 +52,9 @@ class _InventoryPageState extends State<InventoryPage> {
   }
 
   Icon _getDeviceIcon(String? type) {
-    if (type == 'PC') return const Icon(Icons.computer_outlined, color: Color(0xFFFFC727), size: 20);
-    if (type == 'Peripheral') return const Icon(Icons.devices_other_outlined, color: Color(0xFFFFC727), size: 20);
-    return const Icon(Icons.device_unknown_outlined, color: Color(0xFFFFC727), size: 20);
+    if (type == 'PC') return const Icon(Icons.computer_outlined, color: Color(0xFF81D4FA), size: 20);
+    if (type == 'Peripheral') return const Icon(Icons.devices_other_outlined, color: Color(0xFF81D4FA), size: 20);
+    return const Icon(Icons.device_unknown_outlined, color: Color(0xFF81D4FA), size: 20);
   }
 
   Color _getStatusColor(String status) {
@@ -69,21 +69,43 @@ class _InventoryPageState extends State<InventoryPage> {
   }
 
   Future<Map<String, Map<String, String>>> _fetchLocationInfoMap() async {
-    final snapshot = await FirebaseFirestore.instance.collection('locations').get();
-    final map = <String, Map<String, String>>{};
+  final map = <String, Map<String, String>>{};
 
-    for (var doc in snapshot.docs) {
-      final data = doc.data();
-      final name = data['name'];
-      final floor = data['floor'];
-      final building = data['building'];
-      if (name != null && floor != null && building != null) {
-        map[name] = {'floor': floor, 'building': building};
+  try {
+    // Get all buildings
+    final buildingsSnapshot = await FirebaseFirestore.instance
+        .collection('buildings')
+        .get();
+
+    // For each building, get its locations subcollection
+    for (var buildingDoc in buildingsSnapshot.docs) {
+      final buildingData = buildingDoc.data();
+      final buildingName = buildingData['name'] ?? 'Unknown';
+
+      // Get locations subcollection
+      final locationsSnapshot = await buildingDoc.reference
+          .collection('locations')
+          .get();
+
+      for (var locationDoc in locationsSnapshot.docs) {
+        final locationData = locationDoc.data();
+        final locationName = locationData['name'];
+        final floor = locationData['floor'];
+
+        if (locationName != null) {
+          map[locationName] = {
+            'floor': floor ?? 'Unknown',
+            'building': buildingName,
+          };
+        }
       }
     }
-
-    return map;
+  } catch (e) {
+    print('Error fetching location info map: $e');
   }
+
+  return map;
+}
 
   @override
   Widget build(BuildContext context) {
@@ -356,7 +378,7 @@ class _InventoryPageState extends State<InventoryPage> {
           if (locationSnapshot.connectionState == ConnectionState.waiting) {
             return const Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFC727)),
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF81D4FA)),
               ),
             );
           }
@@ -393,7 +415,7 @@ class _InventoryPageState extends State<InventoryPage> {
               if (deviceSnapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
                   child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFC727)),
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF81D4FA)),
                   ),
                 );
               }
@@ -505,7 +527,7 @@ class _InventoryPageState extends State<InventoryPage> {
                                     Container(
                                       padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFFFC727).withOpacity(0.1),
+                                        color: const Color(0xFF81D4FA).withOpacity(0.1),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: _getDeviceIcon(data['type']),
@@ -521,7 +543,7 @@ class _InventoryPageState extends State<InventoryPage> {
                                               fontFamily: 'SansRegular',
                                               fontWeight: FontWeight.w600,
                                               fontSize: 14,
-                                              color: Color(0xFFFFC727),
+                                              color: Color(0xFF81D4FA),
                                             ),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
@@ -610,14 +632,14 @@ class _InventoryPageState extends State<InventoryPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFC727).withOpacity(0.15),
+        color: const Color(0xFF81D4FA).withOpacity(0.15),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
         text,
         style: const TextStyle(
           fontFamily: 'SansRegular',
-          color: Color(0xFFFFC727),
+          color: Color(0xFF81D4FA),
           fontSize: 10,
           fontWeight: FontWeight.w500,
         ),

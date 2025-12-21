@@ -21,24 +21,34 @@ class DetailedPieChartPage extends StatelessWidget {
     final buildingsSnapshot = await firestore.collection('buildings').get();
     Map<String, int> result = {};
     
-    // Initialize the result map with building names from the buildings collection
-    for (var doc in buildingsSnapshot.docs) {
-      final data = doc.data();
+    // Initialize the result map with building names
+    for (var buildingDoc in buildingsSnapshot.docs) {
+      final data = buildingDoc.data();
       final buildingName = data['name'] as String?;
       if (buildingName != null) {
         result[buildingName] = 0;
       }
     }
 
-    // Get the mapping from location to building
-    final locationsSnapshot = await firestore.collection('locations').get();
+    // Get the mapping from location to building by iterating through nested subcollections
     final Map<String, String> locationToBuilding = {};
-    for (var doc in locationsSnapshot.docs) {
-      final data = doc.data();
-      final locationName = data['name'] as String?;
-      final building = data['building'] as String?;
-      if (locationName != null && building != null) {
-        locationToBuilding[locationName] = building;
+    for (var buildingDoc in buildingsSnapshot.docs) {
+      final buildingData = buildingDoc.data();
+      final buildingName = buildingData['name'] as String?;
+      
+      if (buildingName != null) {
+        // Get locations subcollection for this building
+        final locationsSnapshot = await buildingDoc.reference
+            .collection('locations')
+            .get();
+        
+        for (var locationDoc in locationsSnapshot.docs) {
+          final locationData = locationDoc.data();
+          final locationName = locationData['name'] as String?;
+          if (locationName != null) {
+            locationToBuilding[locationName] = buildingName;
+          }
+        }
       }
     }
 
@@ -95,7 +105,7 @@ class DetailedPieChartPage extends StatelessWidget {
   // Generate dynamic colors for buildings
   List<Color> _generateBuildingColors(int count) {
     final List<Color> colors = [
-      const Color(0xFFFFC727), // Yellow
+      const Color(0xFF81D4FA), // Yellow
       const Color(0xFF28A745), // Green
       const Color(0xFF007BFF), // Blue
       const Color(0xFFDC3545), // Red
@@ -124,11 +134,11 @@ class DetailedPieChartPage extends StatelessWidget {
           style: TextStyle(
             fontFamily: 'SansRegular',
             fontWeight: FontWeight.bold,
-            color: Color(0xFFFFC727),
+            color: Color(0xFF81D4FA),
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFFFFC727)),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF81D4FA)),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -149,7 +159,7 @@ class DetailedPieChartPage extends StatelessWidget {
                   height: MediaQuery.of(context).size.height * 0.6,
                   child: const Center(
                     child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFC727)),
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF81D4FA)),
                     ),
                   ),
                 );
@@ -210,7 +220,7 @@ class DetailedPieChartPage extends StatelessWidget {
                       'Peripherals': totalPeripheral,
                     },
                     colors: {
-                      'PC': const Color(0xFFFFC727),
+                      'PC': const Color(0xFF81D4FA),
                       'Peripherals': Colors.grey[600]!,
                     },
                   ),
@@ -231,7 +241,7 @@ class DetailedPieChartPage extends StatelessWidget {
                     title: 'Peripheral Types Distribution',
                     data: peripheralTypeCounts,
                     colors: {
-                      'Monitor': const Color(0xFFFFC727),
+                      'Monitor': const Color(0xFF81D4FA),
                       'Printer': const Color(0xFF28A745),
                       'Tablet': const Color(0xFF007BFF),
                       'Others': Colors.grey[600]!,
@@ -282,7 +292,7 @@ class DetailedPieChartPage extends StatelessWidget {
                 fontFamily: 'SansRegular',
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFFFFC727),
+                color: Color(0xFF81D4FA),
               ),
             ),
           ),
@@ -335,7 +345,7 @@ class DetailedPieChartPage extends StatelessWidget {
                       'No data available',
                       style: TextStyle(
                         fontFamily: 'SansRegular',
-                        color: Color(0xFFFFC727),
+                        color: Color(0xFF81D4FA),
                         fontSize: 18,
                       ),
                     ),
@@ -375,7 +385,7 @@ class DetailedPieChartPage extends StatelessWidget {
               fontFamily: 'SansRegular',
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: Color(0xFFFFC727),
+              color: Color(0xFF81D4FA),
             ),
           ),
         ],
@@ -401,7 +411,7 @@ class DetailedPieChartPage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 10.0),
             decoration: const BoxDecoration(
-              color: Color(0xFFFFC727),
+              color: Color(0xFF81D4FA),
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(16),
                 topRight: Radius.circular(16),
@@ -485,7 +495,7 @@ class DetailedPieChartPage extends StatelessWidget {
                             style: const TextStyle(
                               fontFamily: 'SansRegular',
                               fontSize: 15,
-                              color: Color(0xFFFFC727),
+                              color: Color(0xFF81D4FA),
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -500,7 +510,7 @@ class DetailedPieChartPage extends StatelessWidget {
                         fontFamily: 'SansRegular',
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFFFFC727),
+                        color: Color(0xFF81D4FA),
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -512,7 +522,7 @@ class DetailedPieChartPage extends StatelessWidget {
                         fontFamily: 'SansRegular',
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFFFFC727),
+                        color: Color(0xFF81D4FA),
                       ),
                       textAlign: TextAlign.center,
                     ),

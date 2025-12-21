@@ -57,6 +57,23 @@ class _MapPageState extends State<MapPage> {
     _getCurrentLocation();
   }
 
+    String _calculateDistance(LatLng deviceLocation) {
+    if (_currentLocation == null) return '';
+    
+    final distance = Geolocator.distanceBetween(
+      _currentLocation!.latitude,
+      _currentLocation!.longitude,
+      deviceLocation.latitude,
+      deviceLocation.longitude,
+    );
+    
+    if (distance < 1000) {
+      return '${distance.round()}m away';
+    } else {
+      return '${(distance / 1000).toStringAsFixed(1)}km away';
+    }
+  }
+
   Future<void> _getCurrentLocation() async {
     try {
       setState(() {
@@ -144,7 +161,7 @@ class _MapPageState extends State<MapPage> {
                 await Geolocator.openLocationSettings();
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFFC727),
+                backgroundColor: const Color(0xFF81D4FA),
                 foregroundColor: const Color(0xFF212529),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 elevation: 0,
@@ -206,7 +223,7 @@ class _MapPageState extends State<MapPage> {
                 _checkLocationPermission();
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFFC727),
+                backgroundColor: const Color(0xFF81D4FA),
                 foregroundColor: const Color(0xFF212529),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 elevation: 0,
@@ -268,7 +285,7 @@ class _MapPageState extends State<MapPage> {
                 await Geolocator.openAppSettings();
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFFC727),
+                backgroundColor: const Color(0xFF81D4FA),
                 foregroundColor: const Color(0xFF212529),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 elevation: 0,
@@ -512,17 +529,17 @@ class _MapPageState extends State<MapPage> {
       markers.add(
         Marker(
           point: position,
-          width: 50,
-          height: 50,
+          width: 40,
+          height: 40,
           child: GestureDetector(
             onTap: () => _showLocationDevices(location, devices, position),
             child: Container( 
               decoration: BoxDecoration(
                 color: _selectedLocation == location 
-                    ? const Color(0xFFFFC727) 
+                    ? const Color(0xFF81D4FA) 
                     : const Color(0xFF28A745),
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 3),
+                border: Border.all(color: Colors.white, width: 2),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.3),
@@ -538,28 +555,28 @@ class _MapPageState extends State<MapPage> {
                     const Icon(
                       Icons.location_on,
                       color: Colors.white,
-                      size: 30,
+                      size: 24,
                     ),
                     if (devices.length > 1)
                       Positioned(
                         top: 0,
                         right: 0,
                         child: Container(
-                          padding: const EdgeInsets.all(4),
+                          padding: const EdgeInsets.all(3),
                           decoration: const BoxDecoration(
                             color: Color(0xFFDC3545),
                             shape: BoxShape.circle,
                           ),
                           constraints: const BoxConstraints(
-                            minWidth: 18,
-                            minHeight: 18,
+                            minWidth: 16,
+                            minHeight: 16,
                           ),
                           child: Text(
                             '${devices.length}',
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 9,
+                              fontSize: 8,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -579,13 +596,13 @@ class _MapPageState extends State<MapPage> {
       markers.add(
         Marker(
           point: _currentLocation!,
-          width: 60,
-          height: 60,
+          width: 48,
+          height: 48,
           child: Container(
             decoration: BoxDecoration(
               color: const Color(0xFF007BFF),
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 4),
+              border: Border.all(color: Colors.white, width: 3),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.4),
@@ -598,7 +615,7 @@ class _MapPageState extends State<MapPage> {
               child: Icon(
                 Icons.my_location,
                 color: Colors.white,
-                size: 30,
+                size: 24,
               ),
             ),
           ),
@@ -700,120 +717,145 @@ class _MapPageState extends State<MapPage> {
   }
 
   Widget _buildDeviceCard(Map<String, dynamic> device) {
-    Color statusColor;
-    switch (device['status']?.toLowerCase() ?? '') {
-      case 'active':
-        statusColor = const Color(0xFF28A745);
-        break;
-      case 'maintenance':
-        statusColor = const Color(0xFFFFC107);
-        break;
-      case 'inactive':
-        statusColor = const Color(0xFFDC3545);
-        break;
-      default:
-        statusColor = const Color(0xFF6C757D);
-    }
+  Color statusColor;
+  switch (device['status']?.toLowerCase() ?? '') {
+    case 'active':
+      statusColor = const Color(0xFF28A745);
+      break;
+    case 'maintenance':
+      statusColor = const Color(0xFFFFC107);
+      break;
+    case 'inactive':
+      statusColor = const Color(0xFFDC3545);
+      break;
+    default:
+      statusColor = const Color(0xFF6C757D);
+  }
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
+  final deviceCoords = device['coordinates'] as LatLng?;
+  final distanceText = deviceCoords != null ? _calculateDistance(deviceCoords) : '';
+
+  return Container(
+    margin: const EdgeInsets.only(bottom: 12),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: const Color(0xFFDEE2E6)),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 4,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFDEE2E6)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: () {
-            Navigator.pop(context);
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => DeviceDetailsPage(device: device),
-              ),
-            );
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8F9FA),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    _getCategoryIcon(device['category'] ?? ''),
-                    color: const Color(0xFF007BFF),
-                    size: 24,
-                  ),
+        onTap: () {
+          Navigator.pop(context);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => DeviceDetailsPage(device: device),
+            ),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8F9FA),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        device['name'] ?? 'Unknown',
-                        style: const TextStyle(
-                          fontFamily: 'SansRegular',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF212529),
-                        ),
+                child: Icon(
+                  _getCategoryIcon(device['category'] ?? ''),
+                  color: const Color(0xFF007BFF),
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      device['name'] ?? 'Unknown',
+                      style: const TextStyle(
+                        fontFamily: 'SansRegular',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF212529),
                       ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      device['model'] ?? 'No model',
+                      style: const TextStyle(
+                        fontFamily: 'SansRegular',
+                        fontSize: 12,
+                        color: Color(0xFF6C757D),
+                      ),
+                    ),
+                    if (distanceText.isNotEmpty) ...[
                       const SizedBox(height: 4),
-                      Text(
-                        device['model'] ?? 'No model',
-                        style: const TextStyle(
-                          fontFamily: 'SansRegular',
-                          fontSize: 12,
-                          color: Color(0xFF6C757D),
-                        ),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.near_me,
+                            size: 12,
+                            color: Color(0xFF007BFF),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            distanceText,
+                            style: const TextStyle(
+                              fontFamily: 'SansRegular',
+                              fontSize: 11,
+                              color: Color(0xFF007BFF),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  device['status'] ?? 'Unknown',
+                  style: TextStyle(
+                    fontFamily: 'SansRegular',
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: statusColor,
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    device['status'] ?? 'Unknown',
-                    style: TextStyle(
-                      fontFamily: 'SansRegular',
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: statusColor,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Icon(
-                  Icons.chevron_right,
-                  color: Color(0xFF6C757D),
-                  size: 20,
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.chevron_right,
+                color: Color(0xFF6C757D),
+                size: 20,
+              ),
+            ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   IconData _getCategoryIcon(String category) {
     switch (category.toLowerCase()) {
@@ -841,7 +883,7 @@ class _MapPageState extends State<MapPage> {
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFC727)),
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF81D4FA)),
               ),
             )
           : Stack(
@@ -926,7 +968,7 @@ class _MapPageState extends State<MapPage> {
                   right: 16,
                   child: FloatingActionButton(
                     onPressed: _isTrackingLocation ? null : _getCurrentLocation,
-                    backgroundColor: const Color(0xFFFFC727),
+                    backgroundColor: const Color(0xFF81D4FA),
                     child: _isTrackingLocation
                         ? const SizedBox(
                             width: 24,

@@ -102,7 +102,7 @@ class _LocationsOverviewPageState extends State<LocationsOverviewPage> {
       body: isLoading
           ? const Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFC727)),
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF81D4FA)),
               ),
             )
           : SingleChildScrollView(
@@ -129,14 +129,14 @@ class _LocationsOverviewPageState extends State<LocationsOverviewPage> {
                       children: [
                         const Icon(
                           Icons.location_on_outlined,
-                          color: Color(0xFFFFC727),
+                          color: Color(0xFF81D4FA),
                           size: 48,
                         ),
                         const SizedBox(height: 12),
                         Text(
                           '$totalLocations',
                           style: const TextStyle(
-                            color: Color(0xFFFFC727),
+                            color: Color(0xFF81D4FA),
                             fontSize: 36,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'SansRegular',
@@ -161,7 +161,7 @@ class _LocationsOverviewPageState extends State<LocationsOverviewPage> {
                     buildingData,
                     Icons.business_outlined,
                     [
-                      const Color(0xFFFFC727),
+                      const Color(0xFF81D4FA),
                       const Color(0xFF28A745),
                       const Color(0xFF007BFF),
                       const Color(0xFFDC3545),

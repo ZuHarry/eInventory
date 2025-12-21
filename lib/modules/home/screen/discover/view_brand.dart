@@ -15,7 +15,7 @@ class ViewBrandPage extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(
             Icons.arrow_back_ios_rounded,
-            color: Color(0xFFFFC727),
+            color: Color(0xFF81D4FA),
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -25,7 +25,7 @@ class ViewBrandPage extends StatelessWidget {
             fontFamily: 'SansRegular',
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: Color(0xFFFFC727),
+            color: Color(0xFF81D4FA),
           ),
         ),
       ),
@@ -37,10 +37,10 @@ class ViewBrandPage extends StatelessWidget {
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFC727).withOpacity(0.1),
+              color: const Color(0xFF81D4FA).withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: const Color(0xFFFFC727).withOpacity(0.3),
+                color: const Color(0xFF81D4FA).withOpacity(0.3),
                 width: 1,
               ),
             ),
@@ -48,7 +48,7 @@ class ViewBrandPage extends StatelessWidget {
               children: [
                 const Icon(
                   Icons.touch_app_rounded,
-                  color: Color(0xFFFFC727),
+                  color: Color(0xFF81D4FA),
                   size: 20,
                 ),
                 const SizedBox(width: 12),
@@ -99,7 +99,7 @@ class ViewBrandPage extends StatelessWidget {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
                     child: CircularProgressIndicator(
-                      color: Color(0xFFFFC727),
+                      color: Color(0xFF81D4FA),
                     ),
                   );
                 }
@@ -203,7 +203,7 @@ class ViewBrandPage extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: const Color(0xFFFFC727).withOpacity(0.1),
+                color: const Color(0xFF81D4FA).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: ClipRRect(
@@ -215,7 +215,7 @@ class ViewBrandPage extends StatelessWidget {
                         errorBuilder: (context, error, stackTrace) {
                           return const Icon(
                             Icons.image_rounded,
-                            color: Color(0xFFFFC727),
+                            color: Color(0xFF81D4FA),
                             size: 40,
                           );
                         },
@@ -223,7 +223,7 @@ class ViewBrandPage extends StatelessWidget {
                           if (loadingProgress == null) return child;
                           return const Center(
                             child: CircularProgressIndicator(
-                              color: Color(0xFFFFC727),
+                              color: Color(0xFF81D4FA),
                               strokeWidth: 2,
                             ),
                           );
@@ -231,7 +231,7 @@ class ViewBrandPage extends StatelessWidget {
                       )
                     : const Icon(
                         Icons.image_rounded,
-                        color: Color(0xFFFFC727),
+                        color: Color(0xFF81D4FA),
                         size: 40,
                       ),
               ),
@@ -289,7 +289,7 @@ class ViewBrandPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             ListTile(
-              leading: const Icon(Icons.edit_rounded, color: Color(0xFFFFC727)),
+              leading: const Icon(Icons.edit_rounded, color: Color(0xFF81D4FA)),
               title: const Text(
                 'Edit Brand',
                 style: TextStyle(
@@ -378,17 +378,17 @@ class ViewBrandPage extends StatelessWidget {
                     width: 120,
                     height: 120,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFC727).withOpacity(0.1),
+                      color: const Color(0xFF81D4FA).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: const Color(0xFFFFC727).withOpacity(0.3),
+                        color: const Color(0xFF81D4FA).withOpacity(0.3),
                         width: 2,
                       ),
                     ),
                     child: isUploading
                         ? const Center(
                             child: CircularProgressIndicator(
-                              color: Color(0xFFFFC727),
+                              color: Color(0xFF81D4FA),
                             ),
                           )
                         : newImageUrl != null && newImageUrl!.isNotEmpty
@@ -401,7 +401,7 @@ class ViewBrandPage extends StatelessWidget {
                               )
                             : const Icon(
                                 Icons.add_photo_alternate_rounded,
-                                color: Color(0xFFFFC727),
+                                color: Color(0xFF81D4FA),
                                 size: 48,
                               ),
                   ),
@@ -417,7 +417,7 @@ class ViewBrandPage extends StatelessWidget {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFFFC727), width: 2),
+                      borderSide: const BorderSide(color: Color(0xFF81D4FA), width: 2),
                     ),
                   ),
                   style: const TextStyle(fontFamily: 'SansRegular'),
@@ -468,7 +468,7 @@ class ViewBrandPage extends StatelessWidget {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFFC727),
+                backgroundColor: const Color(0xFF81D4FA),
                 foregroundColor: const Color(0xFF212529),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -589,7 +589,7 @@ class ViewModelPage extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(
             Icons.arrow_back_ios_rounded,
-            color: Color(0xFFFFC727),
+            color: Color(0xFF81D4FA),
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -599,7 +599,7 @@ class ViewModelPage extends StatelessWidget {
             fontFamily: 'SansRegular',
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: Color(0xFFFFC727),
+            color: Color(0xFF81D4FA),
           ),
         ),
       ),
@@ -638,7 +638,7 @@ class ViewModelPage extends StatelessWidget {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
               child: CircularProgressIndicator(
-                color: Color(0xFFFFC727),
+                color: Color(0xFF81D4FA),
               ),
             );
           }
@@ -726,7 +726,7 @@ class ViewModelPage extends StatelessWidget {
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFC727).withOpacity(0.1),
+                  color: const Color(0xFF81D4FA).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: ClipRRect(
@@ -738,7 +738,7 @@ class ViewModelPage extends StatelessWidget {
                           errorBuilder: (context, error, stackTrace) {
                             return const Icon(
                               Icons.phone_android_rounded,
-                              color: Color(0xFFFFC727),
+                              color: Color(0xFF81D4FA),
                               size: 28,
                             );
                           },
@@ -746,7 +746,7 @@ class ViewModelPage extends StatelessWidget {
                             if (loadingProgress == null) return child;
                             return const Center(
                               child: CircularProgressIndicator(
-                                color: Color(0xFFFFC727),
+                                color: Color(0xFF81D4FA),
                                 strokeWidth: 2,
                               ),
                             );
@@ -754,7 +754,7 @@ class ViewModelPage extends StatelessWidget {
                         )
                       : const Icon(
                           Icons.phone_android_rounded,
-                          color: Color(0xFFFFC727),
+                          color: Color(0xFF81D4FA),
                           size: 28,
                         ),
                 ),

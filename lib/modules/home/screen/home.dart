@@ -92,7 +92,7 @@ class HomePage extends StatelessWidget {
                 height: 16,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFC727)),
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF81D4FA)),
                 ),
               ),
               SizedBox(width: 12),
@@ -115,7 +115,7 @@ class HomePage extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('PDF generated successfully!', style: TextStyle(fontSize: 13)),
-          backgroundColor: Color(0xFFFFC727),
+          backgroundColor: Color(0xFF81D4FA),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -143,7 +143,7 @@ class HomePage extends StatelessWidget {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: Color(0xFFFFC727),
+            color: Color(0xFF81D4FA),
           ),
         ),
         actions: [
@@ -151,7 +151,7 @@ class HomePage extends StatelessWidget {
             onPressed: () => _exportToPDF(context),
             icon: const Icon(Icons.picture_as_pdf, size: 20),
             iconSize: 20,
-            color: const Color(0xFFFFC727),
+            color: const Color(0xFF81D4FA),
             tooltip: 'Export PDF',
           ),
         ],
@@ -178,7 +178,7 @@ class HomePage extends StatelessWidget {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFC727)),
+                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF81D4FA)),
                         ),
                       ),
                     );
@@ -226,7 +226,7 @@ class HomePage extends StatelessWidget {
                                             PieChartSectionData(
                                               value: totalPC.toDouble(),
                                               title: '${((totalPC / (totalPC + totalPeripheral)) * 100).toStringAsFixed(0)}%',
-                                              color: const Color(0xFFFFC727),
+                                              color: const Color(0xFF81D4FA),
                                               radius: 60,
                                               titleStyle: const TextStyle(
                                                 fontSize: 12,
@@ -256,7 +256,7 @@ class HomePage extends StatelessWidget {
                                         child: Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFFFFC727),
+                                            color: const Color(0xFF81D4FA),
                                             borderRadius: BorderRadius.circular(12),
                                           ),
                                           child: const Text(
@@ -274,7 +274,7 @@ class HomePage extends StatelessWidget {
                                 : const Center(
                                     child: Text(
                                       'No devices found',
-                                      style: TextStyle(fontSize: 13, color: Color(0xFFFFC727)),
+                                      style: TextStyle(fontSize: 13, color: Color(0xFF81D4FA)),
                                     ),
                                   ),
                           ),
@@ -287,7 +287,7 @@ class HomePage extends StatelessWidget {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            _buildLegendItem(color: const Color(0xFFFFC727), label: "PCs ($totalPC)"),
+                            _buildLegendItem(color: const Color(0xFF81D4FA), label: "PCs ($totalPC)"),
                             const SizedBox(width: 20),
                             _buildLegendItem(color: Colors.grey[600]!, label: "Peripherals ($totalPeripheral)"),
                           ],
@@ -330,7 +330,7 @@ class HomePage extends StatelessWidget {
                           ? const Center(
                               child: Text(
                                 'No buildings found',
-                                style: TextStyle(fontSize: 13, color: Color(0xFFFFC727)),
+                                style: TextStyle(fontSize: 13, color: Color(0xFF81D4FA)),
                               ),
                             )
                           : Column(
@@ -361,9 +361,9 @@ class HomePage extends StatelessWidget {
                                     getTitlesWidget: (value, _) {
                                       switch (value.toInt()) {
                                         case 0:
-                                          return const Text('PC', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFFFC727)));
+                                          return const Text('PC', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF81D4FA)));
                                         case 1:
-                                          return const Text('Peripheral', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFFFC727)));
+                                          return const Text('Peripheral', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF81D4FA)));
                                         default:
                                           return const Text('');
                                       }
@@ -375,7 +375,7 @@ class HomePage extends StatelessWidget {
                                     showTitles: true,
                                     getTitlesWidget: (value, _) => Text(
                                       value.toInt().toString(),
-                                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFFFFC727)),
+                                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF81D4FA)),
                                     ),
                                   ),
                                 ),
@@ -384,11 +384,11 @@ class HomePage extends StatelessWidget {
                               ),
                               barGroups: [
                                 BarChartGroupData(x: 0, barRods: [
-                                  BarChartRodData(toY: onlinePC.toDouble(), color: const Color(0xFFFFC727), width: 14),
+                                  BarChartRodData(toY: onlinePC.toDouble(), color: const Color(0xFF81D4FA), width: 14),
                                   BarChartRodData(toY: offlinePC.toDouble(), color: Colors.grey[600], width: 14),
                                 ]),
                                 BarChartGroupData(x: 1, barRods: [
-                                  BarChartRodData(toY: onlinePeripheral.toDouble(), color: const Color(0xFFFFC727), width: 14),
+                                  BarChartRodData(toY: onlinePeripheral.toDouble(), color: const Color(0xFF81D4FA), width: 14),
                                   BarChartRodData(toY: offlinePeripheral.toDouble(), color: Colors.grey[600], width: 14),
                                 ]),
                               ],
@@ -407,7 +407,7 @@ class HomePage extends StatelessWidget {
                           Expanded(
                             child: ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFFFC727),
+                                backgroundColor: const Color(0xFF81D4FA),
                                 padding: const EdgeInsets.symmetric(vertical: 12),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 elevation: 2,
@@ -432,7 +432,7 @@ class HomePage extends StatelessWidget {
                               onPressed: () async => await _auth.signOut(),
                               child: const Text(
                                 'Log Out',
-                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFFFFC727)),
+                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF81D4FA)),
                               ),
                             ),
                           ),
@@ -499,7 +499,7 @@ class HomePage extends StatelessWidget {
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: Color(0xFFFFC727),
+            color: Color(0xFF81D4FA),
           ),
         ),
       ],
@@ -528,14 +528,14 @@ class HomePage extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       child: Column(
         children: [
-          Icon(icon, size: 20, color: const Color(0xFFFFC727)),
+          Icon(icon, size: 20, color: const Color(0xFF81D4FA)),
           const SizedBox(height: 8),
           Text(
             label,
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: Color(0xFFFFC727),
+              color: Color(0xFF81D4FA),
             ),
           ),
           const SizedBox(height: 6),
@@ -568,7 +568,7 @@ class HomePage extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFFFFC727),
+                color: Color(0xFF81D4FA),
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -594,7 +594,7 @@ class HomePage extends StatelessWidget {
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: Color(0xFFFFC727),
+            color: Color(0xFF81D4FA),
           ),
         ),
         Text(
@@ -602,7 +602,7 @@ class HomePage extends StatelessWidget {
           style: const TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w500,
-            color: Color(0xFFFFC727),
+            color: Color(0xFF81D4FA),
           ),
         ),
       ],

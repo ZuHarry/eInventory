@@ -439,7 +439,7 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
                 Navigator.pop(context); // Go back to previous screen
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFFC727),
+                backgroundColor: const Color(0xFF81D4FA),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -802,7 +802,7 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
                     child: ElevatedButton(
                       onPressed: (_isUploading || _isDeleting) ? null : updateLocation,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: (_isUploading || _isDeleting) ? Colors.grey : const Color(0xFFFFC727),
+                        backgroundColor: (_isUploading || _isDeleting) ? Colors.grey : const Color(0xFF81D4FA),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -931,7 +931,7 @@ class _ModifyLocationPageState extends State<ModifyLocationPage> {
                   icon: const Icon(Icons.edit, size: 16),
                   label: Text(_selectedNewImage != null ? 'Change' : 'Update Photo'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFC727),
+                    backgroundColor: const Color(0xFF81D4FA),
                     foregroundColor: const Color(0xFF212529),
                   ),
                 ),

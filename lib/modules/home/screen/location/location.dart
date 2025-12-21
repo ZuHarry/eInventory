@@ -173,13 +173,13 @@ class _LocationPageState extends State<LocationPage> {
   Icon _getLocationTypeIcon(String type) {
     switch (type) {
       case 'Lecture Room':
-        return const Icon(Icons.school_outlined, color: Color(0xFFFFC727), size: 20);
+        return const Icon(Icons.school_outlined, color: Color(0xFF81D4FA), size: 20);
       case 'Lab':
-        return const Icon(Icons.science_outlined, color: Color(0xFFFFC727), size: 20);
+        return const Icon(Icons.science_outlined, color: Color(0xFF81D4FA), size: 20);
       case 'Lecturer Office':
-        return const Icon(Icons.person_outline, color: Color(0xFFFFC727), size: 20);
+        return const Icon(Icons.person_outline, color: Color(0xFF81D4FA), size: 20);
       default:
-        return const Icon(Icons.room_outlined, color: Color(0xFFFFC727), size: 20);
+        return const Icon(Icons.room_outlined, color: Color(0xFF81D4FA), size: 20);
     }
   }
 
@@ -293,7 +293,7 @@ class _LocationPageState extends State<LocationPage> {
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFFC727),
+                          backgroundColor: const Color(0xFF81D4FA),
                           padding: const EdgeInsets.symmetric(vertical: 8),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
@@ -344,14 +344,14 @@ class _LocationPageState extends State<LocationPage> {
                           children: [
                             Icon(
                               Icons.add_location_outlined,
-                              color: Color(0xFFFFC727),
+                              color: Color(0xFF81D4FA),
                               size: 16,
                             ),
                             SizedBox(width: 6),
                             Text(
                               'Add Location',
                               style: TextStyle(
-                                color: Color(0xFFFFC727),
+                                color: Color(0xFF81D4FA),
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 fontFamily: 'SansRegular',
@@ -389,7 +389,7 @@ class _LocationPageState extends State<LocationPage> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
                     child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFC727)),
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF81D4FA)),
                     ),
                   );
                 }
@@ -450,7 +450,7 @@ class _LocationPageState extends State<LocationPage> {
                     if (countSnapshot.connectionState == ConnectionState.waiting) {
                       return const Center(
                         child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFC727)),
+                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF81D4FA)),
                         ),
                       );
                     }
@@ -523,7 +523,7 @@ class _LocationPageState extends State<LocationPage> {
                                     Container(
                                       padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFFFC727).withOpacity(0.1),
+                                        color: const Color(0xFF81D4FA).withOpacity(0.1),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: _getLocationTypeIcon(type),
@@ -539,7 +539,7 @@ class _LocationPageState extends State<LocationPage> {
                                               fontFamily: 'SansRegular',
                                               fontWeight: FontWeight.w600,
                                               fontSize: 16,
-                                              color: Color(0xFFFFC727),
+                                              color: Color(0xFF81D4FA),
                                             ),
                                           ),
                                           const SizedBox(height: 6),
@@ -567,7 +567,7 @@ class _LocationPageState extends State<LocationPage> {
                                     Container(
                                       padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFFFC727).withOpacity(0.1),
+                                        color: const Color(0xFF81D4FA).withOpacity(0.1),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Column(
@@ -576,7 +576,7 @@ class _LocationPageState extends State<LocationPage> {
                                             '$totalDevices',
                                             style: const TextStyle(
                                               fontFamily: 'SansRegular',
-                                              color: Color(0xFFFFC727),
+                                              color: Color(0xFF81D4FA),
                                               fontSize: 16,
                                               fontWeight: FontWeight.w600,
                                             ),
@@ -585,7 +585,7 @@ class _LocationPageState extends State<LocationPage> {
                                             'Devices',
                                             style: TextStyle(
                                               fontFamily: 'SansRegular',
-                                              color: Color(0xFFFFC727),
+                                              color: Color(0xFF81D4FA),
                                               fontSize: 9,
                                             ),
                                           ),
@@ -659,14 +659,14 @@ class _LocationPageState extends State<LocationPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFC727).withOpacity(0.15),
+        color: const Color(0xFF81D4FA).withOpacity(0.15),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
         text,
         style: const TextStyle(
           fontFamily: 'SansRegular',
-          color: Color(0xFFFFC727),
+          color: Color(0xFF81D4FA),
           fontSize: 10,
           fontWeight: FontWeight.w500,
         ),
