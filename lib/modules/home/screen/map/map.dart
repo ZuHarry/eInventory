@@ -6,6 +6,10 @@ import 'package:einventorycomputer/modules/home/screen/devices/device_details.da
 import 'package:geolocator/geolocator.dart';
 
 class MapPage extends StatefulWidget {
+  final String userId;
+
+  const MapPage({Key? key, required this.userId}) : super(key: key);  // ← Add this
+
   @override
   _MapPageState createState() => _MapPageState();
 }
@@ -18,6 +22,10 @@ class _MapPageState extends State<MapPage> {
   LatLng? _currentLocation;
   bool _isTrackingLocation = false;
   Map<String, LatLng> _locationCoordinates = {};
+
+  String? _userDepartment;
+  String? _currentUserId;
+  
   
   // Default center (Seremban, Malaysia)
   final LatLng _defaultCenter = LatLng(2.7297, 101.9381);
@@ -26,7 +34,10 @@ class _MapPageState extends State<MapPage> {
   @override
   void initState() {
     super.initState();
+    _currentUserId = widget.userId;  // Initialize here
+    _getCurrentUserDepartment().then((_) {
     _loadDevicesWithLocation();
+  });
     _checkLocationPermission();
   }
 
@@ -56,6 +67,35 @@ class _MapPageState extends State<MapPage> {
 
     _getCurrentLocation();
   }
+
+  Future<void> _getCurrentUserDepartment() async {
+  try {
+    // Get current user ID (you'll need to pass this from your auth system)
+    // For example, if you're using Firebase Auth:
+    // final userId = FirebaseAuth.instance.currentUser?.uid;
+    
+    // For now, get it from wherever you store the current user
+    // You might need to pass this as a parameter to MapPage
+    if (_currentUserId == null) {
+      print('⚠ No user ID available');
+      return;
+    }
+    
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(_currentUserId)
+        .get();
+    
+    if (userDoc.exists) {
+      setState(() {
+        _userDepartment = userDoc.data()?['department'] as String?;
+      });
+      print('✓ User department: $_userDepartment');
+    }
+  } catch (e) {
+    print('Error getting user department: $e');
+  }
+}
 
     String _calculateDistance(LatLng deviceLocation) {
     if (_currentLocation == null) return '';
@@ -307,187 +347,225 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<void> _loadDevicesWithLocation() async {
-    if (!mounted) return;
-    
-    setState(() {
-      _isLoading = true;
-    });
+  if (!mounted) return;
+  
+  setState(() {
+    _isLoading = true;
+  });
 
-    try {
-      final buildingsSnapshot = await FirebaseFirestore.instance
-          .collection('buildings')
-          .get();
-
-      Map<String, LatLng> locationCoordinates = {};
-      Map<String, String> locationToBuilding = {};
-
-      for (var buildingDoc in buildingsSnapshot.docs) {
-        final buildingName = buildingDoc.data()['name'] as String?;
-        
-        final locationsSnapshot = await FirebaseFirestore.instance
-            .collection('buildings')
-            .doc(buildingDoc.id)
-            .collection('locations')
-            .get();
-
-        for (var locationDoc in locationsSnapshot.docs) {
-          final data = locationDoc.data();
-
-          print('=== Processing location document ===');
-          print('Raw data: $data');
-
-          final latitudeRaw = data['latitude'];
-          final longitudeRaw = data['longitude'];
-
-          print('Latitude raw: $latitudeRaw (type: ${latitudeRaw.runtimeType})');
-          print('Longitude raw: $longitudeRaw (type: ${longitudeRaw.runtimeType})');
-
-          final latitude = latitudeRaw is double 
-              ? latitudeRaw 
-              : (latitudeRaw is String ? double.tryParse(latitudeRaw) : null);
-              
-          final longitude = longitudeRaw is double 
-              ? longitudeRaw 
-              : (longitudeRaw is String ? double.tryParse(longitudeRaw) : null);
-
-          print('Latitude parsed: $latitude');
-          print('Longitude parsed: $longitude');
-
-          final locationName = data['name'] as String?;
-
-          print('Location name: $locationName');
-
-          if (latitude != null && longitude != null && locationName != null) {
-            final coords = LatLng(latitude, longitude);
-            
-            // Store with exact name
-            locationCoordinates[locationName] = coords;
-            print('✓ Successfully added location: $locationName at ($latitude, $longitude)');
-            
-            // Store with building prefix
-            if (buildingName != null) {
-              final fullLocation = '$buildingName - $locationName';
-              locationCoordinates[fullLocation] = coords;
-              locationToBuilding[locationName] = buildingName;
-            }
-            
-            // Store lowercase versions for flexible matching
-            locationCoordinates[locationName.toLowerCase()] = coords;
-            if (buildingName != null) {
-              final fullLocation = '$buildingName - $locationName';
-              locationCoordinates[fullLocation.toLowerCase()] = coords;
-            }
-          }
-        }
-      }
-
-      print('Total locations loaded: ${locationCoordinates.length}');
-
-      final querySnapshot = await FirebaseFirestore.instance
-          .collection('devices')
-          .get();
-
-      List<Map<String, dynamic>> devicesWithLoc = [];
-
-      for (var doc in querySnapshot.docs) {
-        final data = doc.data();
-        final location = data['location'] as String?;
-        
-        if (location != null && location.isNotEmpty && location != 'Not specified') {
-          LatLng? coords;
-          
-          // Try exact match
-          coords = locationCoordinates[location];
-          
-          // Try lowercase match
-          if (coords == null) {
-            coords = locationCoordinates[location.toLowerCase()];
-          }
-          
-          // Try with building prefix
-          if (coords == null && locationToBuilding.containsKey(location)) {
-            final buildingName = locationToBuilding[location];
-            coords = locationCoordinates['$buildingName - $location'];
-          }
-          
-          // Try splitting if it contains ' - '
-          if (coords == null && location.contains(' - ')) {
-            final parts = location.split(' - ');
-            if (parts.length == 2) {
-              coords = locationCoordinates[parts[1].trim()];
-            }
-          }
-          
-          if (coords != null) {
-            devicesWithLoc.add({
-              'id': doc.id,
-              'name': data['name'] ?? 'Unknown',
-              'location': location,
-              'category': data['category'] ?? 'Other',
-              'status': data['status'] ?? 'Unknown',
-              'model': data['model'] ?? '',
-              'serialNumber': data['serialNumber'] ?? '',
-              'coordinates': coords,
-              ...data,
-            });
-            print('✓ Device "${data['name']}" added with location: $location at ${coords.latitude}, ${coords.longitude}');
-          } else {
-            print('⚠ Warning: No coordinates found for device "${data['name']}" at location: $location');
-          }
-        }
-      }
-
-      print('\n=== FINAL SUMMARY ===');
-      print('Total locations loaded: ${locationCoordinates.length}');
-      print('Total devices with valid locations: ${devicesWithLoc.length}');
-      print('\nAll location coordinates:');
-      locationCoordinates.forEach((name, coords) {
-        print('  $name: ${coords.latitude}, ${coords.longitude}');
-      });
-      print('\nAll devices with locations:');
-      for (var device in devicesWithLoc) {
-        final coords = device['coordinates'] as LatLng;
-        print('  Device: ${device['name']} | Location: ${device['location']} | Coords: ${coords.latitude}, ${coords.longitude}');
-      }
-
-      if (!mounted) return;
-
+  try {
+    // If no department, show nothing or all (based on your requirements)
+    if (_userDepartment == null || _userDepartment!.isEmpty) {
+      print('⚠ No department set for user');
       setState(() {
-        _devicesWithLocation = devicesWithLoc;
-        _locationCoordinates = locationCoordinates;
         _isLoading = false;
       });
+      return;
+    }
 
-      // Force map to update by moving to first device location after a delay
-      if (devicesWithLoc.isNotEmpty) {
-        await Future.delayed(const Duration(milliseconds: 300));
-        if (mounted) {
-          final firstDevice = devicesWithLoc.first;
-          final coords = firstDevice['coordinates'] as LatLng;
-          _mapController.move(coords, _defaultZoom);
-        }
-      }
-      
-    } catch (e) {
-      print('Error loading devices: $e');
-      print('Stack trace: ${StackTrace.current}');
-      
+    // Query buildings filtered by department
+    final buildingsSnapshot = await FirebaseFirestore.instance
+        .collection('buildings')
+        .where('name', isEqualTo: _userDepartment)
+        .get();
+
+    print('Found ${buildingsSnapshot.docs.length} buildings for department $_userDepartment');
+
+    // Check if no buildings found
+    if (buildingsSnapshot.docs.isEmpty) {
+      print('⚠ No buildings found for department: $_userDepartment');
       if (!mounted) return;
-      
       setState(() {
+        _devicesWithLocation = [];
+        _locationCoordinates = {};
         _isLoading = false;
       });
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error loading devices: $e'),
-          backgroundColor: const Color(0xFFDC3545),
+          content: Text('No locations found for your department: $_userDepartment'),
+          backgroundColor: const Color(0xFFFFC107),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       );
+      return;
     }
+
+    Map<String, LatLng> locationCoordinates = {};
+    Map<String, String> locationToBuilding = {};
+
+    for (var buildingDoc in buildingsSnapshot.docs) {
+      final buildingData = buildingDoc.data();
+      final buildingName = buildingData['name'] as String?;
+      
+      print('Processing building: $buildingName');
+      
+      final locationsSnapshot = await FirebaseFirestore.instance
+          .collection('buildings')
+          .doc(buildingDoc.id)
+          .collection('locations')
+          .get();
+
+      for (var locationDoc in locationsSnapshot.docs) {
+        final data = locationDoc.data();
+
+        print('=== Processing location document ===');
+        print('Raw data: $data');
+
+        final latitudeRaw = data['latitude'];
+        final longitudeRaw = data['longitude'];
+
+        print('Latitude raw: $latitudeRaw (type: ${latitudeRaw.runtimeType})');
+        print('Longitude raw: $longitudeRaw (type: ${longitudeRaw.runtimeType})');
+
+        final latitude = latitudeRaw is double 
+            ? latitudeRaw 
+            : (latitudeRaw is String ? double.tryParse(latitudeRaw) : null);
+            
+        final longitude = longitudeRaw is double 
+            ? longitudeRaw 
+            : (longitudeRaw is String ? double.tryParse(longitudeRaw) : null);
+
+        print('Latitude parsed: $latitude');
+        print('Longitude parsed: $longitude');
+
+        final locationName = data['name'] as String?;
+
+        print('Location name: $locationName');
+
+        if (latitude != null && longitude != null && locationName != null) {
+          final coords = LatLng(latitude, longitude);
+          
+          // Store with exact name
+          locationCoordinates[locationName] = coords;
+          print('✓ Successfully added location: $locationName at ($latitude, $longitude)');
+          
+          // Store with building prefix
+          if (buildingName != null) {
+            final fullLocation = '$buildingName - $locationName';
+            locationCoordinates[fullLocation] = coords;
+            locationToBuilding[locationName] = buildingName;
+          }
+          
+          // Store lowercase versions for flexible matching
+          locationCoordinates[locationName.toLowerCase()] = coords;
+          if (buildingName != null) {
+            final fullLocation = '$buildingName - $locationName';
+            locationCoordinates[fullLocation.toLowerCase()] = coords;
+          }
+        }
+      }
+    }
+
+    print('Total locations loaded for $_userDepartment: ${locationCoordinates.length}');
+
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('devices')
+        .get();
+
+    List<Map<String, dynamic>> devicesWithLoc = [];
+
+    for (var doc in querySnapshot.docs) {
+      final data = doc.data();
+      final location = data['location'] as String?;
+      
+      if (location != null && location.isNotEmpty && location != 'Not specified') {
+        LatLng? coords;
+        
+        // Try exact match
+        coords = locationCoordinates[location];
+        
+        // Try lowercase match
+        if (coords == null) {
+          coords = locationCoordinates[location.toLowerCase()];
+        }
+        
+        // Try with building prefix
+        if (coords == null && locationToBuilding.containsKey(location)) {
+          final buildingName = locationToBuilding[location];
+          coords = locationCoordinates['$buildingName - $location'];
+        }
+        
+        // Try splitting if it contains ' - '
+        if (coords == null && location.contains(' - ')) {
+          final parts = location.split(' - ');
+          if (parts.length == 2) {
+            coords = locationCoordinates[parts[1].trim()];
+          }
+        }
+        
+        if (coords != null) {
+          devicesWithLoc.add({
+            'id': doc.id,
+            'name': data['name'] ?? 'Unknown',
+            'location': location,
+            'category': data['category'] ?? 'Other',
+            'status': data['status'] ?? 'Unknown',
+            'model': data['model'] ?? '',
+            'serialNumber': data['serialNumber'] ?? '',
+            'coordinates': coords,
+            ...data,
+          });
+          print('✓ Device "${data['name']}" added with location: $location at ${coords.latitude}, ${coords.longitude}');
+        } else {
+          print('⚠ Warning: No coordinates found for device "${data['name']}" at location: $location');
+        }
+      }
+    }
+
+    print('\n=== FINAL SUMMARY ===');
+    print('User Department: $_userDepartment');
+    print('Total locations loaded: ${locationCoordinates.length}');
+    print('Total devices with valid locations: ${devicesWithLoc.length}');
+    print('\nAll location coordinates:');
+    locationCoordinates.forEach((name, coords) {
+      print('  $name: ${coords.latitude}, ${coords.longitude}');
+    });
+    print('\nAll devices with locations:');
+    for (var device in devicesWithLoc) {
+      final coords = device['coordinates'] as LatLng;
+      print('  Device: ${device['name']} | Location: ${device['location']} | Coords: ${coords.latitude}, ${coords.longitude}');
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      _devicesWithLocation = devicesWithLoc;
+      _locationCoordinates = locationCoordinates;
+      _isLoading = false;
+    });
+
+    // Force map to update by moving to first device location after a delay
+    if (devicesWithLoc.isNotEmpty) {
+      await Future.delayed(const Duration(milliseconds: 300));
+      if (mounted) {
+        final firstDevice = devicesWithLoc.first;
+        final coords = firstDevice['coordinates'] as LatLng;
+        _mapController.move(coords, _defaultZoom);
+      }
+    }
+    
+  } catch (e) {
+    print('Error loading devices: $e');
+    print('Stack trace: ${StackTrace.current}');
+    
+    if (!mounted) return;
+    
+    setState(() {
+      _isLoading = false;
+    });
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error loading devices: $e'),
+        backgroundColor: const Color(0xFFDC3545),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
   }
+}
 
   List<Marker> _buildMarkers() {
     List<Marker> markers = [];

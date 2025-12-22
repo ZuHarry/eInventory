@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'add_location.dart';
 import 'location_details.dart';
@@ -14,12 +15,14 @@ class LocationPage extends StatefulWidget {
 
 class _LocationPageState extends State<LocationPage> {
   String _searchQuery = '';
-  String _selectedBuilding = 'All';
   String _selectedFloor = 'All';
   String _selectedType = 'All';
   String _selectedSort = 'Total Devices (High-Low)';
+  
+  String? _userDepartment;
+  String? _userBuildingId;
+  bool _isLoadingUserData = true;
 
-  List<String> _buildings = ['All'];
   final List<String> _floors = ['All', 'Ground Floor', '1st Floor', '2nd Floor', '3rd Floor'];
   final List<String> _types = ['All', 'Lecture Room', 'Lab', 'Lecturer Office', 'Other'];
   final List<String> _sortOptions = [
@@ -29,65 +32,76 @@ class _LocationPageState extends State<LocationPage> {
     'Name (A-Z)',
   ];
 
-  Map<String, String> _buildingNameToIdMap = {}; // Map building names to their IDs
-
   @override
   void initState() {
     super.initState();
-    _fetchBuildingNames();
+    _loadUserDepartment();
   }
 
-  Stream<List<QueryDocumentSnapshot>> _getAllLocationsStream() async* {
-    final db = FirebaseFirestore.instance;
-    
+  Future<void> _loadUserDepartment() async {
     try {
-      final buildingsSnapshot = await db.collection('buildings').get();
-      
-      List<Stream<QuerySnapshot>> locationStreams = [];
-      
-      for (var buildingDoc in buildingsSnapshot.docs) {
-        locationStreams.add(
-          buildingDoc.reference.collection('locations').snapshots()
-        );
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        
+        if (userDoc.exists) {
+          final userData = userDoc.data();
+          final department = userData?['department'] as String?;
+          
+          if (department != null && department.isNotEmpty) {
+            // Find the building that matches the user's department
+            final buildingsSnapshot = await FirebaseFirestore.instance
+                .collection('buildings')
+                .where('name', isEqualTo: department)
+                .get();
+            
+            if (buildingsSnapshot.docs.isNotEmpty) {
+              setState(() {
+                _userDepartment = department;
+                _userBuildingId = buildingsSnapshot.docs.first.id;
+                _isLoadingUserData = false;
+              });
+            } else {
+              setState(() {
+                _isLoadingUserData = false;
+              });
+            }
+          } else {
+            setState(() {
+              _isLoadingUserData = false;
+            });
+          }
+        }
       }
-      
-      if (locationStreams.isEmpty) {
-        yield [];
-        return;
-      }
-      
-      yield* CombineLatestStream.list(locationStreams)
-        .map((snapshots) => snapshots
-            .cast<QuerySnapshot>()
-            .expand((snapshot) => snapshot.docs)
-            .toList());
     } catch (e) {
-      print('Error fetching locations: $e');
-      yield [];
+      print('Error loading user department: $e');
+      setState(() {
+        _isLoadingUserData = false;
+      });
     }
   }
 
-  Future<void> _fetchBuildingNames() async {
+  Stream<List<QueryDocumentSnapshot>> _getDepartmentLocationsStream() async* {
+    if (_userBuildingId == null) {
+      yield [];
+      return;
+    }
+
     try {
-      final snapshot = await FirebaseFirestore.instance.collection('buildings').get();
-      final buildingNames = <String>['All'];
-      final nameToIdMap = <String, String>{};
+      final db = FirebaseFirestore.instance;
       
-      for (var doc in snapshot.docs) {
-        final data = doc.data();
-        final name = data['name'] as String?;
-        if (name != null && name.isNotEmpty) {
-          buildingNames.add(name);
-          nameToIdMap[name] = doc.id; // Store the mapping
-        }
-      }
-      
-      setState(() {
-        _buildings = buildingNames;
-        _buildingNameToIdMap = nameToIdMap;
-      });
+      yield* db
+          .collection('buildings')
+          .doc(_userBuildingId)
+          .collection('locations')
+          .snapshots()
+          .map((snapshot) => snapshot.docs);
     } catch (e) {
-      print('Error fetching building names: $e');
+      print('Error fetching locations: $e');
+      yield [];
     }
   }
 
@@ -185,6 +199,54 @@ class _LocationPageState extends State<LocationPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoadingUserData) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF8F9FA),
+        body: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF81D4FA)),
+          ),
+        ),
+      );
+    }
+
+    if (_userDepartment == null || _userBuildingId == null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8F9FA),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                size: 64,
+                color: Colors.orange[400],
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'No Department Assigned',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  color: Color(0xFF212529),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Please contact your administrator',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  color: Color(0xFF6C757D),
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
@@ -192,11 +254,41 @@ class _LocationPageState extends State<LocationPage> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Color(0xFF212529)),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(210),
+          preferredSize: const Size.fromHeight(190),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 5, 20, 10),
             child: Column(
               children: [
+                // Department Badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF81D4FA).withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.business_outlined,
+                        color: Color(0xFF81D4FA),
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _userDepartment!,
+                        style: const TextStyle(
+                          fontFamily: 'SansRegular',
+                          color: Color(0xFF81D4FA),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                // Search Bar
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -234,18 +326,9 @@ class _LocationPageState extends State<LocationPage> {
                   ),
                 ),
                 const SizedBox(height: 10),
+                // Filters (Floor and Type only)
                 Row(
                   children: [
-                    Expanded(
-                      child: _buildFilterDropdown(
-                        Icons.business_outlined,
-                        'Building',
-                        _selectedBuilding,
-                        _buildings,
-                        (value) => setState(() => _selectedBuilding = value!),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
                     Expanded(
                       child: _buildFilterDropdown(
                         Icons.layers_outlined,
@@ -265,15 +348,11 @@ class _LocationPageState extends State<LocationPage> {
                         (value) => setState(() => _selectedType = value!),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
+                    const SizedBox(width: 8),
                     Expanded(
                       child: _buildFilterDropdown(
                         Icons.sort_outlined,
-                        'Sort by',
+                        'Sort',
                         _selectedSort,
                         _sortOptions,
                         (value) => setState(() => _selectedSort = value!),
@@ -282,6 +361,7 @@ class _LocationPageState extends State<LocationPage> {
                   ],
                 ),
                 const SizedBox(height: 10),
+                // Action Buttons
                 Row(
                   children: [
                     Expanded(
@@ -372,7 +452,7 @@ class _LocationPageState extends State<LocationPage> {
         children: [
           Expanded(
             child: StreamBuilder<List<QueryDocumentSnapshot>>(
-              stream: _getAllLocationsStream(),
+              stream: _getDepartmentLocationsStream(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return const Center(
@@ -407,16 +487,14 @@ class _LocationPageState extends State<LocationPage> {
                 final filteredDocs = allDocs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
                   final name = data['name']?.toString().toLowerCase() ?? '';
-                  final building = data['building'] ?? '';
                   final floor = data['floor'] ?? '';
                   final type = data['type'] ?? '';
 
                   final matchesSearch = name.contains(_searchQuery.toLowerCase());
-                  final matchesBuilding = _selectedBuilding == 'All' || building == _selectedBuilding;
                   final matchesFloor = _selectedFloor == 'All' || floor == _selectedFloor;
                   final matchesType = _selectedType == 'All' || type == _selectedType;
 
-                  return matchesSearch && matchesBuilding && matchesFloor && matchesType;
+                  return matchesSearch && matchesFloor && matchesType;
                 }).toList();
 
                 if (filteredDocs.isEmpty) {
@@ -476,16 +554,12 @@ class _LocationPageState extends State<LocationPage> {
                       itemBuilder: (context, index) {
                         final data = sortedDocs[index].data() as Map<String, dynamic>;
                         final locationName = data['name'] ?? 'Unknown';
-                        final building = data['building'] ?? '';
                         final floor = data['floor'] ?? '';
                         final type = data['type'] ?? '';
 
                         final pcCount = deviceCounts[locationName]?['PC'] ?? 0;
                         final peripheralCount = deviceCounts[locationName]?['Peripheral'] ?? 0;
                         final totalDevices = pcCount + peripheralCount;
-
-                        // Get buildingId from the map
-                        final buildingId = _buildingNameToIdMap[building] ?? '';
 
                         return Container(
                           margin: const EdgeInsets.only(bottom: 8),
@@ -509,7 +583,7 @@ class _LocationPageState extends State<LocationPage> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (_) => LocationDetailsPage(
-                                      buildingId: buildingId,
+                                      buildingId: _userBuildingId!,
                                       locationId: sortedDocs[index].id,
                                       locationName: locationName,
                                     ),
@@ -547,7 +621,6 @@ class _LocationPageState extends State<LocationPage> {
                                             spacing: 6,
                                             runSpacing: 4,
                                             children: [
-                                              _buildInfoChip(building),
                                               _buildInfoChip(floor),
                                               _buildInfoChip(type),
                                             ],

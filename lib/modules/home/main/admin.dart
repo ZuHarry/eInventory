@@ -26,6 +26,7 @@ class _AdminScreenState extends State<AdminScreen> {
   String? _username;
   String? _profileImageUrl;
   String? _staffType;  // ADD THIS
+  String? _department;  // ADD THIS alongside _staffType
 
   final List<String> _titles = [
     "Home",
@@ -63,7 +64,8 @@ class _AdminScreenState extends State<AdminScreen> {
         setState(() {
           _username = data?['username'] ?? 'User';
           _profileImageUrl = data?['profileImageUrl'];
-          _staffType = data?['staffType'];  // ADD THIS
+          _staffType = data?['staffType'];
+          _department = data?['department'];  // ADD THIS
         });
       }
     } catch (e) {
@@ -114,6 +116,8 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   Widget _getCurrentPage() {
+      final user = FirebaseAuth.instance.currentUser;
+
   switch (_selectedIndex) {
     case 0:
       return HomePage();
@@ -126,7 +130,7 @@ class _AdminScreenState extends State<AdminScreen> {
     case 4:
       return TriviaPage();
     case 5:
-      return MapPage();
+      return MapPage(userId: user?.uid ?? '');
     case 6:
       return SettingsPage();
     case 7:
@@ -204,6 +208,15 @@ class _AdminScreenState extends State<AdminScreen> {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
+                    if (_department != null)  // ADD THIS
+                      Text(
+                        _department!,
+                        style: const TextStyle(
+                          fontFamily: 'SansRegular',
+                          fontSize: 11,
+                          color: Color(0xFFADB5BD),
+                        ),
+                      ),
                     Text(
                       FirebaseAuth.instance.currentUser?.email ?? '',
                       style: const TextStyle(

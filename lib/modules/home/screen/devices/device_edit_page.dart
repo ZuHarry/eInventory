@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../location/choose_location.dart'; // your custom location selector
-import '../../main/screen.dart'; // your home screen
+import '../../main/staff.dart'; // your home screen
 import '../devices/choose_brand.dart';
 import '../devices/choose_model.dart';
 

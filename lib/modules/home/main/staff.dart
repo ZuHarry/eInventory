@@ -23,6 +23,8 @@ class _ScreenPageState extends State<ScreenPage> {
   int _selectedIndex = 0;
   String? _username;
   String? _profileImageUrl;
+  String? _staffType;  // ADD THIS
+  String? _department;  // ADD THIS alongside _staffType
 
   final List<String> _titles = [
     "Home",
@@ -58,6 +60,8 @@ class _ScreenPageState extends State<ScreenPage> {
           setState(() {
             _username = data?['username'] ?? 'User';
             _profileImageUrl = data?['profileImageUrl'];
+            _staffType = data?['staffType'];
+          _department = data?['department'];  // ADD THIS
           });
         }
       } catch (e) {
@@ -187,6 +191,24 @@ class _ScreenPageState extends State<ScreenPage> {
                         color: Color(0xFF81D4FA),
                       ),
                     ),
+                    Text(
+                      _staffType ?? 'Staff',  // ADD THIS
+                      style: const TextStyle(
+                        fontFamily: 'SansRegular',
+                        fontSize: 12,
+                        color: Color(0xFFADB5BD),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    if (_department != null)  // ADD THIS
+                      Text(
+                        _department!,
+                        style: const TextStyle(
+                          fontFamily: 'SansRegular',
+                          fontSize: 11,
+                          color: Color(0xFFADB5BD),
+                        ),
+                      ),
                     Text(
                       FirebaseAuth.instance.currentUser?.email ?? '',
                       style: const TextStyle(

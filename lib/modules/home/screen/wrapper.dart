@@ -1,7 +1,7 @@
 import 'package:einventorycomputer/models/user.dart';
 import 'package:einventorycomputer/modules/authentication/authenticate.dart';
 import 'package:einventorycomputer/modules/authentication/verify_email.dart';
-import 'package:einventorycomputer/modules/home/main/screen.dart';
+import 'package:einventorycomputer/modules/home/main/staff.dart';
 import 'package:einventorycomputer/modules/home/main/admin.dart'; // Add admin screen import
 import 'package:einventorycomputer/modules/home/screen/splash_screen.dart';
 import 'package:einventorycomputer/services/ping.dart';
