@@ -4,14 +4,13 @@ import 'add_model_page.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../discover/discover_page.dart';
-import 'package:firebase_auth/firebase_auth.dart';  // ADD THIS
 
-class TriviaPage extends StatefulWidget {
+class TriviaAdminPage extends StatefulWidget {
   @override
-  _TriviaPageState createState() => _TriviaPageState();
+  _TriviaAdminPageState createState() => _TriviaAdminPageState();
 }
 
-class _TriviaPageState extends State<TriviaPage> {
+class _TriviaAdminPageState extends State<TriviaAdminPage> {
   String _selectedCategory = 'All';
   final List<String> _categories = [
     'Discover',
@@ -24,11 +23,6 @@ class _TriviaPageState extends State<TriviaPage> {
     'Buildings',
     'Users'
   ];
-
-  // ADD THESE THREE LINES:
-  String? _userDepartment;
-  String? _userBuildingId;
-  bool _isLoadingUserData = true;
 
   @override
   Widget build(BuildContext context) {
@@ -697,8 +691,6 @@ class _FilteredDevicesPageState extends State<FilteredDevicesPage> {
     super.initState();
     _filterDataFuture = _getFilterCriteria();
   }
-
-  
 
   Future<Map<String, dynamic>> _getFilterCriteria() async {
     if (widget.category == 'Buildings') {

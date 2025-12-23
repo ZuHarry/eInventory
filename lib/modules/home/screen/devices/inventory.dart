@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:einventorycomputer/modules/home/screen/devices/device_details.dart';
 
 class InventoryPage extends StatefulWidget {
@@ -15,13 +16,66 @@ class _InventoryPageState extends State<InventoryPage> {
   String _selectedFloor = 'All';
   String _selectedBuilding = 'All';
   String _selectedStatus = 'All';
-  List<String> _buildingOptions = ['All']; // Dynamic building list
+  List<String> _buildingOptions = ['All'];
   bool _isBuildingDataLoaded = false;
+  
+  // Add user department tracking
+  String? _userDepartment;
+  String? _userBuildingId;
+  bool _isLoadingUserData = true;
 
   @override
   void initState() {
     super.initState();
+    _loadUserDepartment();
     _loadBuildingOptions();
+  }
+
+  // Load user's department
+  Future<void> _loadUserDepartment() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        
+        if (userDoc.exists) {
+          final userData = userDoc.data();
+          final department = userData?['department'] as String?;
+          
+          if (department != null && department.isNotEmpty) {
+            // Find the building that matches the user's department
+            final buildingsSnapshot = await FirebaseFirestore.instance
+                .collection('buildings')
+                .where('name', isEqualTo: department)
+                .get();
+            
+            if (buildingsSnapshot.docs.isNotEmpty) {
+              setState(() {
+                _userDepartment = department;
+                _userBuildingId = buildingsSnapshot.docs.first.id;
+                _isLoadingUserData = false;
+              });
+            } else {
+              setState(() {
+                _isLoadingUserData = false;
+              });
+            }
+          } else {
+            setState(() {
+              _isLoadingUserData = false;
+            });
+          }
+        }
+      }
+    } catch (e) {
+      print('Error loading user department: $e');
+      setState(() {
+        _isLoadingUserData = false;
+      });
+    }
   }
 
   // Load building names from Firestore
@@ -45,7 +99,7 @@ class _InventoryPageState extends State<InventoryPage> {
     } catch (e) {
       print('Error loading building options: $e');
       setState(() {
-        _buildingOptions = ['All']; // Fallback to default
+        _buildingOptions = ['All'];
         _isBuildingDataLoaded = true;
       });
     }
@@ -69,46 +123,130 @@ class _InventoryPageState extends State<InventoryPage> {
   }
 
   Future<Map<String, Map<String, String>>> _fetchLocationInfoMap() async {
-  final map = <String, Map<String, String>>{};
+    final map = <String, Map<String, String>>{};
 
-  try {
-    // Get all buildings
-    final buildingsSnapshot = await FirebaseFirestore.instance
-        .collection('buildings')
-        .get();
+    try {
+      // If user has a department, only fetch locations from their building
+      if (_userBuildingId != null) {
+        final buildingDoc = await FirebaseFirestore.instance
+            .collection('buildings')
+            .doc(_userBuildingId)
+            .get();
+        
+        if (buildingDoc.exists) {
+          final buildingData = buildingDoc.data();
+          final buildingName = buildingData?['name'] ?? 'Unknown';
 
-    // For each building, get its locations subcollection
-    for (var buildingDoc in buildingsSnapshot.docs) {
-      final buildingData = buildingDoc.data();
-      final buildingName = buildingData['name'] ?? 'Unknown';
+          // Get locations subcollection
+          final locationsSnapshot = await buildingDoc.reference
+              .collection('locations')
+              .get();
 
-      // Get locations subcollection
-      final locationsSnapshot = await buildingDoc.reference
-          .collection('locations')
-          .get();
+          for (var locationDoc in locationsSnapshot.docs) {
+            final locationData = locationDoc.data();
+            final locationName = locationData['name'];
+            final floor = locationData['floor'];
 
-      for (var locationDoc in locationsSnapshot.docs) {
-        final locationData = locationDoc.data();
-        final locationName = locationData['name'];
-        final floor = locationData['floor'];
+            if (locationName != null) {
+              map[locationName] = {
+                'floor': floor ?? 'Unknown',
+                'building': buildingName,
+              };
+            }
+          }
+        }
+      } else {
+        // Fallback: Get all buildings if no department assigned
+        final buildingsSnapshot = await FirebaseFirestore.instance
+            .collection('buildings')
+            .get();
 
-        if (locationName != null) {
-          map[locationName] = {
-            'floor': floor ?? 'Unknown',
-            'building': buildingName,
-          };
+        for (var buildingDoc in buildingsSnapshot.docs) {
+          final buildingData = buildingDoc.data();
+          final buildingName = buildingData['name'] ?? 'Unknown';
+
+          final locationsSnapshot = await buildingDoc.reference
+              .collection('locations')
+              .get();
+
+          for (var locationDoc in locationsSnapshot.docs) {
+            final locationData = locationDoc.data();
+            final locationName = locationData['name'];
+            final floor = locationData['floor'];
+
+            if (locationName != null) {
+              map[locationName] = {
+                'floor': floor ?? 'Unknown',
+                'building': buildingName,
+              };
+            }
+          }
         }
       }
+    } catch (e) {
+      print('Error fetching location info map: $e');
     }
-  } catch (e) {
-    print('Error fetching location info map: $e');
-  }
 
-  return map;
-}
+    return map;
+  }
 
   @override
   Widget build(BuildContext context) {
+    // Show loading while user data is being fetched
+    if (_isLoadingUserData) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF8F9FA),
+        body: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF81D4FA)),
+          ),
+        ),
+      );
+    }
+
+    // Show warning if no department assigned
+    if (_userDepartment == null || _userBuildingId == null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8F9FA),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          iconTheme: const IconThemeData(color: Color(0xFF212529)),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                size: 64,
+                color: Colors.orange[400],
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'No Department Assigned',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  color: Color(0xFF212529),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Please contact your administrator',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  color: Color(0xFF6C757D),
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
@@ -116,12 +254,41 @@ class _InventoryPageState extends State<InventoryPage> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Color(0xFF212529)),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(100),
+          preferredSize: const Size.fromHeight(140),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
             child: Column(
               children: [
-                // Search Bar - Made more compact
+                // Department Badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF81D4FA).withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.business_outlined,
+                        color: Color(0xFF81D4FA),
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _userDepartment!,
+                        style: const TextStyle(
+                          fontFamily: 'SansRegular',
+                          color: Color(0xFF81D4FA),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Search Bar
                 Container(
                   height: 40,
                   decoration: BoxDecoration(
@@ -160,7 +327,7 @@ class _InventoryPageState extends State<InventoryPage> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                // First Row - Type, Floor, Building Filters
+                // First Row - Type, Floor Filters
                 Row(
                   children: [
                     // Type Filter
@@ -256,72 +423,8 @@ class _InventoryPageState extends State<InventoryPage> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    // Building Filter - Now Dynamic
+                    // Status Filter
                     Expanded(
-                      child: Container(
-                        height: 32,
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 4,
-                              offset: const Offset(0, 1),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.business_outlined, size: 14, color: Color(0xFF6C757D)),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: _isBuildingDataLoaded 
-                                ? DropdownButton<String>(
-                                    value: _selectedBuilding,
-                                    dropdownColor: Colors.white,
-                                    underline: const SizedBox(),
-                                    isExpanded: true,
-                                    isDense: true,
-                                    style: const TextStyle(
-                                      color: Color(0xFF212529),
-                                      fontFamily: 'SansRegular',
-                                      fontSize: 12,
-                                    ),
-                                    items: _buildingOptions.map((building) {
-                                      return DropdownMenuItem(
-                                        value: building,
-                                        child: Text(
-                                          building == 'All' ? 'All' : building,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      );
-                                    }).toList(),
-                                    onChanged: (value) => setState(() => _selectedBuilding = value!),
-                                  )
-                                : const SizedBox(
-                                    width: 12,
-                                    height: 12,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 1,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6C757D)),
-                                    ),
-                                  ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                // Second Row - Status Filter (centered)
-                Row(
-                  children: [
-                    Expanded(flex: 1, child: Container()), // Left spacer
-                    Expanded(
-                      flex: 2,
                       child: Container(
                         height: 32,
                         padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -353,7 +456,7 @@ class _InventoryPageState extends State<InventoryPage> {
                                   fontSize: 12,
                                 ),
                                 items: const [
-                                  DropdownMenuItem(value: 'All', child: Text('All Status')),
+                                  DropdownMenuItem(value: 'All', child: Text('All')),
                                   DropdownMenuItem(value: 'Online', child: Text('Online')),
                                   DropdownMenuItem(value: 'Offline', child: Text('Offline')),
                                 ],
@@ -364,7 +467,6 @@ class _InventoryPageState extends State<InventoryPage> {
                         ),
                       ),
                     ),
-                    Expanded(flex: 1, child: Container()), // Right spacer
                   ],
                 ),
               ],
@@ -438,10 +540,12 @@ class _InventoryPageState extends State<InventoryPage> {
                 final building = (data['building'] ?? 'Unknown').toString();
                 final status = (data['status'] ?? '').toString();
 
+                // Filter by user's department
+                if (building != _userDepartment) return false;
+                
                 if (_searchQuery.isNotEmpty && !name.contains(_searchQuery.toLowerCase())) return false;
                 if (_selectedType != 'All' && type != _selectedType) return false;
                 if (_selectedFloor != 'All' && floor != _selectedFloor) return false;
-                if (_selectedBuilding != 'All' && building != _selectedBuilding) return false;
                 if (_selectedStatus != 'All' && status.toLowerCase() != _selectedStatus.toLowerCase()) return false;
                 return true;
               }).toList();
@@ -556,7 +660,6 @@ class _InventoryPageState extends State<InventoryPage> {
                                               _buildInfoChip('${data['floor'] ?? 'Unknown'}'),
                                             ],
                                           ),
-                                          // Show peripheral_type chip below if it exists and is not empty
                                           if (data['peripheral_type'] != null && 
                                               data['peripheral_type'].toString().isNotEmpty) ...[
                                             const SizedBox(height: 4),
