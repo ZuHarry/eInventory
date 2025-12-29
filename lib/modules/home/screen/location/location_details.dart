@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'modify_location.dart';
+  import 'package:einventorycomputer/modules/home/screen/devices/device_staff_page.dart';
 
 class LocationDetailsPage extends StatefulWidget {
   final String locationId;
@@ -24,6 +25,8 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
   String _selectedType = 'All';
   int _totalDevicesCount = 0;
   String _staffName = 'Unknown';
+  String _staffId = 'N/A';
+  String? _handledByUid;
   late String buildingId;
 
   @override
@@ -34,20 +37,20 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
   }
 
   Future<void> _fetchLocationDetails() async {
-  final doc = await FirebaseFirestore.instance
-      .collection('buildings')
-      .doc(buildingId) // Use the stored buildingId
-      .collection('locations')
-      .doc(widget.locationId)
-      .get();
-  if (doc.exists) {
-    setState(() {
-      locationData = doc.data();
-    });
-    await _fetchTotalDevicesCount();
-    await _fetchStaffName();
+    final doc = await FirebaseFirestore.instance
+        .collection('buildings')
+        .doc(buildingId)
+        .collection('locations')
+        .doc(widget.locationId)
+        .get();
+    if (doc.exists) {
+      setState(() {
+        locationData = doc.data();
+      });
+      await _fetchTotalDevicesCount();
+      await _fetchStaffDetails();
+    }
   }
-}
 
   Future<void> _fetchTotalDevicesCount() async {
     final querySnapshot = await FirebaseFirestore.instance
@@ -59,34 +62,51 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
     });
   }
 
-  Future<void> _fetchStaffName() async {
+  Future<void> _fetchStaffDetails() async {
     if (locationData!['handledBy'] != null) {
+      _handledByUid = locationData!['handledBy'];
       final userDoc = await FirebaseFirestore.instance
           .collection('users')
-          .doc(locationData!['handledBy'])
+          .doc(_handledByUid)
           .get();
       if (userDoc.exists) {
         setState(() {
           _staffName = userDoc['fullname'] ?? 'Unknown';
+          _staffId = userDoc['staffId'] ?? 'N/A';
         });
       }
     }
   }
 
   void _navigateToEdit() {
-  if (locationData != null) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ModifyLocationPage(
-          locationId: widget.locationId,
-          locationData: locationData!,
-          buildingId: buildingId, // Use the stored buildingId
+    if (locationData != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ModifyLocationPage(
+            locationId: widget.locationId,
+            locationData: locationData!,
+            buildingId: buildingId,
+          ),
         ),
-      ),
-    ).then((_) => _fetchLocationDetails());
+      ).then((_) => _fetchLocationDetails());
+    }
   }
-}
+
+  void _navigateToStaffDetails() {
+    if (_handledByUid != null && _handledByUid!.isNotEmpty) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => DeviceStaffPage(
+            staffId: _handledByUid!,
+            staffName: _staffName,
+            device: {}, // Pass empty map since we're not coming from a device context
+          ),
+        ),
+      );
+    }
+  }
 
   Icon _getDeviceIcon(String? type) {
     if (type == 'PC') return const Icon(Icons.computer, color: Colors.black);
@@ -107,8 +127,8 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
     }
   }
 
-  Widget _buildGridItem(String label, IconData icon, String value) {
-    return Container(
+  Widget _buildGridItem(String label, IconData icon, String value, {bool isClickable = false, VoidCallback? onTap}) {
+    Widget content = Container(
       decoration: BoxDecoration(
         color: const Color(0xFF212529),
         borderRadius: BorderRadius.circular(12),
@@ -141,6 +161,16 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
         ],
       ),
     );
+
+    if (isClickable && onTap != null) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: content,
+      );
+    }
+
+    return content;
   }
 
   Widget _buildLocationImage(String imageUrl) {
@@ -217,7 +247,13 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
                         _buildGridItem('Floor', Icons.stairs, locationData!['floor']),
                         _buildGridItem('Type', Icons.category, locationData!['type']),
                         _buildGridItem('Total Devices', Icons.devices, _totalDevicesCount.toString()),
-                        _buildGridItem('Handled By', Icons.person, _staffName),
+                        _buildGridItem(
+                          'Handled By',
+                          Icons.person,
+                          '$_staffName\n($_staffId)',
+                          isClickable: _handledByUid != null,
+                          onTap: _navigateToStaffDetails,
+                        ),
                       ],
                     ),
                   ),

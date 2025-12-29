@@ -20,12 +20,14 @@ class DeviceStaffPage extends StatefulWidget {
 class _DeviceStaffPageState extends State<DeviceStaffPage> {
   late Future<Map<String, dynamic>> _staffDataFuture;
   late Future<List<Map<String, dynamic>>> _assignedDevicesFuture;
+  late Future<List<Map<String, dynamic>>> _handledLocationsFuture;
 
   @override
   void initState() {
     super.initState();
     _staffDataFuture = _fetchStaffData();
     _assignedDevicesFuture = _fetchAssignedDevices();
+    _handledLocationsFuture = _fetchHandledLocations();
   }
 
   Future<Map<String, dynamic>> _fetchStaffData() async {
@@ -65,6 +67,51 @@ class _DeviceStaffPageState extends State<DeviceStaffPage> {
       return [];
     }
   }
+
+  Future<List<Map<String, dynamic>>> _fetchHandledLocations() async {
+  try {
+    // First, get the staff's department from the staff data
+    final staffData = await _fetchStaffData();
+    final department = staffData['department'];
+    
+    if (department == null || department == 'N/A') {
+      print('No valid department found for staff');
+      return [];
+    }
+
+    // Query the building document with the same name as the department
+    final buildingDoc = await FirebaseFirestore.instance
+        .collection('buildings')
+        .where('name', isEqualTo: department)
+        .limit(1)
+        .get();
+
+    if (buildingDoc.docs.isEmpty) {
+      print('No building found matching department: $department');
+      return [];
+    }
+
+    final buildingId = buildingDoc.docs.first.id;
+
+    // Now fetch locations from the nested locations subcollection
+    final locationsSnapshot = await FirebaseFirestore.instance
+        .collection('buildings')
+        .doc(buildingId)
+        .collection('locations')
+        .where('handledBy', isEqualTo: widget.staffId)
+        .get();
+
+    return locationsSnapshot.docs
+        .map((doc) => {
+              ...doc.data(),
+              'docId': doc.id,
+            })
+        .toList();
+  } catch (e) {
+    print('Error fetching handled locations: $e');
+    return [];
+  }
+}
 
   Icon _getDeviceIcon(String? type) {
     if (type == 'PC') {
@@ -197,6 +244,7 @@ class _DeviceStaffPageState extends State<DeviceStaffPage> {
                 final staffType = staffData['staffType'] ?? 'N/A';
                 final telephone = staffData['telephone'] ?? 'N/A';
                 final staffId = staffData['staffId'] ?? 'N/A';
+                final department = staffData['department'] ?? 'N/A';
 
                 return Container(
                   width: double.infinity,
@@ -283,10 +331,179 @@ class _DeviceStaffPageState extends State<DeviceStaffPage> {
                       _buildInfoRow(Icons.phone_outlined, 'Telephone', telephone),
                       const SizedBox(height: 12),
                       _buildInfoRow(Icons.badge_outlined, 'Staff ID', staffId),
+                      const SizedBox(height: 12),
+                      _buildInfoRow(Icons.business_outlined, 'Department', department),
                     ],
                   ),
                 );
               },
+            ),
+
+            const SizedBox(height: 24),
+
+            // Handled Locations Section
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF81D4FA).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.location_on,
+                          color: Color(0xFF81D4FA),
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Handled Locations',
+                        style: TextStyle(
+                          fontFamily: 'SansRegular',
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF212529),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  FutureBuilder<List<Map<String, dynamic>>>(
+                    future: _handledLocationsFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Color(0xFF81D4FA),
+                            ),
+                          ),
+                        );
+                      }
+
+                      if (snapshot.hasError) {
+                        return Text(
+                          'Error loading locations',
+                          style: const TextStyle(
+                            fontFamily: 'SansRegular',
+                            fontSize: 14,
+                            color: Color(0xFFF44336),
+                          ),
+                        );
+                      }
+
+                      final locations = snapshot.data ?? [];
+
+                      if (locations.isEmpty) {
+                        return Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF81D4FA).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: const Color(0xFF81D4FA).withOpacity(0.3),
+                            ),
+                          ),
+                          child: const Center(
+                            child: Text(
+                              'No locations handled',
+                              style: TextStyle(
+                                fontFamily: 'SansRegular',
+                                fontSize: 14,
+                                color: Color(0xFF6C757D),
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: locations.length,
+                        itemBuilder: (context, index) {
+                          final location = locations[index];
+                          final locationName = location['name'] ?? 'Unknown Location';
+                          final building = location['building'] ?? 'N/A';
+                          final floor = location['floor'] ?? 'N/A';
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8F9FA),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.grey.withOpacity(0.1),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF81D4FA).withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.place,
+                                    color: Color(0xFF81D4FA),
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        locationName,
+                                        style: const TextStyle(
+                                          fontFamily: 'SansRegular',
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF212529),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Building: $building • Floor: $floor',
+                                        style: const TextStyle(
+                                          fontFamily: 'SansRegular',
+                                          fontSize: 12,
+                                          color: Color(0xFF6C757D),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
 
             const SizedBox(height: 24),
@@ -309,14 +526,31 @@ class _DeviceStaffPageState extends State<DeviceStaffPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Assigned Devices',
-                    style: TextStyle(
-                      fontFamily: 'SansRegular',
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF212529),
-                    ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF81D4FA).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.devices,
+                          color: Color(0xFF81D4FA),
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Assigned Devices',
+                        style: TextStyle(
+                          fontFamily: 'SansRegular',
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF212529),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 20),
                   FutureBuilder<List<Map<String, dynamic>>>(

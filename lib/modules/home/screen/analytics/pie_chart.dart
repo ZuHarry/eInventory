@@ -1,75 +1,195 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class DetailedPieChartPage extends StatelessWidget {
   Color hex(String hexCode) => Color(int.parse('FF$hexCode', radix: 16));
 
-  Future<int> getCountByType(String type) async {
-    final snapshot = await FirebaseFirestore.instance
-        .collection('devices')
-        .where('type', isEqualTo: type)
-        .count()
+  Future<String?> getUserDepartment() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return null;
+    
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
         .get();
-    return snapshot.count ?? 0;
+    
+    return userDoc.data()?['department'] as String?;
   }
 
-  Future<Map<String, int>> getDeviceCountsByBuilding() async {
+  Future<Set<String>> getDepartmentLocations() async {
+    final department = await getUserDepartment();
+    if (department == null || department.isEmpty) {
+      return {};
+    }
+
     final firestore = FirebaseFirestore.instance;
 
-    // First, get all buildings from the buildings collection
-    final buildingsSnapshot = await firestore.collection('buildings').get();
-    Map<String, int> result = {};
+    // Query buildings where 'name' field equals the user's department
+    final buildingsSnapshot = await firestore
+        .collection('buildings')
+        .where('name', isEqualTo: department)
+        .get();
     
-    // Initialize the result map with building names
+    if (buildingsSnapshot.docs.isEmpty) {
+      return {};
+    }
+
+    // Collect all location names from all matching buildings
+    final Set<String> departmentLocationNames = {};
+    
     for (var buildingDoc in buildingsSnapshot.docs) {
-      final data = buildingDoc.data();
-      final buildingName = data['name'] as String?;
-      if (buildingName != null) {
-        result[buildingName] = 0;
+      // Get locations subcollection from this building
+      final locationsSnapshot = await firestore
+          .collection('buildings')
+          .doc(buildingDoc.id)
+          .collection('locations')
+          .get();
+      
+      for (var locationDoc in locationsSnapshot.docs) {
+        final locationData = locationDoc.data();
+        final locationName = locationData['name'];
+        
+        if (locationName != null) {
+          departmentLocationNames.add(locationName);
+        }
       }
     }
 
-    // Get the mapping from location to building by iterating through nested subcollections
-    final Map<String, String> locationToBuilding = {};
+    return departmentLocationNames;
+  }
+
+  Future<int> getCountByType(String type) async {
+    final departmentLocations = await getDepartmentLocations();
+    
+    if (departmentLocations.isEmpty) {
+      return 0;
+    }
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('devices')
+        .where('type', isEqualTo: type)
+        .get();
+    
+    // Filter devices that are in department locations
+    int count = 0;
+    for (var doc in snapshot.docs) {
+      final deviceLocation = doc.data()['location'];
+      if (deviceLocation != null && departmentLocations.contains(deviceLocation)) {
+        count++;
+      }
+    }
+    
+    return count;
+  }
+
+  Future<Map<String, int>> getDevicesByBrand() async {
+    final departmentLocations = await getDepartmentLocations();
+    
+    if (departmentLocations.isEmpty) {
+      return {};
+    }
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('devices')
+        .get();
+    
+    Map<String, int> brandCounts = {};
+    
+    for (var doc in snapshot.docs) {
+      final data = doc.data();
+      final deviceLocation = data['location'];
+      final brand = data['brand'];
+
+      if (deviceLocation != null &&
+          departmentLocations.contains(deviceLocation) &&
+          brand != null &&
+          brand.toString().trim().isNotEmpty) {
+        final brandStr = brand.toString().trim();
+        brandCounts[brandStr] = (brandCounts[brandStr] ?? 0) + 1;
+      }
+    }
+
+    return brandCounts;
+  }
+
+  Future<Map<String, int>> getDevicesByFloor() async {
+    final department = await getUserDepartment();
+    if (department == null || department.isEmpty) {
+      return {};
+    }
+
+    final firestore = FirebaseFirestore.instance;
+
+    // Get buildings for user's department
+    final buildingsSnapshot = await firestore
+        .collection('buildings')
+        .where('name', isEqualTo: department)
+        .get();
+    
+    if (buildingsSnapshot.docs.isEmpty) {
+      return {};
+    }
+
+    // Map to store floor -> location names
+    Map<String, Set<String>> floorToLocations = {};
+    
     for (var buildingDoc in buildingsSnapshot.docs) {
-      final buildingData = buildingDoc.data();
-      final buildingName = buildingData['name'] as String?;
+      final locationsSnapshot = await firestore
+          .collection('buildings')
+          .doc(buildingDoc.id)
+          .collection('locations')
+          .get();
       
-      if (buildingName != null) {
-        // Get locations subcollection for this building
-        final locationsSnapshot = await buildingDoc.reference
-            .collection('locations')
-            .get();
+      for (var locationDoc in locationsSnapshot.docs) {
+        final locationData = locationDoc.data();
+        final locationName = locationData['name'];
+        final floor = locationData['floor'];
         
-        for (var locationDoc in locationsSnapshot.docs) {
-          final locationData = locationDoc.data();
-          final locationName = locationData['name'] as String?;
-          if (locationName != null) {
-            locationToBuilding[locationName] = buildingName;
+        if (locationName != null && floor != null) {
+          final floorStr = floor.toString().trim();
+          if (!floorToLocations.containsKey(floorStr)) {
+            floorToLocations[floorStr] = {};
+          }
+          floorToLocations[floorStr]!.add(locationName);
+        }
+      }
+    }
+
+    // Now count devices by floor
+    final devicesSnapshot = await firestore
+        .collection('devices')
+        .get();
+    
+    Map<String, int> floorCounts = {};
+    
+    for (var deviceDoc in devicesSnapshot.docs) {
+      final deviceData = deviceDoc.data();
+      final deviceLocation = deviceData['location'];
+      
+      if (deviceLocation != null) {
+        // Find which floor this location belongs to
+        for (var entry in floorToLocations.entries) {
+          if (entry.value.contains(deviceLocation)) {
+            final floorName = entry.key;
+            floorCounts[floorName] = (floorCounts[floorName] ?? 0) + 1;
+            break;
           }
         }
       }
     }
 
-    // Count devices by building
-    final devicesSnapshot = await firestore.collection('devices').get();
-    for (var doc in devicesSnapshot.docs) {
-      final data = doc.data();
-      final locationName = data['location'] as String?;
-
-      if (locationName != null && locationToBuilding.containsKey(locationName)) {
-        final building = locationToBuilding[locationName]!;
-        if (result.containsKey(building)) {
-          result[building] = result[building]! + 1;
-        }
-      }
-    }
-
-    return result;
+    return floorCounts;
   }
 
   Future<Map<String, int>> getPeripheralCountsByType() async {
+    final departmentLocations = await getDepartmentLocations();
+    
+    if (departmentLocations.isEmpty) {
+      return {};
+    }
+
     final firestore = FirebaseFirestore.instance;
     
     Map<String, int> result = {
@@ -86,40 +206,39 @@ class DetailedPieChartPage extends StatelessWidget {
 
     for (var doc in devicesSnapshot.docs) {
       final data = doc.data();
+      final deviceLocation = data['location'];
       final peripheralType = data['peripheral_type'] as String?;
       
-      if (peripheralType != null) {
-        if (result.containsKey(peripheralType)) {
-          result[peripheralType] = result[peripheralType]! + 1;
+      // Only count if device is in department locations
+      if (deviceLocation != null && departmentLocations.contains(deviceLocation)) {
+        if (peripheralType != null) {
+          if (result.containsKey(peripheralType)) {
+            result[peripheralType] = result[peripheralType]! + 1;
+          } else {
+            result['Others'] = result['Others']! + 1;
+          }
         } else {
           result['Others'] = result['Others']! + 1;
         }
-      } else {
-        result['Others'] = result['Others']! + 1;
       }
     }
 
     return result;
   }
 
-  // Generate dynamic colors for buildings
-  List<Color> _generateBuildingColors(int count) {
-    final List<Color> colors = [
-      const Color(0xFF81D4FA), // Yellow
-      const Color(0xFF28A745), // Green
-      const Color(0xFF007BFF), // Blue
-      const Color(0xFFDC3545), // Red
-      const Color(0xFF6F42C1), // Purple
-      const Color(0xFFFD7E14), // Orange
-      const Color(0xFF20C997), // Teal
-      const Color(0xFFE83E8C), // Pink
+  // Generate dynamic colors
+  Color _getColorForIndex(int index) {
+    final colors = [
+      const Color(0xFF81D4FA),
+      const Color(0xFF28A745),
+      const Color(0xFF007BFF),
+      const Color(0xFFDC3545),
+      const Color(0xFF6F42C1),
+      const Color(0xFFFD7E14),
+      const Color(0xFF20C997),
+      const Color(0xFFE83E8C),
     ];
-    
-    List<Color> result = [];
-    for (int i = 0; i < count; i++) {
-      result.add(colors[i % colors.length]);
-    }
-    return result;
+    return colors[index % colors.length];
   }
 
   @override
@@ -150,8 +269,10 @@ class DetailedPieChartPage extends StatelessWidget {
             future: Future.wait([
               getCountByType('PC'),
               getCountByType('Peripheral'),
-              getDeviceCountsByBuilding(),
+              getDevicesByBrand(),
+              getDevicesByFloor(),
               getPeripheralCountsByType(),
+              getUserDepartment(),
             ]),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -183,32 +304,63 @@ class DetailedPieChartPage extends StatelessWidget {
 
               final totalPC = snapshot.data![0] as int;
               final totalPeripheral = snapshot.data![1] as int;
-              final buildingCounts = snapshot.data![2] as Map<String, int>;
-              final peripheralTypeCounts = snapshot.data![3] as Map<String, int>;
+              final brandCounts = snapshot.data![2] as Map<String, int>;
+              final floorCounts = snapshot.data![3] as Map<String, int>;
+              final peripheralTypeCounts = snapshot.data![4] as Map<String, int>;
+              final userDepartment = snapshot.data![5] as String?;
 
-              // Generate dynamic colors for buildings
-              final buildingNames = buildingCounts.keys.toList();
-              final buildingColors = _generateBuildingColors(buildingNames.length);
-              final Map<String, Color> buildingColorMap = {};
-              for (int i = 0; i < buildingNames.length; i++) {
-                buildingColorMap[buildingNames[i]] = buildingColors[i];
+              // Generate colors for brands
+              final brandNames = brandCounts.keys.toList();
+              final Map<String, Color> brandColorMap = {};
+              for (int i = 0; i < brandNames.length; i++) {
+                brandColorMap[brandNames[i]] = _getColorForIndex(i);
+              }
+
+              // Generate colors for floors
+              final floorNames = floorCounts.keys.toList();
+              final Map<String, Color> floorColorMap = {};
+              for (int i = 0; i < floorNames.length; i++) {
+                floorColorMap[floorNames[i]] = _getColorForIndex(i);
               }
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Page Title
+                  // Page Title with Department
                   Container(
                     margin: const EdgeInsets.only(bottom: 24.0),
-                    child: const Text(
-                      'Device Analytics Overview',
-                      style: TextStyle(
-                        fontFamily: 'SansRegular',
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF212529),
-                      ),
-                      textAlign: TextAlign.center,
+                    child: Column(
+                      children: [
+                        const Text(
+                          'Device Analytics Overview',
+                          style: TextStyle(
+                            fontFamily: 'SansRegular',
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF212529),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        if (userDepartment != null) ...[
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF81D4FA),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              'Department: $userDepartment',
+                              style: const TextStyle(
+                                fontFamily: 'SansRegular',
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF212529),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                   
@@ -227,11 +379,20 @@ class DetailedPieChartPage extends StatelessWidget {
                   
                   const SizedBox(height: 40),
                   
-                  // Building Distribution Chart (now dynamic)
+                  // Devices by Brand Chart
                   _buildPieChartSection(
-                    title: 'Devices by Building',
-                    data: buildingCounts,
-                    colors: buildingColorMap,
+                    title: 'Devices by Brand',
+                    data: brandCounts,
+                    colors: brandColorMap,
+                  ),
+                  
+                  const SizedBox(height: 40),
+                  
+                  // Devices by Floor Chart
+                  _buildPieChartSection(
+                    title: 'Devices by Floor',
+                    data: floorCounts,
+                    colors: floorColorMap,
                   ),
                   
                   const SizedBox(height: 40),
@@ -313,7 +474,7 @@ class DetailedPieChartPage extends StatelessWidget {
             ),
           ),
 
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
           
           // Pie Chart
           Container(
@@ -351,7 +512,7 @@ class DetailedPieChartPage extends StatelessWidget {
                     ),
                   ),
           ),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
           
           // Data Table
           _buildDataTable(data, colors),

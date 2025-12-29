@@ -25,7 +25,7 @@ class _TriviaPageState extends State<TriviaPage> {
     'Users'
   ];
 
-  // ADD THESE THREE LINES:
+  
   String? _userDepartment;
   String? _userBuildingId;
   bool _isLoadingUserData = true;

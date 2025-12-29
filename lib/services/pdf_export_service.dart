@@ -5,6 +5,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 
 class PDFExportService {
@@ -24,15 +25,15 @@ class PDFExportService {
           margin: const pw.EdgeInsets.all(32),
           build: (pw.Context context) {
             return [
-              _buildHeader(),
+              _buildHeader(data['userDepartment'] as String?),
               pw.SizedBox(height: 20),
               _buildDeviceDistributionSummary(data),
               pw.SizedBox(height: 30),
               _buildDeviceSummaryTable(data),
               pw.SizedBox(height: 30),
-              _buildBuildingSummaryTable(data),
-              pw.SizedBox(height: 30),
               _buildOnlineOfflineSummary(data),
+              pw.SizedBox(height: 30),
+              _buildBrandDistribution(data),
             ];
           },
         ),
@@ -47,43 +48,134 @@ class PDFExportService {
     }
   }
   
-  // Fetch all dashboard data
+  // Get current user's department
+  static Future<String?> _getUserDepartment() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return null;
+    
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+    
+    return userDoc.data()?['department'] as String?;
+  }
+  
+  // Get locations that belong to the user's department
+  static Future<Set<String>> _getDepartmentLocations(String department) async {
+    final firestore = FirebaseFirestore.instance;
+    
+    // Query buildings where 'name' field equals the user's department
+    final buildingsSnapshot = await firestore
+        .collection('buildings')
+        .where('name', isEqualTo: department)
+        .get();
+    
+    if (buildingsSnapshot.docs.isEmpty) {
+      return {};
+    }
+    
+    // Collect all location names from all matching buildings
+    final Set<String> departmentLocationNames = {};
+    
+    for (var buildingDoc in buildingsSnapshot.docs) {
+      // Get locations subcollection from this building
+      final locationsSnapshot = await firestore
+          .collection('buildings')
+          .doc(buildingDoc.id)
+          .collection('locations')
+          .get();
+      
+      for (var locationDoc in locationsSnapshot.docs) {
+        final locationData = locationDoc.data();
+        final locationName = locationData['name'];
+        
+        if (locationName != null) {
+          departmentLocationNames.add(locationName);
+        }
+      }
+    }
+    
+    return departmentLocationNames;
+  }
+  
+  // Fetch all dashboard data filtered by user's department
   static Future<Map<String, dynamic>> _fetchDashboardData() async {
     final firestore = FirebaseFirestore.instance;
     
-    // Get device counts
-    final pcSnapshot = await firestore
-        .collection('devices')
-        .where('type', isEqualTo: 'PC')
-        .count()
-        .get();
-    final totalPC = pcSnapshot.count ?? 0;
+    // Get user's department
+    final userDepartment = await _getUserDepartment();
     
-    final onlinePCSnapshot = await firestore
-        .collection('devices')
-        .where('type', isEqualTo: 'PC')
-        .where('status', isEqualTo: 'Online')
-        .count()
-        .get();
-    final onlinePC = onlinePCSnapshot.count ?? 0;
+    if (userDepartment == null || userDepartment.isEmpty) {
+      return {
+        'totalPC': 0,
+        'onlinePC': 0,
+        'offlinePC': 0,
+        'totalPeripheral': 0,
+        'onlinePeripheral': 0,
+        'offlinePeripheral': 0,
+        'brandCounts': <String, int>{},
+        'generatedAt': DateTime.now(),
+        'userDepartment': null,
+      };
+    }
     
-    final peripheralSnapshot = await firestore
-        .collection('devices')
-        .where('type', isEqualTo: 'Peripheral')
-        .count()
-        .get();
-    final totalPeripheral = peripheralSnapshot.count ?? 0;
+    // Get department locations
+    final departmentLocations = await _getDepartmentLocations(userDepartment);
     
-    final onlinePeripheralSnapshot = await firestore
-        .collection('devices')
-        .where('type', isEqualTo: 'Peripheral')
-        .where('status', isEqualTo: 'Online')
-        .count()
-        .get();
-    final onlinePeripheral = onlinePeripheralSnapshot.count ?? 0;
+    if (departmentLocations.isEmpty) {
+      return {
+        'totalPC': 0,
+        'onlinePC': 0,
+        'offlinePC': 0,
+        'totalPeripheral': 0,
+        'onlinePeripheral': 0,
+        'offlinePeripheral': 0,
+        'brandCounts': <String, int>{},
+        'generatedAt': DateTime.now(),
+        'userDepartment': userDepartment,
+      };
+    }
     
-    // Get building data
-    final buildingCounts = await _getDeviceCountsByBuilding();
+    // Get all devices
+    final allDevicesSnapshot = await firestore.collection('devices').get();
+    
+    int totalPC = 0;
+    int onlinePC = 0;
+    int totalPeripheral = 0;
+    int onlinePeripheral = 0;
+    Map<String, int> brandCounts = {};
+    
+    // Filter devices by department locations
+    for (var doc in allDevicesSnapshot.docs) {
+      final data = doc.data();
+      final deviceLocation = data['location'] as String?;
+      final type = (data['type'] as String?)?.toLowerCase();
+      final status = data['status'] as String?;
+      final brand = data['brand'] as String?;
+      
+      // Only count devices in department locations
+      if (deviceLocation != null && departmentLocations.contains(deviceLocation)) {
+        // Count by type
+        if (type == 'pc') {
+          totalPC++;
+          if (status == 'Online') {
+            onlinePC++;
+          }
+        } else if (type == 'peripheral') {
+          totalPeripheral++;
+          if (status == 'Online') {
+            onlinePeripheral++;
+          }
+        }
+        
+        // Count by brand
+        if (brand != null && brand.trim().isNotEmpty) {
+          final brandStr = brand.trim();
+          brandCounts[brandStr] = (brandCounts[brandStr] ?? 0) + 1;
+        }
+      }
+    }
     
     return {
       'totalPC': totalPC,
@@ -92,71 +184,14 @@ class PDFExportService {
       'totalPeripheral': totalPeripheral,
       'onlinePeripheral': onlinePeripheral,
       'offlinePeripheral': totalPeripheral - onlinePeripheral,
-      'buildingCounts': buildingCounts,
+      'brandCounts': brandCounts,
       'generatedAt': DateTime.now(),
+      'userDepartment': userDepartment,
     };
   }
   
-  // Get device counts by building - dynamically fetch from buildings collection
-  static Future<Map<String, Map<String, int>>> _getDeviceCountsByBuilding() async {
-    final firestore = FirebaseFirestore.instance;
-    
-    // First, get all buildings from the buildings collection
-    final buildingsSnapshot = await firestore.collection('buildings').get();
-    final Map<String, Map<String, int>> result = {};
-    
-    // Initialize result map with all buildings
-    for (var doc in buildingsSnapshot.docs) {
-      final data = doc.data();
-      final buildingName = data['name'] as String?;
-      if (buildingName != null) {
-        result[buildingName] = {'pc': 0, 'peripherals': 0};
-      }
-    }
-    
-    // Get location to building mapping
-    final locationsSnapshot = await firestore.collection('locations').get();
-    final Map<String, String> locationToBuilding = {};
-    for (var doc in locationsSnapshot.docs) {
-      final data = doc.data();
-      final locationName = data['name'] as String?;
-      final buildingName = data['building'] as String?; // This is the building name, not ID
-      
-      if (locationName != null && buildingName != null) {
-        locationToBuilding[locationName] = buildingName;
-      }
-    }
-    
-    // Count devices by building
-    final devicesSnapshot = await firestore.collection('devices').get();
-    for (var doc in devicesSnapshot.docs) {
-      final data = doc.data();
-      final locationName = data['location'] as String?;
-      final type = (data['type'] as String?)?.toLowerCase();
-      
-      if (locationName != null &&
-          locationToBuilding.containsKey(locationName) &&
-          (type == 'pc' || type == 'peripheral')) {
-        final buildingName = locationToBuilding[locationName]!;
-        if (result.containsKey(buildingName)) {
-          if (type == 'pc') {
-            result[buildingName]!['pc'] = result[buildingName]!['pc']! + 1;
-          } else if (type == 'peripheral') {
-            result[buildingName]!['peripherals'] = result[buildingName]!['peripherals']! + 1;
-          }
-        }
-      }
-    }
-    
-    // Debug print to help troubleshoot
-    print('Location to Building mapping: $locationToBuilding');
-    print('Final building counts: $result');
-    
-    return result;
-  }
-  
   // Build PDF header with title and timestamp
-  static pw.Widget _buildHeader() {
+  static pw.Widget _buildHeader(String? department) {
     final now = DateTime.now();
     final formatter = DateFormat('MMMM dd, yyyy \'at\' hh:mm a');
     
@@ -171,6 +206,16 @@ class PDFExportService {
             color: PdfColors.grey800,
           ),
         ),
+        pw.SizedBox(height: 8),
+        if (department != null && department.isNotEmpty)
+          pw.Text(
+            'Department: $department',
+            style: pw.TextStyle(
+              fontSize: 14,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColors.amber,
+            ),
+          ),
         pw.SizedBox(height: 8),
         pw.Text(
           'Generated on ${formatter.format(now)}',
@@ -192,7 +237,7 @@ class PDFExportService {
     
     if (total == 0) {
       return pw.Container(
-        child: pw.Text('No devices found', style: pw.TextStyle(fontSize: 16)),
+        child: pw.Text('No devices found in your department', style: pw.TextStyle(fontSize: 16)),
       );
     }
     
@@ -308,56 +353,6 @@ class PDFExportService {
     return '${(part / total * 100).toStringAsFixed(1)}%';
   }
   
-  // Build building summary table
-  static pw.Widget _buildBuildingSummaryTable(Map<String, dynamic> data) {
-    final buildingCounts = data['buildingCounts'] as Map<String, Map<String, int>>;
-    
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Text(
-          'Devices by Building',
-          style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
-        ),
-        pw.SizedBox(height: 16),
-        buildingCounts.isEmpty 
-          ? pw.Text('No buildings found', style: pw.TextStyle(fontSize: 12, color: PdfColors.grey600))
-          : pw.Table(
-              border: pw.TableBorder.all(color: PdfColors.grey300),
-              children: [
-                // Header
-                pw.TableRow(
-                  decoration: pw.BoxDecoration(color: PdfColors.grey100),
-                  children: [
-                    _buildTableCell('Building', isHeader: true),
-                    _buildTableCell('PCs', isHeader: true),
-                    _buildTableCell('Peripherals', isHeader: true),
-                    _buildTableCell('Total', isHeader: true),
-                  ],
-                ),
-                // Building rows - dynamically generated from buildings collection
-                ...buildingCounts.entries.map((entry) {
-                  final building = entry.key;
-                  final counts = entry.value;
-                  final pcCount = counts['pc'] ?? 0;
-                  final peripheralCount = counts['peripherals'] ?? 0;
-                  final total = pcCount + peripheralCount;
-                  
-                  return pw.TableRow(
-                    children: [
-                      _buildTableCell(building),
-                      _buildTableCell('$pcCount'),
-                      _buildTableCell('$peripheralCount'),
-                      _buildTableCell('$total'),
-                    ],
-                  );
-                }).toList(),
-              ],
-            ),
-      ],
-    );
-  }
-  
   // Build online vs offline summary (replaces chart)
   static pw.Widget _buildOnlineOfflineSummary(Map<String, dynamic> data) {
     final onlinePC = data['onlinePC'] as int;
@@ -409,6 +404,52 @@ class PDFExportService {
             ),
           ],
         ),
+      ],
+    );
+  }
+  
+  // Build brand distribution table
+  static pw.Widget _buildBrandDistribution(Map<String, dynamic> data) {
+    final brandCounts = data['brandCounts'] as Map<String, int>;
+    final userDepartment = data['userDepartment'] as String?;
+    
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text(
+          'Brand Distribution${userDepartment != null ? " ($userDepartment)" : ""}',
+          style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+        ),
+        pw.SizedBox(height: 16),
+        brandCounts.isEmpty 
+          ? pw.Text('No devices found', style: pw.TextStyle(fontSize: 12, color: PdfColors.grey600))
+          : pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.grey300),
+              children: [
+                // Header
+                pw.TableRow(
+                  decoration: pw.BoxDecoration(color: PdfColors.grey100),
+                  children: [
+                    _buildTableCell('Brand', isHeader: true),
+                    _buildTableCell('Count', isHeader: true),
+                    _buildTableCell('Percentage', isHeader: true),
+                  ],
+                ),
+                // Brand rows
+                ...brandCounts.entries.map((entry) {
+                  final total = brandCounts.values.reduce((a, b) => a + b);
+                  final percentage = (entry.value / total * 100).toStringAsFixed(1);
+                  
+                  return pw.TableRow(
+                    children: [
+                      _buildTableCell(entry.key),
+                      _buildTableCell('${entry.value}'),
+                      _buildTableCell('$percentage%'),
+                    ],
+                  );
+                }).toList(),
+              ],
+            ),
       ],
     );
   }
