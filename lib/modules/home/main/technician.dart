@@ -3,7 +3,7 @@ import 'package:einventorycomputer/services/auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:einventorycomputer/modules/home/screen/home.dart';
+import 'package:einventorycomputer/modules/home/screen/home/home.dart';
 import 'package:einventorycomputer/modules/home/screen/devices/inventory.dart';
 import 'package:einventorycomputer/modules/home/screen/settings/settings.dart';
 import 'package:einventorycomputer/modules/home/screen/user/account.dart';
@@ -15,12 +15,12 @@ import 'package:image_picker/image_picker.dart';
 import 'package:einventorycomputer/modules/home/screen/map/map.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;  // ADD THIS LINE
 
-class AdminScreen extends StatefulWidget {
+class TechnicianScreen extends StatefulWidget {
   @override
-  _AdminScreenState createState() => _AdminScreenState();
+  _TechnicianScreenState createState() => _TechnicianScreenState();
 }
 
-class _AdminScreenState extends State<AdminScreen> {
+class _TechnicianScreenState extends State<TechnicianScreen> {
   final AuthService _auth = AuthService();
   int _selectedIndex = 0;
   String? _username;

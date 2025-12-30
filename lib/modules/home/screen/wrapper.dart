@@ -2,7 +2,8 @@ import 'package:einventorycomputer/models/user.dart';
 import 'package:einventorycomputer/modules/authentication/authenticate.dart';
 import 'package:einventorycomputer/modules/authentication/verify_email.dart';
 import 'package:einventorycomputer/modules/home/main/staff.dart';
-import 'package:einventorycomputer/modules/home/main/technician.dart'; // Add admin screen import
+import 'package:einventorycomputer/modules/home/main/technician.dart';
+import 'package:einventorycomputer/modules/home/main/admin.dart';
 import 'package:einventorycomputer/modules/home/screen/splash_screen.dart';
 import 'package:einventorycomputer/services/ping.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -138,10 +139,10 @@ class _WrapperState extends State<Wrapper> with WidgetsBindingObserver {
                 
                 final staffType = staffTypeSnapshot.data ?? 'Staff';
                 
-                // Route based on staffType
-                // Only Technician goes to AdminScreen, others go to regular ScreenPage
                 if (staffType == 'Technician') {
-                  return AdminScreen(); // Admin/Technician page
+                  return TechnicianScreen();
+                } else if (staffType == 'Admin') {
+                  return AdminScreen(); // You'll need to create this screen
                 } else {
                   // Staff or Lecturer go to regular user page
                   return ScreenPage(); 

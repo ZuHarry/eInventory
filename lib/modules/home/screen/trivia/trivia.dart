@@ -29,9 +29,110 @@ class _TriviaPageState extends State<TriviaPage> {
   String? _userDepartment;
   String? _userBuildingId;
   bool _isLoadingUserData = true;
+  
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserDepartment();
+  }
+
+  Future<void> _loadUserDepartment() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        
+        if (userDoc.exists) {
+          final userData = userDoc.data();
+          final department = userData?['department'] as String?;
+          
+          if (department != null && department.isNotEmpty) {
+            final buildingsSnapshot = await FirebaseFirestore.instance
+                .collection('buildings')
+                .where('name', isEqualTo: department)
+                .get();
+            
+            if (buildingsSnapshot.docs.isNotEmpty) {
+              setState(() {
+                _userDepartment = department;
+                _userBuildingId = buildingsSnapshot.docs.first.id;
+                _isLoadingUserData = false;
+              });
+            } else {
+              setState(() {
+                _isLoadingUserData = false;
+              });
+            }
+          } else {
+            setState(() {
+              _isLoadingUserData = false;
+            });
+          }
+        }
+      }
+    } catch (e) {
+      print('Error loading user department: $e');
+      setState(() {
+        _isLoadingUserData = false;
+      });
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoadingUserData) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF8F9FA),
+        body: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF81D4FA)),
+          ),
+        ),
+      );
+    }
+
+    if (_userDepartment == null || _userBuildingId == null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8F9FA),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                size: 64,
+                color: Colors.orange[400],
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'No Department Assigned',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  color: Color(0xFF212529),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Please contact your administrator',
+                style: TextStyle(
+                  fontFamily: 'SansRegular',
+                  color: Color(0xFF6C757D),
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       body: Column(
@@ -302,8 +403,33 @@ class _TriviaPageState extends State<TriviaPage> {
       'Users': {},
     };
 
+    // First, get all location IDs that belong to the user's building
+    Set<String> departmentLocationIds = {};
+    if (_userBuildingId != null) {
+      try {
+        final locationsSnapshot = await FirebaseFirestore.instance
+            .collection('buildings')
+            .doc(_userBuildingId)
+            .collection('locations')
+            .get();
+        
+        departmentLocationIds = locationsSnapshot.docs
+            .map((doc) => doc.data()['name'] as String)
+            .toSet();
+      } catch (e) {
+        print('Error fetching department locations: $e');
+      }
+    }
+
     for (var device in devices) {
       final deviceData = device.data() as Map<String, dynamic>;
+      final deviceLocation = deviceData['location']?.toString();
+
+      // Skip devices that are not in the user's department locations
+      if (_userBuildingId != null && 
+          (deviceLocation == null || !departmentLocationIds.contains(deviceLocation))) {
+        continue;
+      }
 
       // Count brands
       if (deviceData['brand'] != null) {
@@ -335,37 +461,13 @@ class _TriviaPageState extends State<TriviaPage> {
         data['Status']![status] = (data['Status']![status] ?? 0) + 1;
       }
 
-      // Get building name from location reference
-      if (deviceData['location'] != null) {
-        try {
-          final locationId = deviceData['location'].toString();
-          final locationDoc = await FirebaseFirestore.instance
-              .collection('locations')
-              .doc(locationId)
-              .get();
-
-          if (locationDoc.exists) {
-            final buildingId = locationDoc['building'];
-            if (buildingId != null) {
-              final buildingDoc = await FirebaseFirestore.instance
-                  .collection('buildings')
-                  .doc(buildingId)
-                  .get();
-
-              if (buildingDoc.exists) {
-                final buildingName =
-                    buildingDoc['name'] ?? 'Unknown Building';
-                data['Buildings']![buildingName] =
-                    (data['Buildings']![buildingName] ?? 0) + 1;
-              }
-            }
-          }
-        } catch (e) {
-          print('Error fetching building: $e');
-        }
+      // Buildings - should only show the user's department building
+      if (_userDepartment != null) {
+        data['Buildings']![_userDepartment!] = 
+            (data['Buildings']![_userDepartment!] ?? 0) + 1;
       }
 
-      // Get user full name from handledBy UID
+      // Get user full name from assigned_by UID
       if (deviceData['assigned_by'] != null) {
         try {
           final userId = deviceData['assigned_by'].toString();
@@ -377,7 +479,7 @@ class _TriviaPageState extends State<TriviaPage> {
           if (userDoc.exists) {
             final fullName = userDoc['fullname'] ?? 'Unknown User';
             final staffType = userDoc['staffType'] ?? 'Unknown';
-            final displayName = '$fullName ($staffType)';  // Add staff type
+            final displayName = '$fullName ($staffType)';
 
             data['Users']![displayName] =
                 (data['Users']![displayName] ?? 0) + 1;
@@ -692,10 +794,58 @@ class FilteredDevicesPage extends StatefulWidget {
 class _FilteredDevicesPageState extends State<FilteredDevicesPage> {
   late Future<Map<String, dynamic>> _filterDataFuture;
 
+  // ADD THESE VARIABLES
+  String? _userBuildingId;
+  Set<String> _departmentLocationIds = {};
+
   @override
   void initState() {
     super.initState();
+    _loadUserBuilding();  // ADD THIS
     _filterDataFuture = _getFilterCriteria();
+  }
+
+  Future<void> _loadUserBuilding() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        
+        if (userDoc.exists) {
+          final userData = userDoc.data();
+          final department = userData?['department'] as String?;
+          
+          if (department != null && department.isNotEmpty) {
+            final buildingsSnapshot = await FirebaseFirestore.instance
+                .collection('buildings')
+                .where('name', isEqualTo: department)
+                .get();
+            
+            if (buildingsSnapshot.docs.isNotEmpty) {
+              _userBuildingId = buildingsSnapshot.docs.first.id;
+              
+              // Get all location names for this building
+              final locationsSnapshot = await FirebaseFirestore.instance
+                  .collection('buildings')
+                  .doc(_userBuildingId)
+                  .collection('locations')
+                  .get();
+              
+              setState(() {
+                _departmentLocationIds = locationsSnapshot.docs
+                    .map((doc) => doc.data()['name'] as String)
+                    .toSet();
+              });
+            }
+          }
+        }
+      }
+    } catch (e) {
+      print('Error loading user building: $e');
+    }
   }
 
   
@@ -854,7 +1004,7 @@ class _FilteredDevicesPageState extends State<FilteredDevicesPage> {
     );
   }
 
-  Stream<List<QueryDocumentSnapshot>> _getFilteredStream(Map<String, dynamic> filterData) {
+Stream<List<QueryDocumentSnapshot>> _getFilteredStream(Map<String, dynamic> filterData) {
     final filterType = filterData['type'] ?? '';
 
     if (filterType == 'building') {
@@ -884,20 +1034,41 @@ class _FilteredDevicesPageState extends State<FilteredDevicesPage> {
         return filtered;
       });
     } else if (filterType == 'user') {
-      // Query devices where handledBy matches user ID
+      // Query devices where assigned_by matches user ID AND in user's department
       return FirebaseFirestore.instance
           .collection('devices')
-          .where('assigned_by', isEqualTo: filterData['userId'])  // CHANGED FROM 'handledBy'
+          .where('assigned_by', isEqualTo: filterData['userId'])
           .snapshots()
-          .map((snapshot) => snapshot.docs);
+          .map((snapshot) {
+            // Filter by department locations
+            if (_departmentLocationIds.isEmpty) {
+              return snapshot.docs;
+            }
+            return snapshot.docs.where((doc) {
+              final data = doc.data() as Map<String, dynamic>;
+              final location = data['location']?.toString();
+              return location != null && _departmentLocationIds.contains(location);
+            }).toList();
+          });
     } else {
-      // Default filtering for other categories
+      // Default filtering for other categories (Brand, Model, Type, Status, Location)
+      // FILTER BY CATEGORY VALUE AND USER'S DEPARTMENT
       final fieldName = widget.category.toLowerCase();
       return FirebaseFirestore.instance
           .collection('devices')
           .where(fieldName, isEqualTo: widget.value)
           .snapshots()
-          .map((snapshot) => snapshot.docs);
+          .map((snapshot) {
+            // Filter by department locations
+            if (_departmentLocationIds.isEmpty) {
+              return snapshot.docs;
+            }
+            return snapshot.docs.where((doc) {
+              final data = doc.data() as Map<String, dynamic>;
+              final location = data['location']?.toString();
+              return location != null && _departmentLocationIds.contains(location);
+            }).toList();
+          });
     }
   }
 

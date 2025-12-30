@@ -1,24 +1,26 @@
-import 'package:einventorycomputer/modules/home/screen/location/location.dart';
+import 'package:einventorycomputer/modules/home/screen/location/admin/location_admin.dart';
 import 'package:einventorycomputer/services/auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:einventorycomputer/modules/home/screen/home/home.dart';
-import 'package:einventorycomputer/modules/home/screen/devices/inventory.dart';
+import 'package:einventorycomputer/modules/home/screen/home/home_admin.dart';
+import 'package:einventorycomputer/modules/home/screen/devices/admin/inventory_admin.dart';
 import 'package:einventorycomputer/modules/home/screen/settings/settings.dart';
 import 'package:einventorycomputer/modules/home/screen/user/account.dart';
 import 'package:einventorycomputer/modules/home/screen/devices/add_device.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:einventorycomputer/modules/home/screen/devices/device_details.dart';
+import 'package:einventorycomputer/modules/home/screen/trivia/trivia_admin.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:einventorycomputer/modules/home/screen/map/map.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;  // ADD THIS LINE
 
-class ScreenPage extends StatefulWidget {
+class AdminScreen extends StatefulWidget {
   @override
-  _ScreenPageState createState() => _ScreenPageState();
+  _AdminScreenState createState() => _AdminScreenState();
 }
 
-class _ScreenPageState extends State<ScreenPage> {
+class _AdminScreenState extends State<AdminScreen> {
   final AuthService _auth = AuthService();
   int _selectedIndex = 0;
   String? _username;
@@ -31,6 +33,8 @@ class _ScreenPageState extends State<ScreenPage> {
     "Inventory", 
     "Add Device",
     "Scanner",
+    "Trivia",
+    "Map",
     "Settings",
     "Account",
     "Location",
@@ -42,7 +46,7 @@ class _ScreenPageState extends State<ScreenPage> {
     });
   }
 
-  final List<int> _bottomNavIndexes = [0, 1, 3, 5, 6];
+  final List<int> _bottomNavIndexes = [0, 1, 3, 5, 7, 8];
 
   @override
   void initState() {
@@ -51,24 +55,24 @@ class _ScreenPageState extends State<ScreenPage> {
   }
 
   Future<void> _loadUserData() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      try {
-        final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-        if (doc.exists && mounted) {
-          final data = doc.data();
-          setState(() {
-            _username = data?['username'] ?? 'User';
-            _profileImageUrl = data?['profileImageUrl'];
-            _staffType = data?['staffType'];
+  final user = FirebaseAuth.instance.currentUser;
+  if (user != null) {
+    try {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      if (doc.exists && mounted) {
+        final data = doc.data();
+        setState(() {
+          _username = data?['username'] ?? 'User';
+          _profileImageUrl = data?['profileImageUrl'];
+          _staffType = data?['staffType'];
           _department = data?['department'];  // ADD THIS
-          });
-        }
-      } catch (e) {
-        print('Error loading user data: $e');
+        });
       }
+    } catch (e) {
+      print('Error loading user data: $e');
     }
   }
+}
 
   void _onSelect(int index) {
     if (_selectedIndex != index) {
@@ -112,25 +116,29 @@ class _ScreenPageState extends State<ScreenPage> {
   }
 
   Widget _getCurrentPage() {
+      final user = FirebaseAuth.instance.currentUser;
+
   switch (_selectedIndex) {
     case 0:
-      return HomePage();
+      return HomeAdminPage();
     case 1:
-      return InventoryPage();
+      return InventoryAdminPage();
     case 2:
       return AddDevicePage(onNavigateToInventory: _navigateToInventory);
     case 3:
       return QRScannerPage();
-    // case 4:
-    //   return TriviaPage();  // ADD THIS
     case 4:
-      return SettingsPage();
+      return TriviaAdminPage();
     case 5:
-      return AccountPage();
+      return MapPage(userId: user?.uid ?? '');
     case 6:
-      return LocationPage();  // Index changed from 6 to 7
+      return SettingsPage();
+    case 7:
+      return AccountPage();
+    case 8:
+      return LocationAdminPage();  // Index changed from 6 to 7
     default:
-      return HomePage();
+      return HomeAdminPage();
   }
 }
 
@@ -162,7 +170,7 @@ class _ScreenPageState extends State<ScreenPage> {
         ),
       ),
       drawer: Drawer(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.black,
         width: 260,
         child: SafeArea(
           child: Column(
@@ -234,10 +242,11 @@ class _ScreenPageState extends State<ScreenPage> {
                       _buildDrawerItem(Icons.inventory_2_outlined, Icons.inventory_2_rounded, "Inventory", 1),
                       _buildDrawerItem(Icons.add_box_outlined, Icons.add_box_rounded, "Add Device", 2),
                       _buildDrawerItem(Icons.qr_code_scanner_outlined, Icons.qr_code_scanner_rounded, "Scan", 3),
-                      // _buildDrawerItem(Icons.quiz_outlined, Icons.quiz_rounded, "Trivia", 4),
-                      _buildDrawerItem(Icons.settings_outlined, Icons.settings_rounded, "Settings", 4),
-                      _buildDrawerItem(Icons.person_outline_rounded, Icons.person_rounded, "Account", 5),
-                      _buildDrawerItem(Icons.location_city_outlined, Icons.location_city_rounded, "Location", 6), 
+                      _buildDrawerItem(Icons.quiz_outlined, Icons.quiz_rounded, "Trivia", 4),  // ADD THIS
+                      _buildDrawerItem(Icons.map_outlined, Icons.map_rounded, "Map", 5),
+                      _buildDrawerItem(Icons.settings_outlined, Icons.settings_rounded, "Settings", 6),  // Index changed from 4 to 5
+                      _buildDrawerItem(Icons.person_outline_rounded, Icons.person_rounded, "Account", 7),  // Index changed from 5 to 6
+                      _buildDrawerItem(Icons.location_city_outlined, Icons.location_city_rounded, "Location", 8),  // Index changed from 6 to 7
                     ],
                   ),
                 ),
@@ -347,13 +356,18 @@ class _ScreenPageState extends State<ScreenPage> {
                       label: "Scan",
                     ),
                     BottomNavigationBarItem(
-                      icon: _buildBottomNavIcon(Icons.person_outline_rounded, 3, safeCurrentIndex),
-                      activeIcon: _buildBottomNavIcon(Icons.person_rounded, 3, safeCurrentIndex),
+                      icon: _buildBottomNavIcon(Icons.map_outlined, 3, safeCurrentIndex),
+                      activeIcon: _buildBottomNavIcon(Icons.map_rounded, 3, safeCurrentIndex),
+                      label: "Map",
+                    ),
+                    BottomNavigationBarItem(
+                      icon: _buildBottomNavIcon(Icons.person_outline_rounded, 4, safeCurrentIndex),
+                      activeIcon: _buildBottomNavIcon(Icons.person_rounded, 4, safeCurrentIndex),
                       label: "Account",
                     ),
                     BottomNavigationBarItem(
-                      icon: _buildBottomNavIcon(Icons.location_city_outlined, 4, safeCurrentIndex),
-                      activeIcon: _buildBottomNavIcon(Icons.location_city_rounded, 4, safeCurrentIndex),
+                      icon: _buildBottomNavIcon(Icons.location_city_outlined, 5, safeCurrentIndex),
+                      activeIcon: _buildBottomNavIcon(Icons.location_city_rounded, 5, safeCurrentIndex),
                       label: "Location",
                     ),
                   ],
@@ -428,14 +442,23 @@ class QRScannerPage extends StatefulWidget {
 }
 
 class _QRScannerPageState extends State<QRScannerPage> {
-  MobileScannerController cameraController = MobileScannerController();
+  MobileScannerController? cameraController;  // Changed to nullable
   final ImagePicker _imagePicker = ImagePicker();
   bool isScanning = true;
   String? scannedData;
 
   @override
+  void initState() {
+    super.initState();
+    // Only initialize camera controller on mobile platforms
+    if (!kIsWeb) {
+      cameraController = MobileScannerController();
+    }
+  }
+
+  @override
   void dispose() {
-    cameraController.dispose();
+    cameraController?.dispose();  // Added ? for null safety
     super.dispose();
   }
 
@@ -456,90 +479,90 @@ class _QRScannerPageState extends State<QRScannerPage> {
   }
 
   Future<void> _pickImageFromGallery() async {
-  try {
-    final XFile? image = await _imagePicker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 100,
-    );
-    
-    if (image != null) {
-      setState(() {
-        isScanning = false;
-      });
-      
-      // Show loading dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return const Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF81D4FA)),
-            ),
-          );
-        },
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 100,
       );
+      
+      if (image != null) {
+        setState(() {
+          isScanning = false;
+        });
+        
+        // Show loading dialog
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF81D4FA)),
+              ),
+            );
+          },
+        );
 
-      // Create a temporary controller for image analysis
-      final MobileScannerController tempController = MobileScannerController();
-      
-      // Set up a listener for barcode detection
-      bool barcodeFound = false;
-      String? detectedCode;
-      
-      // Listen for barcode detection
-      final subscription = tempController.barcodes.listen((BarcodeCapture capture) {
-        if (!barcodeFound && capture.barcodes.isNotEmpty) {
-          barcodeFound = true;
-          detectedCode = capture.barcodes.first.rawValue;
-        }
-      });
-      
-      try {
-        // Analyze the image
-        await tempController.analyzeImage(image.path);
+        // Create a temporary controller for image analysis
+        final MobileScannerController tempController = MobileScannerController();
         
-        // Wait a bit for the detection to process
-        await Future.delayed(const Duration(milliseconds: 500));
+        // Set up a listener for barcode detection
+        bool barcodeFound = false;
+        String? detectedCode;
         
-        // Clean up
-        await subscription.cancel();
-        tempController.dispose();
+        // Listen for barcode detection
+        final subscription = tempController.barcodes.listen((BarcodeCapture capture) {
+          if (!barcodeFound && capture.barcodes.isNotEmpty) {
+            barcodeFound = true;
+            detectedCode = capture.barcodes.first.rawValue;
+          }
+        });
         
-        Navigator.of(context).pop(); // Close loading dialog
-        
-        if (barcodeFound && detectedCode != null) {
-          _showScannedDataDialog(detectedCode!);
-        } else {
+        try {
+          // Analyze the image
+          await tempController.analyzeImage(image.path);
+          
+          // Wait a bit for the detection to process
+          await Future.delayed(const Duration(milliseconds: 500));
+          
+          // Clean up
+          await subscription.cancel();
+          tempController.dispose();
+          
+          Navigator.of(context).pop(); // Close loading dialog
+          
+          if (barcodeFound && detectedCode != null) {
+            _showScannedDataDialog(detectedCode!);
+          } else {
+            _showNoQRCodeFoundDialog();
+          }
+          
+        } catch (e) {
+          await subscription.cancel();
+          tempController.dispose();
+          Navigator.of(context).pop(); // Close loading dialog
           _showNoQRCodeFoundDialog();
         }
-        
-      } catch (e) {
-        await subscription.cancel();
-        tempController.dispose();
-        Navigator.of(context).pop(); // Close loading dialog
-        _showNoQRCodeFoundDialog();
       }
+    } catch (e) {
+      if (Navigator.canPop(context)) {
+        Navigator.of(context).pop(); // Close loading dialog if open
+      }
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error reading image: $e'),
+          backgroundColor: const Color(0xFFDC3545),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
+      
+      setState(() {
+        isScanning = true;
+      });
     }
-  } catch (e) {
-    if (Navigator.canPop(context)) {
-      Navigator.of(context).pop(); // Close loading dialog if open
-    }
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Error reading image: $e'),
-        backgroundColor: const Color(0xFFDC3545),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    );
-    
-    setState(() {
-      isScanning = true;
-    });
   }
-}
 
   void _showNoQRCodeFoundDialog() {
     showDialog(
@@ -816,12 +839,98 @@ class _QRScannerPageState extends State<QRScannerPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Web platform - show message instead of scanner
+    if (kIsWeb) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8F9FA),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.qr_code_scanner_rounded,
+                  size: 80,
+                  color: Color(0xFFADB5BD),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'QR Scanner Not Available',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF212529),
+                  fontFamily: 'SansRegular',
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Camera scanning is not supported on web browsers',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF6C757D),
+                  fontFamily: 'SansRegular',
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: _pickImageFromGallery,
+                icon: const Icon(Icons.photo_library_rounded, size: 20),
+                label: const Text(
+                  'Upload QR Image',
+                  style: TextStyle(
+                    fontFamily: 'SansRegular',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF81D4FA),
+                  foregroundColor: const Color(0xFF212529),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Please use the mobile app for camera scanning',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFFADB5BD),
+                  fontFamily: 'SansRegular',
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Mobile platform - show camera scanner
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         children: [
           MobileScanner(
-            controller: cameraController,
+            controller: cameraController!,  // Added ! because we know it's not null on mobile
             onDetect: _onDetect,
           ),
           
@@ -873,7 +982,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: IconButton(
-                    onPressed: () => cameraController.toggleTorch(),
+                    onPressed: () => cameraController?.toggleTorch(),  // Added ?
                     icon: const Icon(Icons.flash_on, color: Colors.white, size: 24),
                   ),
                 ),
@@ -893,7 +1002,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: IconButton(
-                    onPressed: () => cameraController.switchCamera(),
+                    onPressed: () => cameraController?.switchCamera(),  // Added ?
                     icon: const Icon(Icons.flip_camera_ios, color: Colors.white, size: 24),
                   ),
                 ),

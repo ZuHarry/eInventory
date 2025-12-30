@@ -4,6 +4,7 @@ import 'add_model_page.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../discover/discover_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';  // ADD THIS
 
 class TriviaAdminPage extends StatefulWidget {
   @override
@@ -23,6 +24,11 @@ class _TriviaAdminPageState extends State<TriviaAdminPage> {
     'Buildings',
     'Users'
   ];
+
+  
+  String? _userDepartment;
+  String? _userBuildingId;
+  bool _isLoadingUserData = true;
 
   @override
   Widget build(BuildContext context) {
@@ -191,7 +197,7 @@ class _TriviaAdminPageState extends State<TriviaAdminPage> {
 
           floatingActionButton: FloatingActionButton.extended(
       onPressed: () {
-        _showAddDataDialog();
+        _showAddDataAdminDialog();
       },
       backgroundColor: const Color(0xFF81D4FA),
       icon: const Icon(
@@ -212,7 +218,7 @@ class _TriviaAdminPageState extends State<TriviaAdminPage> {
     );
   }
 
-  void _showAddDataDialog() {
+  void _showAddDataAdminDialog() {
   showDialog(
     context: context,
     builder: (context) => Dialog(
@@ -638,7 +644,7 @@ class _TriviaAdminPageState extends State<TriviaAdminPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => FilteredDevicesPage(
+        builder: (context) => FilteredDevicesAdminPage(
           category: category,
           value: value,
         ),
@@ -669,21 +675,21 @@ class _TriviaAdminPageState extends State<TriviaAdminPage> {
 }
 
 // Filtered Devices Page
-class FilteredDevicesPage extends StatefulWidget {
+class FilteredDevicesAdminPage extends StatefulWidget {
   final String category;
   final String value;
 
-  const FilteredDevicesPage({
+  const FilteredDevicesAdminPage({
     Key? key,
     required this.category,
     required this.value,
   }) : super(key: key);
 
   @override
-  State<FilteredDevicesPage> createState() => _FilteredDevicesPageState();
+  State<FilteredDevicesAdminPage> createState() => _FilteredDevicesAdminPageState();
 }
 
-class _FilteredDevicesPageState extends State<FilteredDevicesPage> {
+class _FilteredDevicesAdminPageState extends State<FilteredDevicesAdminPage> {
   late Future<Map<String, dynamic>> _filterDataFuture;
 
   @override
@@ -691,6 +697,8 @@ class _FilteredDevicesPageState extends State<FilteredDevicesPage> {
     super.initState();
     _filterDataFuture = _getFilterCriteria();
   }
+
+  
 
   Future<Map<String, dynamic>> _getFilterCriteria() async {
     if (widget.category == 'Buildings') {
@@ -1017,12 +1025,12 @@ class _FilteredDevicesPageState extends State<FilteredDevicesPage> {
   }
 }
 
-class AddDataDialog extends StatefulWidget {
+class AddDataAdminDialog extends StatefulWidget {
   @override
-  State<AddDataDialog> createState() => _AddDataDialogState();
+  State<AddDataAdminDialog> createState() => _AddDataAdminDialogState();
 }
 
-class _AddDataDialogState extends State<AddDataDialog> {
+class _AddDataAdminDialogState extends State<AddDataAdminDialog> {
   String _selectedType = 'Brand';
   final _nameController = TextEditingController();
   bool _isLoading = false;
