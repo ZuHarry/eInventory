@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:einventorycomputer/modules/home/screen/location/location.dart';
 import 'package:einventorycomputer/modules/home/screen/location/location_details.dart';
 import 'package:einventorycomputer/modules/home/screen/location/location_overview.dart';
-import 'package:einventorycomputer/modules/home/screen/location/add_location.dart';
+import 'package:einventorycomputer/modules/home/screen/location/admin/add_location_admin.dart';
 
 
 class LocationAdminPage extends StatefulWidget {
@@ -282,7 +282,7 @@ class _LocationAdminPageState extends State<LocationAdminPage> {
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => const AddLocationPage()),
+                            MaterialPageRoute(builder: (_) => const AddLocationAdminPage()),
                           );
                         },
                         style: ElevatedButton.styleFrom(

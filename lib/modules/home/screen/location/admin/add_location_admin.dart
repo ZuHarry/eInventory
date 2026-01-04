@@ -4,16 +4,17 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'add_location_map.dart';
+import 'package:einventorycomputer/modules/home/screen/location/add_location_map.dart';
 
-class AddLocationPage extends StatefulWidget {
-  const AddLocationPage({super.key});
+
+class AddLocationAdminPage extends StatefulWidget {
+  const AddLocationAdminPage({super.key});
 
   @override
-  State<AddLocationPage> createState() => _AddLocationPageState();
+  State<AddLocationAdminPage> createState() => _AddLocationAdminPageState();
 }
 
-class _AddLocationPageState extends State<AddLocationPage> {
+class _AddLocationAdminPageState extends State<AddLocationAdminPage> {
   final _formKey = GlobalKey<FormState>();
   final ImagePicker _picker = ImagePicker();
 
@@ -26,62 +27,41 @@ class _AddLocationPageState extends State<AddLocationPage> {
   double? _latitude;
   double? _longitude;
 
-  // User department variables
-  String? _userDepartment;
-  String? _userBuildingId;
-  bool _isLoadingUserData = true;
+  // Building selection variables
+  String? _selectedBuildingId;
+  String? _selectedBuildingName;
+  List<Map<String, String>> _buildings = [];
+  bool _isLoadingBuildings = true;
 
   Color hex(String hexCode) => Color(int.parse('FF$hexCode', radix: 16));
 
   @override
   void initState() {
     super.initState();
-    _loadUserDepartment();
+    _loadBuildings();
   }
 
-  // Load user's department from Firestore
-  Future<void> _loadUserDepartment() async {
+  // Load all buildings from Firestore
+  Future<void> _loadBuildings() async {
     try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        final userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .get();
-        
-        if (userDoc.exists) {
-          final userData = userDoc.data();
-          final department = userData?['department'] as String?;
-          
-          if (department != null && department.isNotEmpty) {
-            // Find the building that matches the user's department
-            final buildingsSnapshot = await FirebaseFirestore.instance
-                .collection('buildings')
-                .where('name', isEqualTo: department)
-                .get();
-            
-            if (buildingsSnapshot.docs.isNotEmpty) {
-              setState(() {
-                _userDepartment = department;
-                _userBuildingId = buildingsSnapshot.docs.first.id;
-                _isLoadingUserData = false;
-              });
-            } else {
-              setState(() {
-                _isLoadingUserData = false;
-              });
-            }
-          } else {
-            setState(() {
-              _isLoadingUserData = false;
-            });
-          }
-        }
-      }
-    } catch (e) {
-      print('Error loading user department: $e');
+      final buildingsSnapshot = await FirebaseFirestore.instance
+          .collection('buildings')
+          .orderBy('name')
+          .get();
+      
       setState(() {
-        _isLoadingUserData = false;
+        _buildings = buildingsSnapshot.docs.map((doc) {
+          return {
+            'id': doc.id,
+            'name': doc.data()['name'] as String? ?? 'Unknown',
+          };
+        }).toList();
+        _isLoadingBuildings = false;
+      });
+    } catch (e) {
+      print('Error loading buildings: $e');
+      setState(() {
+        _isLoadingBuildings = false;
       });
     }
   }
@@ -411,7 +391,7 @@ class _AddLocationPageState extends State<AddLocationPage> {
               ),
               const SizedBox(height: 8),
               Text(
-                'A location with the name "$locationName" already exists. Please choose a different name.',
+                'A location with the name "$locationName" already exists in this building. Please choose a different name.',
                 style: const TextStyle(
                   fontFamily: 'SansRegular',
                   fontSize: 14,
@@ -492,7 +472,7 @@ class _AddLocationPageState extends State<AddLocationPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              '"${_locationNameController.text}" will be added to $_userDepartment, $_floor as a $_locationType.',
+              '"${_locationNameController.text}" will be added to $_selectedBuildingName, $_floor as a $_locationType.',
               style: const TextStyle(
                 fontFamily: 'SansRegular',
                 fontSize: 14,
@@ -539,14 +519,13 @@ class _AddLocationPageState extends State<AddLocationPage> {
 
   Future<bool> _checkLocationNameExists(String locationName) async {
     try {
-      if (_userBuildingId == null) {
+      if (_selectedBuildingId == null) {
         return false;
       }
       
-      // Query Firestore to check if location name already exists in this building's locations
       final QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collection('buildings')
-          .doc(_userBuildingId)
+          .doc(_selectedBuildingId)
           .collection('locations')
           .where('name', isEqualTo: locationName.trim())
           .limit(1)
@@ -700,11 +679,14 @@ class _AddLocationPageState extends State<AddLocationPage> {
   }
 
   void _submitForm() async {
-    // Check if all required fields are filled
     List<String> emptyFields = [];
     
     if (_locationNameController.text.trim().isEmpty) {
       emptyFields.add('Location Name');
+    }
+    
+    if (_selectedBuildingId == null) {
+      emptyFields.add('Building');
     }
 
     if (emptyFields.isNotEmpty) {
@@ -712,7 +694,6 @@ class _AddLocationPageState extends State<AddLocationPage> {
       return;
     }
 
-    // Check if location name already exists
     String locationName = _locationNameController.text.trim();
     bool nameExists = await _checkLocationNameExists(locationName);
     
@@ -721,20 +702,17 @@ class _AddLocationPageState extends State<AddLocationPage> {
       return;
     }
 
-    // Show confirmation dialog
     final confirmed = await _showConfirmationDialog();
     if (!confirmed) return;
 
     String? finalImageUrl;
 
-    // If user uploaded a custom image, upload it to Firebase Storage
     if (_selectedImage != null) {
       finalImageUrl = await _uploadImageToFirebase(_selectedImage!);
       if (finalImageUrl == null) {
         return;
       }
     } else {
-      // Use default image based on location type
       if (_locationType == 'Lecture Room') {
         finalImageUrl = 'https://drive.google.com/uc?export=view&id=1VRibpXtVrgUGokLdUrzCSIl8nZ3zanGy';
       } else if (_locationType == 'Lab') {
@@ -746,21 +724,13 @@ class _AddLocationPageState extends State<AddLocationPage> {
       User? currentUser = FirebaseAuth.instance.currentUser;
       String? userUid = currentUser?.uid;
 
-      if (_userBuildingId == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Building not found")),
-        );
-        return;
-      }
-
-      // Save the location under the user's department building
       await FirebaseFirestore.instance
           .collection('buildings')
-          .doc(_userBuildingId)
+          .doc(_selectedBuildingId)
           .collection('locations')
           .add({
             'name': locationName,
-            'building': _userDepartment,
+            'building': _selectedBuildingName,
             'floor': _floor,
             'type': _locationType,
             'imageUrl': finalImageUrl,
@@ -775,7 +745,6 @@ class _AddLocationPageState extends State<AddLocationPage> {
         const SnackBar(content: Text("Location added successfully")),
       );
 
-      // Clear form
       _locationNameController.clear();
       setState(() {
         _floor = 'Ground Floor';
@@ -784,6 +753,8 @@ class _AddLocationPageState extends State<AddLocationPage> {
         _selectedImage = null;
         _latitude = null;
         _longitude = null;
+        _selectedBuildingId = null;
+        _selectedBuildingName = null;
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -805,8 +776,7 @@ class _AddLocationPageState extends State<AddLocationPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Show loading indicator while fetching user data
-    if (_isLoadingUserData) {
+    if (_isLoadingBuildings) {
       return const Scaffold(
         backgroundColor: Color(0xFFF8F9FA),
         body: Center(
@@ -817,8 +787,7 @@ class _AddLocationPageState extends State<AddLocationPage> {
       );
     }
 
-    // Show error if no department is assigned
-    if (_userDepartment == null || _userBuildingId == null) {
+    if (_buildings.isEmpty) {
       return Scaffold(
         backgroundColor: const Color(0xFFF8F9FA),
         appBar: AppBar(
@@ -845,7 +814,7 @@ class _AddLocationPageState extends State<AddLocationPage> {
               ),
               const SizedBox(height: 16),
               const Text(
-                'No Department Assigned',
+                'No Buildings Available',
                 style: TextStyle(
                   fontFamily: 'SansRegular',
                   color: Color(0xFF212529),
@@ -855,7 +824,7 @@ class _AddLocationPageState extends State<AddLocationPage> {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Please contact your administrator',
+                'Please add buildings first',
                 style: TextStyle(
                   fontFamily: 'SansRegular',
                   color: Color(0xFF6C757D),
@@ -905,8 +874,7 @@ class _AddLocationPageState extends State<AddLocationPage> {
                 children: [
                   _buildTextField(_locationNameController, 'Location Name'),
                   const SizedBox(height: 16),
-                  // Locked Building Field
-                  _buildLockedBuildingField(),
+                  _buildBuildingDropdown(),
                   const SizedBox(height: 16),
                   _buildDropdown(
                     label: 'Floor',
@@ -971,61 +939,63 @@ class _AddLocationPageState extends State<AddLocationPage> {
     );
   }
 
-  // New widget for locked building field
-  Widget _buildLockedBuildingField() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.white),
-        borderRadius: BorderRadius.circular(12),
-        color: Colors.grey[800]?.withOpacity(0.3),
+  Widget _buildBuildingDropdown() {
+    return DropdownButtonFormField<String>(
+      value: _selectedBuildingId,
+      onChanged: (value) {
+        setState(() {
+          _selectedBuildingId = value;
+          _selectedBuildingName = _buildings.firstWhere(
+            (building) => building['id'] == value,
+            orElse: () => {'name': 'Unknown'},
+          )['name'];
+        });
+      },
+      dropdownColor: const Color(0xFF212529),
+      items: _buildings.map((building) {
+        return DropdownMenuItem<String>(
+          value: building['id'],
+          child: Text(
+            building['name']!,
+            style: const TextStyle(
+              fontFamily: 'SansRegular',
+              color: Colors.white,
+            ),
+          ),
+        );
+      }).toList(),
+      decoration: const InputDecoration(
+        labelText: 'Building *',
+        labelStyle: TextStyle(
+          color: Colors.white,
+          fontFamily: 'SansRegular',
+        ),
+        border: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.white),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.white),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.white, width: 2),
+        ),
+        fillColor: Colors.transparent,
+        filled: true,
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF81D4FA).withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(
-              Icons.business,
-              color: Color(0xFF81D4FA),
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Building',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontFamily: 'SansRegular',
-                    fontSize: 12,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _userDepartment!,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontFamily: 'SansRegular',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Icon(
-            Icons.lock_outline,
-            color: Color(0xFF81D4FA),
-            size: 20,
-          ),
-        ],
+      style: const TextStyle(
+        fontFamily: 'SansRegular',
+        color: Colors.white,
+      ),
+      icon: const Icon(
+        Icons.arrow_drop_down,
+        color: Colors.white,
+      ),
+      hint: const Text(
+        'Select a building',
+        style: TextStyle(
+          fontFamily: 'SansRegular',
+          color: Colors.white70,
+        ),
       ),
     );
   }

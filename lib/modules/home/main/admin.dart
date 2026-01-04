@@ -12,8 +12,8 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:einventorycomputer/modules/home/screen/devices/device_details.dart';
 import 'package:einventorycomputer/modules/home/screen/trivia/trivia_admin.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:einventorycomputer/modules/home/screen/map/map.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;  // ADD THIS LINE
+import 'package:einventorycomputer/modules/home/screen/map/map_admin.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class AdminScreen extends StatefulWidget {
   @override
@@ -130,7 +130,7 @@ class _AdminScreenState extends State<AdminScreen> {
     case 4:
       return TriviaAdminPage();
     case 5:
-      return MapPage(userId: user?.uid ?? '');
+      return MapAdminPage(userId: user?.uid ?? '');
     case 6:
       return SettingsPage();
     case 7:

@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:einventorycomputer/services/auth.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:einventorycomputer/services/pdf_export_service.dart';
+import 'package:einventorycomputer/services/pdf_export_service_admin.dart';
 import 'package:einventorycomputer/modules/home/screen/analytics/pie_chart.dart';
 
 class HomeAdminPage extends StatelessWidget {
@@ -78,7 +78,7 @@ class HomeAdminPage extends StatelessWidget {
     );
 
     try {
-      await PDFExportService.exportDashboardToPDF();
+      await PDFExportServiceAdmin.exportDashboardToPDF();
       await Future.delayed(const Duration(seconds: 2));
       
       Navigator.of(context).pop();
