@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
@@ -10,61 +11,106 @@ class LocationsOverviewPage extends StatefulWidget {
 }
 
 class _LocationsOverviewPageState extends State<LocationsOverviewPage> {
-  Map<String, int> buildingData = {};
   Map<String, int> floorData = {};
   Map<String, int> typeData = {};
   bool isLoading = true;
   int totalLocations = 0;
+  
+  String? _userDepartment;
+  String? _userBuildingId;
 
   @override
   void initState() {
     super.initState();
-    _fetchAnalyticsData();
+    _loadUserDepartmentAndFetchData();
+  }
+
+  Future<void> _loadUserDepartmentAndFetchData() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        
+        if (userDoc.exists) {
+          final userData = userDoc.data();
+          final department = userData?['department'] as String?;
+          
+          if (department != null && department.isNotEmpty) {
+            // Find the building that matches the user's department
+            final buildingsSnapshot = await FirebaseFirestore.instance
+                .collection('buildings')
+                .where('name', isEqualTo: department)
+                .get();
+            
+            if (buildingsSnapshot.docs.isNotEmpty) {
+              setState(() {
+                _userDepartment = department;
+                _userBuildingId = buildingsSnapshot.docs.first.id;
+              });
+              
+              // Fetch analytics data for this department
+              await _fetchAnalyticsData();
+            } else {
+              setState(() {
+                isLoading = false;
+              });
+            }
+          } else {
+            setState(() {
+              isLoading = false;
+            });
+          }
+        }
+      }
+    } catch (e) {
+      print('Error loading user department: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   Future<void> _fetchAnalyticsData() async {
+    if (_userBuildingId == null) {
+      setState(() {
+        isLoading = false;
+      });
+      return;
+    }
+
     try {
       final firestore = FirebaseFirestore.instance;
-      final buildingsSnapshot = await firestore.collection('buildings').get();
 
-      Map<String, int> buildings = {};
       Map<String, int> floors = {};
       Map<String, int> types = {};
       int totalCount = 0;
 
-      // Iterate through each building
-      for (var buildingDoc in buildingsSnapshot.docs) {
-        final buildingName = buildingDoc.data()['name'] ?? 'Unknown';
-        final buildingUid = buildingDoc.id;
+      // Fetch locations subcollection for the user's building only
+      final locationsSnapshot = await firestore
+          .collection('buildings')
+          .doc(_userBuildingId)
+          .collection('locations')
+          .get();
 
-        // Fetch locations subcollection for this building
-        final locationsSnapshot = await firestore
-            .collection('buildings')
-            .doc(buildingUid)
-            .collection('locations')
-            .get();
+      totalCount = locationsSnapshot.docs.length;
 
-        // Count locations in this building
-        final locationCount = locationsSnapshot.docs.length;
-        buildings[buildingName] = (buildings[buildingName] ?? 0) + locationCount;
-        totalCount += locationCount;
+      // Process each location document
+      for (var locationDoc in locationsSnapshot.docs) {
+        final data = locationDoc.data();
+        final floor = data['floor'] ?? 'Unknown';
+        final type = data['type'] ?? 'Unknown';
 
-        // Process each location document
-        for (var locationDoc in locationsSnapshot.docs) {
-          final data = locationDoc.data();
-          final floor = data['floor'] ?? 'Unknown';
-          final type = data['type'] ?? 'Unknown';
+        // Count floors
+        floors[floor] = (floors[floor] ?? 0) + 1;
 
-          // Count floors
-          floors[floor] = (floors[floor] ?? 0) + 1;
-
-          // Count types
-          types[type] = (types[type] ?? 0) + 1;
-        }
+        // Count types
+        types[type] = (types[type] ?? 0) + 1;
       }
 
       setState(() {
-        buildingData = buildings;
         floorData = floors;
         typeData = types;
         totalLocations = totalCount;
@@ -89,14 +135,29 @@ class _LocationsOverviewPageState extends State<LocationsOverviewPage> {
           icon: const Icon(Icons.arrow_back, color: Color(0xFF212529)),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Locations Overview',
-          style: TextStyle(
-            color: Color(0xFF212529),
-            fontFamily: 'SansRegular',
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
-          ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Locations Overview',
+              style: TextStyle(
+                color: Color(0xFF212529),
+                fontFamily: 'SansRegular',
+                fontWeight: FontWeight.w600,
+                fontSize: 20,
+              ),
+            ),
+            if (_userDepartment != null)
+              Text(
+                _userDepartment!,
+                style: const TextStyle(
+                  color: Color(0xFF6C757D),
+                  fontFamily: 'SansRegular',
+                  fontWeight: FontWeight.w400,
+                  fontSize: 14,
+                ),
+              ),
+          ],
         ),
       ),
       body: isLoading
@@ -105,101 +166,128 @@ class _LocationsOverviewPageState extends State<LocationsOverviewPage> {
                 valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF81D4FA)),
               ),
             )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Total Locations Card
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF212529),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+          : _userDepartment == null || _userBuildingId == null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        size: 64,
+                        color: Colors.orange[400],
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'No Department Assigned',
+                        style: TextStyle(
+                          fontFamily: 'SansRegular',
+                          color: Color(0xFF212529),
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
                         ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        const Icon(
-                          Icons.location_on_outlined,
-                          color: Color(0xFF81D4FA),
-                          size: 48,
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Please contact your administrator',
+                        style: TextStyle(
+                          fontFamily: 'SansRegular',
+                          color: Color(0xFF6C757D),
+                          fontSize: 14,
                         ),
-                        const SizedBox(height: 12),
-                        Text(
-                          '$totalLocations',
-                          style: const TextStyle(
-                            color: Color(0xFF81D4FA),
-                            fontSize: 36,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'SansRegular',
-                          ),
-                        ),
-                        const Text(
-                          'Total Locations',
-                          style: TextStyle(
-                            color: Color(0xFFADB5BD),
-                            fontSize: 16,
-                            fontFamily: 'SansRegular',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Buildings Analytics
-                  _buildAnalyticsSection(
-                    'Locations by Building',
-                    buildingData,
-                    Icons.business_outlined,
-                    [
-                      const Color(0xFF81D4FA),
-                      const Color(0xFF28A745),
-                      const Color(0xFF007BFF),
-                      const Color(0xFFDC3545),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                )
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Total Locations Card
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF212529),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            const Icon(
+                              Icons.location_on_outlined,
+                              color: Color(0xFF81D4FA),
+                              size: 48,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              '$totalLocations',
+                              style: const TextStyle(
+                                color: Color(0xFF81D4FA),
+                                fontSize: 36,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'SansRegular',
+                              ),
+                            ),
+                            const Text(
+                              'Total Locations',
+                              style: TextStyle(
+                                color: Color(0xFFADB5BD),
+                                fontSize: 16,
+                                fontFamily: 'SansRegular',
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'in $_userDepartment',
+                              style: const TextStyle(
+                                color: Color(0xFF6C757D),
+                                fontSize: 14,
+                                fontFamily: 'SansRegular',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
 
-                  // Floors Analytics
-                  _buildAnalyticsSection(
-                    'Locations by Floor',
-                    floorData,
-                    Icons.layers_outlined,
-                    [
-                      const Color(0xFF6F42C1),
-                      const Color(0xFF20C997),
-                      const Color(0xFFFD7E14),
-                      const Color(0xFFE83E8C),
-                      const Color(0xFF6C757D),
+                      // Floors Analytics
+                      _buildAnalyticsSection(
+                        'Locations by Floor',
+                        floorData,
+                        Icons.layers_outlined,
+                        [
+                          const Color(0xFF6F42C1),
+                          const Color(0xFF20C997),
+                          const Color(0xFFFD7E14),
+                          const Color(0xFFE83E8C),
+                          const Color(0xFF6C757D),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Types Analytics
+                      _buildAnalyticsSection(
+                        'Locations by Type',
+                        typeData,
+                        Icons.category_outlined,
+                        [
+                          const Color(0xFF007BFF),
+                          const Color(0xFF28A745),
+                          const Color(0xFFFFC107),
+                          const Color(0xFFDC3545),
+                          const Color(0xFF17A2B8),
+                        ],
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 24),
-
-                  // Types Analytics
-                  _buildAnalyticsSection(
-                    'Locations by Type',
-                    typeData,
-                    Icons.category_outlined,
-                    [
-                      const Color(0xFF007BFF),
-                      const Color(0xFF28A745),
-                      const Color(0xFFFFC107),
-                      const Color(0xFFDC3545),
-                      const Color(0xFF17A2B8),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+                ),
     );
   }
 

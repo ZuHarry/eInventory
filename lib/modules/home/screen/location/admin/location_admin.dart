@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:einventorycomputer/modules/home/screen/location/location.dart';
 import 'package:einventorycomputer/modules/home/screen/location/location_details.dart';
-import 'package:einventorycomputer/modules/home/screen/location/location_overview.dart';
+import 'package:einventorycomputer/modules/home/screen/location/admin/location_overview_admin.dart';
 import 'package:einventorycomputer/modules/home/screen/location/admin/add_location_admin.dart';
 
 
@@ -243,7 +243,7 @@ class _LocationAdminPageState extends State<LocationAdminPage> {
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => const LocationsOverviewPage()),
+                            MaterialPageRoute(builder: (_) => const LocationsOverviewAdminPage()),
                           );
                         },
                         style: ElevatedButton.styleFrom(
