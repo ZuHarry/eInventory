@@ -28,6 +28,9 @@ dependencies:
   geolocator: ^10.1.0
   google_maps_flutter: ^2.5.0
 
+  dart_ping: ^9.0.1
+  connectivity_plus: ^6.1.2
+
   # PDF generation dependencies
   pdf: ^3.10.7
   printing: ^5.11.1

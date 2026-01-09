@@ -1,31 +1,36 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dart_ping/dart_ping.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class DevicePingService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  final Connectivity _connectivity = Connectivity();
+  
+  Future<bool> _hasNetworkConnection() async {
+    final connectivityResult = await _connectivity.checkConnectivity();
+    return connectivityResult != ConnectivityResult.none;
+  }
+
   
   // Check if device is reachable using socket connection
-  Future<bool> pingDevice(String ipAddress, {int timeoutSeconds = 10}) async {
-    // Common ports to try
-    final ports = [80, 443, 8080, 22, 23, 3389, 21, 25];
+  Future<bool> pingDevice(String ipAddress, {int timeoutSeconds = 5}) async {
+  try {
+    final ping = Ping(ipAddress, count: 1, timeout: timeoutSeconds);
     
-    for (final port in ports) {
-      try {
-        final socket = await Socket.connect(
-          ipAddress,
-          port,
-          timeout: Duration(seconds: timeoutSeconds),
-        );
-        await socket.close();
+    await for (final result in ping.stream) {
+      if (result.error == null && result.response != null) {
         return true;
-      } catch (e) {
-        // Continue to next port
-        continue;
       }
     }
     return false;
+  } catch (e) {
+    print('Ping error for $ipAddress: $e');
+    return false;
   }
+}
   
   // Alternative method using InternetAddress lookup
   Future<bool> checkDeviceReachability(String ipAddress) async {
@@ -40,6 +45,13 @@ class DevicePingService {
   
   // Ping all devices from Firestore and update their status
   Future<Map<String, bool>> pingAllDevices() async {
+    
+    // Check network first
+    if (!await _hasNetworkConnection()) {
+      print('No network connection, skipping ping');
+      return {};
+    }
+
     Map<String, bool> results = {};
     
     try {
@@ -78,35 +90,68 @@ class DevicePingService {
   
   // Helper method to ping a device and return result with ID
   Future<MapEntry<String, bool>> _pingDeviceWithId(String deviceId, String ipAddress) async {
-    try {
-      final isOnline = await pingDevice(ipAddress);
-      print('Device $deviceId ($ipAddress): ${isOnline ? 'Online' : 'Offline'}');
-      return MapEntry(deviceId, isOnline);
-    } catch (e) {
-      print('Error pinging device $deviceId: $e');
+  try {
+    // Validate IP address format
+    if (!_isValidIpAddress(ipAddress)) {
+      print('Invalid IP address for device $deviceId: $ipAddress');
       return MapEntry(deviceId, false);
     }
+    
+    final isOnline = await pingDevice(ipAddress, timeoutSeconds: 3);
+    print('Device $deviceId ($ipAddress): ${isOnline ? 'Online' : 'Offline'}');
+    return MapEntry(deviceId, isOnline);
+  } catch (e) {
+    print('Error pinging device $deviceId: $e');
+    return MapEntry(deviceId, false);
   }
+}
+
+bool _isValidIpAddress(String ip) {
+  final ipRegex = RegExp(r'^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$');
+  if (!ipRegex.hasMatch(ip)) return false;
+  
+  final parts = ip.split('.');
+  return parts.every((part) => int.parse(part) <= 255);
+}
   
   // Update multiple devices status in Firestore
   Future<void> _updateDevicesStatus(Map<String, bool> results) async {
-    final batch = _firestore.batch();
+  final batch = _firestore.batch();
+  int updateCount = 0;
+  
+  for (final entry in results.entries) {
+    final deviceRef = _firestore.collection('devices').doc(entry.key);
     
-    for (final entry in results.entries) {
-      final deviceRef = _firestore.collection('devices').doc(entry.key);
-      batch.update(deviceRef, {
-        'status': entry.value ? 'Online' : 'Offline',
-        'last_ping': FieldValue.serverTimestamp(),
-      });
+    // Only update if status actually changed
+    final currentDoc = await deviceRef.get();
+    if (currentDoc.exists) {
+      final currentStatus = currentDoc.data()?['status'];
+      final newStatus = entry.value ? 'Online' : 'Offline';
+      
+      // Skip update if status hasn't changed
+      if (currentStatus == newStatus) {
+        continue;
+      }
     }
     
+    batch.update(deviceRef, {
+      'status': entry.value ? 'Online' : 'Offline',
+      'last_ping': FieldValue.serverTimestamp(),
+    });
+    updateCount++;
+  }
+  
+  if (updateCount > 0) {
     try {
       await batch.commit();
-      print('Updated ${results.length} devices status');
+      print('Updated $updateCount devices status (${results.length - updateCount} unchanged)');
     } catch (e) {
       print('Error updating devices status: $e');
     }
+  } else {
+    print('No status changes detected, skipping Firestore update');
   }
+}
   
   // Stream devices with real-time updates
   Stream<List<Map<String, dynamic>>> getDevicesStream() {
