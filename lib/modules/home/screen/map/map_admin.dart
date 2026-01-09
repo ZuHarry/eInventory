@@ -456,6 +456,7 @@ class _MapAdminPageState extends State<MapAdminPage> {
             'id': doc.id,
             'name': data['name'] ?? 'Unknown',
             'location': location,
+            'buildingName': locationToBuilding[location] ?? '', // ADD THIS LINE
             'category': data['category'] ?? 'Other',
             'status': data['status'] ?? 'Unknown',
             'model': data['model'] ?? '',
@@ -662,92 +663,108 @@ class _MapAdminPageState extends State<MapAdminPage> {
   }
 
   void _showLocationDevices(String location, List<Map<String, dynamic>> devices, LatLng position) {
-    setState(() {
-      _selectedLocation = location;
-    });
+  setState(() {
+    _selectedLocation = location;
+  });
 
-    _mapController.move(position, 15.0);
+  _mapController.move(position, 15.0);
 
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (BuildContext context) {
-        return Container(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.6,
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
+    builder: (BuildContext context) {
+      return Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.6,
+        ),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
           ),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
+        ),
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFDEE2E6),
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-          ),
-          child: Column(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFDEE2E6),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.location_on,
-                      color: Color(0xFF28A745),
-                      size: 24,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        location,
-                        style: const TextStyle(
-                          fontFamily: 'SansRegular',
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF212529),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.location_on,
+                    color: Color(0xFF28A745),
+                    size: 24,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (devices.first['buildingName'] != null && 
+                            devices.first['buildingName'].toString().isNotEmpty)
+                          Text(
+                            devices.first['buildingName'],
+                            style: const TextStyle(
+                              fontFamily: 'SansRegular',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF6C757D),
+                            ),
+                          ),
+                        Text(
+                          location,
+                          style: const TextStyle(
+                            fontFamily: 'SansRegular',
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF212529),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                    Text(
-                      '${devices.length} ${devices.length == 1 ? 'Device' : 'Devices'}',
-                      style: const TextStyle(
-                        fontFamily: 'SansRegular',
-                        fontSize: 14,
-                        color: Color(0xFF6C757D),
-                      ),
+                  ),
+                  Text(
+                    '${devices.length} ${devices.length == 1 ? 'Device' : 'Devices'}',
+                    style: const TextStyle(
+                      fontFamily: 'SansRegular',
+                      fontSize: 14,
+                      color: Color(0xFF6C757D),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              const Divider(height: 1),
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: devices.length,
-                  itemBuilder: (context, index) {
-                    final device = devices[index];
-                    return _buildDeviceCard(device);
-                  },
-                ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: devices.length,
+                itemBuilder: (context, index) {
+                  final device = devices[index];
+                  return _buildDeviceCard(device);
+                },
               ),
-            ],
-          ),
-        );
-      },
-    ).whenComplete(() {
-      setState(() {
-        _selectedLocation = null;
-      });
+            ),
+          ],
+        ),
+      );
+    },
+  ).whenComplete(() {
+    setState(() {
+      _selectedLocation = null;
     });
-  }
+  });
+}
 
   Widget _buildDeviceCard(Map<String, dynamic> device) {
   Color statusColor;
